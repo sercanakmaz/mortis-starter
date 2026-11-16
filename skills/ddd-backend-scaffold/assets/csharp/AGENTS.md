@@ -1,0 +1,87 @@
+# Boilerplate: working agreement
+
+This file is the always-on contract for everyone who changes this solution, people and AI agents alike. It holds the rules that apply to all work. The reasoning and the request flow are in [docs/architecture.md](docs/architecture.md).
+
+## 1. Map
+
+```
+src/
+  Boilerplate.Shared/          building blocks: Entity, AggregateRoot, EventBase, EventContext, command pipeline, exceptions
+  Boilerplate.Domain/          Aggregates/<Plural>/ : aggregate, child entities, value objects, Events/, service, repository interface, module
+  Boilerplate.Application/     <Plural>/ : commands (command + validator + handler in one file), event handlers, DTOs
+  Boilerplate.Infrastructure/  Persistence/ : AppDbContext, EfRepository, UnitOfWork, <Plural>/ repository + EF configuration, Migrations/
+  Boilerplate.Api/             HTTP host: controllers, middlewares
+  Boilerplate.Console/         manual-testing host: Scenarios/, run with `dotnet run --project src/Boilerplate.Console -- <scenario>`
+test/
+  Boilerplate.Tests/           TestSupport/ (every fake, builder and mock) + tests, named after the type under test
+```
+
+Dependencies point one way: `Shared ← Domain ← Application ← Api / Console`, and `Infrastructure → Domain`. Only Infrastructure knows EF Core and PostgreSQL. Only the two hosts wire everything together.
+
+## 2. Non-negotiables
+
+| # | Rule | What enforces it |
+|---|---|---|
+| 1 | **All business logic lives in the aggregate.** Properties are `protected set`, collections are a private `List<T>` exposed as `IReadOnlyCollection<T>`, state changes through named methods (`Complete`, `AddLine`, `Override`). Services only orchestrate: check, load, call the aggregate, save. | Review |
+| 2 | **Child entities and value objects are reached only through their aggregate root.** A child's constructor and mutating methods are `internal`. A child gets no repository, no service and no command. A value object is an immutable `record` that validates itself in its constructor. | Compiler (`internal`) |
+| 3 | **Events are raised inside the aggregate method that changes the state.** Event records are past-tense names (`Created`, `Completed`) in `Aggregates/<Plural>/Events/` and carry ids as strings, never entities. | Compiler (`RaiseEvent` is `protected`), repository tests |
+| 4 | **Ids are `Guid.CreateVersion7()` and are assigned in the domain, never by the database.** Time is `DateTime.UtcNow`. No `.Result`, no `.Wait()`. | Build fails (`BannedSymbols.txt`, RS0030); `ValueGeneratedNever()` in the configuration extensions |
+| 5 | **Every command that writes implements `ITransactionalCommand`.** | A repository write outside a transaction throws `TransactionRequiredException` |
+| 6 | **Load with `FindByIdTrackingAsync` before you change an aggregate**, then call `UpdateAsync`. | `UpdateAsync` throws for an untracked aggregate |
+| 7 | **A repository write is sent to the database immediately.** Statement order inside a service is behaviour, not style. | Review |
+| 8 | **A service file holds the interface and the class, nothing else.** Primary-constructor injection. No private methods and no local functions in a `*Service`, `*CommandHandler` or `*EventHandler`: a rule goes to the aggregate or value object, the steps stay inline. No instance field that remembers data between calls. | Review |
+| 9 | **An aggregate's service never injects another aggregate's service.** Another aggregate's data comes from its repository. A reaction in another aggregate is an event handler in the Application layer, in the *reacting* aggregate's folder (`Application/<Plural>/`), named `<Action>When<Aggregate><Event>EventHandler`. | Review |
+| 10 | **A command handler calls one service method and maps the result to a DTO** with `XDto.Map(...)`. It holds no business rule. **A host sends a command and never names its handler**: a controller, a Console scenario or an event handler injects `ICommandDispatcher` and calls `Send(command)`. An event handler sends a command, never calls a service or a repository, so validation, logging and the transaction apply to a reaction as they do to a request. | Review |
+| 11 | **A validator checks the shape of the input and is synchronous.** It never reads the database. Uniqueness and existence checks belong in the service; rules about state belong in the aggregate. | Review |
+| 12 | **A reference to another aggregate is its id plus a foreign key** in the EF configuration, with the delete behaviour written there. Never a `kind` column plus an untyped id. No application check that repeats what the foreign key already guarantees. | Configuration tests |
+| 13 | **Registration is explicit**: `<Aggregate>Module` (service), `PersistenceModule` (repositories), `ApplicationModule` (`AddCommandHandler<TCommand, TContent, THandler>()`, validators, event handlers), `ScenarioModule`. No assembly scanning. | Review |
+| 14 | **Tests**: xUnit `Assert` only. A test class holds `[Fact]` / `[Theory]` methods and nothing else. Every mock, fake and builder lives in `TestSupport/`. A test file is named after the type it tests. Take the failing run first. | Review |
+| 15 | **No comments in code**, in `src/` or `test/`. The reason for a decision goes to `docs/`. | Review |
+| 16 | **Locals are named after the thing they hold**: `orderRepository`, never `repository`, `service`, `builder` or a `Mock` suffix. Constants live in a `*Constants` class. | Review |
+| 17 | **A new abstraction needs two real implementations today**, or it is a boundary a test must replace. Choosing one of several implementations is keyed dependency injection, never a factory with a `switch`. Write the decision down in `docs/adr/`. | Review |
+| 18 | **A new NuGet package needs the owner's agreement.** No mediator, mapping or assertion library: the command pipeline, `Dto.Map` and xUnit `Assert` are the choices here. | Review |
+| 19 | **A handler is sync or async, and its base class says which.** `BaseSyncEventHandler<TEvent>` runs inside the transaction, awaited, ordered by `Sequence`; a throw rolls the whole command back, so it is the place for a rule that must hold together with the change. `BaseAsyncEventHandler<TEvent>` runs after COMMIT in its own scope and transaction as the `system` user; its failure is logged and never undoes the original change, so it is for eventual consistency (stock, read models, notifications). An event with an async handler implements `IQueueEvent` and carries every value the handler needs; the handler never reloads the publisher. Write async handlers for at-least-once delivery, because a broker will replace the in-process dispatcher. | Compiler (`BaseAsyncEventHandler` requires `IQueueEvent`), dispatcher and handler tests |
+| 20 | **The user is data on the command, never ambient.** A command that writes implements `IUserCommand` (`UserId`, `UserEmail`, both `[JsonIgnore]`, never read from JSON). The host fills it: `UserCommandFilter` in the Api, `CommandScenario` in the Console. The handler passes `command.ToAuditUser()` down to the aggregate. An event carries the user who raised it; a sync handler passes `@event.UserId` on, an async handler uses `SystemUser`. There is no `IUserContext`. | Filter, command, event and handler tests |
+
+## 3. Adding an aggregate: every place it touches
+
+| Project | Files |
+|---|---|
+| Domain | `Aggregates/<Plural>/<Aggregate>.cs`, `Events/*.cs`, `I<Aggregate>Repository.cs`, `<Aggregate>Service.cs`, `<Aggregate>Constants.cs`, `<Aggregate>Module.cs`, and one line in `DomainModule.cs` |
+| Infrastructure | `Persistence/<Plural>/<Aggregate>Repository.cs`, `<Aggregate>Configuration.cs`, one line in `PersistenceModule.cs`, and a migration |
+| Application | `<Plural>/<Verb><Aggregate>Command.cs` per command, `<Aggregate>Dto.cs`, and the handler and validator lines in `ApplicationModule.cs` |
+| Api | `Controllers/<Plural>Controller.cs` |
+| Console | one `AddCommandScenario<...>()` line in `ScenarioModule.cs` per command you want to run from arguments, and a scenario in `Scenarios/` when a manual test needs several steps |
+| Tests | `TestSupport/Domain/<Plural>/Fake<Aggregate>.cs`, `<Aggregate>RepositoryBuilder.cs`, `<Aggregate>ServiceBuilder.cs`; `Domain/<Plural>/<Aggregate>Tests.cs`, `<Aggregate>ServiceTests.cs`; `Infrastructure/Persistence/<Plural>/<Aggregate>RepositoryTests.cs`, `<Aggregate>ConfigurationTests.cs`; a handler test per command that has a validator and one per event handler |
+
+Write the fakes, builders and tests first, watch them fail, then write the code.
+
+## 4. How work is done
+
+- **Know how it will be verified before you start**: a test, a Console scenario, or a request against the running Api.
+- **Name the files you expect to touch before you touch them.** A finding outside that list is written down, not fixed on the way.
+- **Fixing a bug**: first a test that fails with the bug's own symptom, then the fix, then the same test passes unchanged. Never narrow the scenario, never fit the expected value to the output, never weaken an assertion that went red.
+- **"Done" needs output.** Show the build and test result; say which part was skipped and why.
+- **Git**: an AI agent does not run `git add` or `git commit`, and never runs `checkout`, `restore`, `stash`, `reset`, `clean`, `rebase`, `merge` or `revert`. It leaves its work in the working tree and says what changed.
+- **Plans** go to `plans/<work>/` and are deleted when the work ends. What should outlive the work moves to `docs/`.
+- **When something has to be explained twice, it is missing from the docs.** Write it into this file or `docs/` in the same change.
+
+## 5. Commands
+
+```bash
+dotnet build
+dotnet test
+docker compose up -d postgres
+dotnet ef database update --project src/Boilerplate.Infrastructure
+dotnet run --project src/Boilerplate.Console --                 # lists scenarios and commands
+dotnet run --project src/Boilerplate.Console -- <Command> '<json>'  # runs one command; F5 in VS Code asks for both
+dotnet ef migrations add <Name> --project src/Boilerplate.Infrastructure --output-dir Persistence/Migrations
+```
+
+## 6. Skills
+
+| Task | Skill |
+|---|---|
+| Start another solution with this shape, or copy the building blocks into an existing one | `ddd-backend-scaffold` |
+| Add or change an aggregate, child entity, value object, event, command, mapping or test | `ddd-backend-develop` |
+| Check a change against the rules above | `ddd-backend-review` |

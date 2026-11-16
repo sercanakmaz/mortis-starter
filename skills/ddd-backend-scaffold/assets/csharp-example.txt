@@ -1,0 +1,21 @@
+delete src/Boilerplate.Domain/Aggregates
+delete src/Boilerplate.Application/Customers
+delete src/Boilerplate.Application/Orders
+delete src/Boilerplate.Application/Products
+delete src/Boilerplate.Api/Controllers
+delete src/Boilerplate.Infrastructure/Persistence/Customers
+delete src/Boilerplate.Infrastructure/Persistence/Orders
+delete src/Boilerplate.Infrastructure/Persistence/Products
+delete src/Boilerplate.Infrastructure/Persistence/Migrations
+delete src/Boilerplate.Console/Scenarios/BlockedCustomerScenario.cs
+delete src/Boilerplate.Console/Scenarios/OrderFlowScenario.cs
+delete src/Boilerplate.Console/Scenarios/StockFlowScenario.cs
+delete test/Boilerplate.Tests/Application
+delete test/Boilerplate.Tests/Domain
+delete test/Boilerplate.Tests/Infrastructure/Persistence
+delete test/Boilerplate.Tests/TestSupport/Domain
+lines Customer|Order|Product|Completed|LineAdded|LineCancelled|StockFlow src/Boilerplate.Domain/DomainModule.cs
+lines Customer|Order|Product|Completed|LineAdded|LineCancelled|StockFlow src/Boilerplate.Infrastructure/Persistence/PersistenceModule.cs
+lines Customer|Order|Product|Completed|LineAdded|LineCancelled|StockFlow|Shared\.Domain|Shared\.Application|FluentValidation src/Boilerplate.Application/ApplicationModule.cs
+lines Customer|Order|Product|Completed|LineAdded|LineCancelled|StockFlow src/Boilerplate.Console/Scenarios/ScenarioModule.cs
+launch CreateProduct|stock-flow|order-flow .vscode/launch.json
