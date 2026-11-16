@@ -5,7 +5,7 @@ set -uo pipefail
 # Needs: dotnet SDK 10, psql, curl, and a PostgreSQL the PG* variables below can reach.
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCAFFOLD="$REPO_DIR/skills/ddd-backend-scaffold/scripts/scaffold.sh"
+SCAFFOLD="$REPO_DIR/_temp/template/scripts/scaffold.sh"
 WORK_DIR="${SMOKE_WORK_DIR:-$(mktemp -d)}"
 export PGHOST="${PGHOST:-localhost}" PGPORT="${PGPORT:-5432}" PGUSER="${PGUSER:-postgres}" PGPASSWORD="${PGPASSWORD:-postgres}"
 API_PORT="${SMOKE_API_PORT:-5099}"

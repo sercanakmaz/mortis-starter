@@ -1,7 +1,9 @@
 ---
-name: ddd-backend-scaffold
+name: mortis-scaffold
 description: Scaffolds a new .NET 10 backend solution built from domain-driven-design building blocks (aggregates, child entities, value objects, domain events with sync and async handlers, repositories, domain services, commands) on EF Core and PostgreSQL, or copies just the building blocks into a solution that already exists. Use whenever the user wants to start, create, bootstrap or scaffold a C# / .NET backend, API, service or microservice, asks for a .NET "boilerplate", "starter", "template" or "DDD / clean project structure", or wants an existing .NET project to adopt this structure, even when they never say "DDD".
 ---
+
+> **Being rebuilt.** The C# solution and `scripts/scaffold.sh` no longer ship in this skill; they are in `_temp/template/` in the repository until the skill generates projects from its references (see `plans/`). The commands below run from there.
 
 # Scaffold a DDD backend
 
@@ -75,7 +77,7 @@ The references describe the template and the example exactly: `tests/check_docs.
 
 ## After scaffolding
 
-- The first real change is usually an aggregate. `AGENTS.md` §3 in the new solution lists every file an aggregate touches, and the `ddd-backend-develop` skill walks through it.
+- The first real change is usually an aggregate. `AGENTS.md` §3 in the new solution lists every file an aggregate touches, and the `mortis-develop` skill walks through it.
 - A new migration: `dotnet ef migrations add <Name> --project src/<Name>.Infrastructure --output-dir Persistence/Migrations` (needs `dotnet tool install --global dotnet-ef`).
 - The connection string is `ConnectionStrings:Default` in both `appsettings.json` files; the environment variable `ConnectionStrings__Default` overrides it.
 

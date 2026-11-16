@@ -4,7 +4,14 @@ All notable changes to the skills and the template. Newest first.
 
 ## 2026-11
 
+### Planned
+- The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
+- The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).
+
 ### Changed
+- The product is named mortis-starter. The skill `ddd-backend-scaffold` is now `mortis-scaffold`.
+- Notes on where ideas came from moved to a temporary, git-ignored `_sources/` folder.
+- The C# solution and `scaffold.sh` moved out of the `mortis-scaffold` skill to the temporary `_temp/template/`. The skill now holds no project source.
 - Commands no longer extend `BaseCommand` / `UserCommand`. They are plain records that implement `ICommand<TContent>`, `IUserCommand` and `ITransactionalCommand`; `ToAuditUser()` is an extension method (ADR 0002).
 - Hosts send commands through `ICommandDispatcher.Send(command)` and never name a handler. Handlers are registered with `AddCommandHandler<TCommand, TContent, THandler>()`. Controllers, Console scenarios and event handlers were converted (ADR 0001).
 - `CommandScenario<TCommand, TContent>` replaces `CommandScenario<TCommand, TContent, THandler>`.

@@ -1,14 +1,14 @@
-# DDD backend skills for .NET
+# mortis-starter
 
-Claude Code skills that start and grow a .NET backend built from domain-driven-design building blocks. The shape comes from [`csharp_boilerplate`](https://github.com/sercanakmaz/csharp_boilerplate); the rules and safeguards come from what the Zeyrek backend learned on top of it.
+A project starter for backends, delivered as Claude Code skills. Today it starts and grows a .NET backend built from domain-driven-design building blocks; it is becoming a starter where you choose the methods and technologies your project needs (see `docs/roadmap.md`).
 
 ## Status
 
 | Skill | State |
 |---|---|
-| `ddd-backend-scaffold` | **Ready.** Creates a solution (with a worked Order / Customer / Product example, which you can leave out), or copies only the building blocks into an existing solution. Includes sync and async event handlers |
-| `ddd-backend-develop` | Planned (phase 2): adding aggregates, child entities, value objects, events, commands, mappings and tests |
-| `ddd-backend-review` | Planned (phase 3): a script and checklist that check a change against the rules |
+| `mortis-scaffold` | **Ready.** Creates a solution (with a worked Order / Customer / Product example, which you can leave out), or copies only the building blocks into an existing solution. Includes sync and async event handlers |
+| `mortis-develop` | Planned (phase 2): adding aggregates, child entities, value objects, events, commands, mappings and tests |
+| `mortis-review` | Planned (phase 3): a script and checklist that check a change against the rules |
 
 ## Install
 
@@ -24,7 +24,7 @@ To use a skill in one project only, copy its folder into that project's `.claude
 In Claude Code, ask for what you want: "scaffold a new .NET backend called Acme.Billing". Or run the script yourself:
 
 ```bash
-bash skills/ddd-backend-scaffold/scripts/scaffold.sh Acme --out ~/code
+bash _temp/template/scripts/scaffold.sh Acme --out ~/code
 cd ~/code/Acme && dotnet build && dotnet test
 ```
 
@@ -44,11 +44,13 @@ src/<Name>.Console         runs any registered command by name, plus scenarios: 
 test/<Name>.Tests          fakes, builders, tests
 ```
 
-`skills/ddd-backend-scaffold/assets/csharp/docs/architecture.md` explains the request flow, the event pipeline and the persistence rules. `assets/csharp/AGENTS.md` lists the rules and what enforces each one. `skills/ddd-backend-scaffold/references/event-handlers.md` explains when to use a sync handler (inside the transaction, can veto) and when an async one (after the commit, eventual consistency).
+`_temp/template/assets/csharp/docs/architecture.md` explains the request flow, the event pipeline and the persistence rules. `_temp/template/assets/csharp/AGENTS.md` lists the rules and what enforces each one. `skills/mortis-scaffold/references/event-handlers.md` explains when to use a sync handler (inside the transaction, can veto) and when an async one (after the commit, eventual consistency).
 
 ## Why it is built this way
 
 - [docs/decisions.md](docs/decisions.md): decisions about these skills, and what is still open.
+- [docs/options-catalog.md](docs/options-catalog.md) and [docs/roadmap.md](docs/roadmap.md): where this is going, a project starter with choosable methods and technologies.
+- [plans/](plans/README.md): the brief for each step of that work.
 - [CHANGELOG.md](CHANGELOG.md): what changed.
 - The template's `docs/adr/` explains the backend's own design: the command dispatcher, commands as interfaces, the user on the command, event handlers and the Console.
 

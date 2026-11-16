@@ -82,6 +82,6 @@ dotnet ef migrations add <Name> --project src/Boilerplate.Infrastructure --outpu
 
 | Task | Skill |
 |---|---|
-| Start another solution with this shape, or copy the building blocks into an existing one | `ddd-backend-scaffold` |
-| Add or change an aggregate, child entity, value object, event, command, mapping or test | `ddd-backend-develop` |
-| Check a change against the rules above | `ddd-backend-review` |
+| Start another solution with this shape, or copy the building blocks into an existing one | `mortis-scaffold` |
+| Add or change an aggregate, child entity, value object, event, command, mapping or test | `mortis-develop` |
+| Check a change against the rules above | `mortis-review` |

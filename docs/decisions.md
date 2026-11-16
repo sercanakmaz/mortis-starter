@@ -1,31 +1,40 @@
 # Decisions about these skills
 
-Decisions about the skills repository itself: what it contains, how it is laid out and how it is checked. Decisions about the generated backend are architecture decision records inside the template: `skills/ddd-backend-scaffold/assets/csharp/docs/adr/` (0001 the command dispatcher, 0002 commands as records with interfaces, 0003 the user on the command, 0004 event handlers, 0005 the Console).
+Decisions about the skills repository itself: what it contains, how it is laid out and how it is checked. Decisions about the generated backend are architecture decision records inside the template: `_temp/template/assets/csharp/docs/adr/` (0001 the command dispatcher, 0002 commands as records with interfaces, 0003 the user on the command, 0004 event handlers, 0005 the Console).
 
 ## Decided
 
 | # | Decision | Why |
 |---|---|---|
-| 1 | The shape comes from `csharp_boilerplate`; the rules and safeguards come from the Zeyrek backend (banned APIs, no comments in code, no private methods in services and handlers, explicit registration, tests that hold only `[Fact]` / `[Theory]`). | The boilerplate is the structure the author wants to reuse; Zeyrek is where the rules were learned. |
+| 1 | The generated code follows a fixed set of rules and build guards (banned APIs, no comments in code, no private methods in services and handlers, explicit registration, tests that hold only `[Fact]` / `[Theory]`). | They were learned the hard way and are cheap to enforce from the first day. |
 | 2 | The stack is .NET 10, EF Core and PostgreSQL, with our own command pipeline and no mediator library. Code and messages are English. | One stack done well. A mediator would add a dependency for what `CommandPipeline` and `CommandDispatcher` already do. |
-| 3 | A skill is `SKILL.md` plus `references/` (an architecture overview and one reference per layer), modelled on Zeyrek's `architecture-overview.md`. The template's structure is described in those files, not left for the reader to rediscover. | `SKILL.md` stays short; Claude reads only the reference a task needs. |
+| 3 | A skill is `SKILL.md` plus `references/` (an architecture overview and one reference per layer). The template's structure is described in those files, not left for the reader to rediscover. | `SKILL.md` stays short; Claude reads only the reference a task needs. |
 | 4 | There is one folder per language: `assets/csharp/`. It is a complete solution named `Boilerplate` with the Order / Customer / Product example inside. `--no-example` removes the example with the manifest `assets/csharp-example.txt`. A Go version would be `assets/go/` and `--lang go`. | There used to be a `templates/` and an `examples/` folder for the same thing, and the example had no `Shared` layer. Two copies drifted; one real solution cannot. |
 | 5 | The template compiles and is tested as it is. `tests/smoke.sh` scaffolds three solutions (with example, `--no-example`, `--kernel-only`) and checks them against a real PostgreSQL. `tests/check_docs.py` fails when a reference names a file or type that does not exist, or the overview omits a template source file. | The documentation is only trustworthy if a change cannot leave it behind. |
 | 6 | Event handlers have two kinds, sync (inside the transaction, can veto) and async (after the commit, eventually consistent), both in the Application layer, both sending commands. | The reaction to an event must run a use case; see ADR 0004. |
 | 7 | "Use case" is called "command". A host sends a command through `ICommandDispatcher` and never names its handler. Commands are records that implement `ICommand<TContent>`, `IUserCommand` and `ITransactionalCommand`; the user is data on the command, filled by the presentation layer. | ADRs 0001 to 0003. |
 | 8 | The Console runs any registered command by name and does not migrate. Migrations are `dotnet ef database update`. | ADR 0005. |
-| 9 | Work is done in phases. Phase 1 (`ddd-backend-scaffold`) is complete. | One tested thing at a time. |
+| 9 | Work is done in phases. Phase 1 (`mortis-scaffold`) is complete. | One tested thing at a time. |
 | 10 | The assistant does not commit. The maintainer reviews and commits. | The maintainer owns the history. |
 | 11 | A small change is made at once; a big one gets a plan first. | Keeps the maintainer in control of direction. |
+| 12 | The repository is a **project starter**: a person chooses methods and technologies in an interview and gets exactly that, lean or advanced. The choices live in `MORTIS.md`. | One fixed template cannot serve both a weekend service and a platform. See `options-catalog.md`. |
+| 13 | **The skills hold knowledge and checks, never a project.** Claude writes a user's project from the references; the solutions in this repository are reference examples under `examples/`, used to verify the skills and not installed. Three layers (architecture in pseudo-code, language, proof); four skills named `mortis-architect`, `mortis-scaffold`, `mortis-develop`, `mortis-review`. From phase 1 step 03 on this replaces decision 4, and it replaces the earlier idea of a core plus modules copied by a script. | A starter that ships a template can only produce that template. `specs/generation-and-verification.md`. |
+| 14 | Event delivery has exactly three models: `none`, `after-command`, `background`. | The maintainer's requirement; the last two share one module. |
+| 15 | Our own message bus, wire-compatible with MassTransit 8 on RabbitMQ. Not MassTransit 9 (commercial), not MassTransit 8 (maintenance ends after 2026), not OpenTransit (no releases yet, .NET only). | Existing MassTransit consumers must keep working and Go must speak the same format. `specs/messaging-wire-format.md`. |
+| 16 | Multi-tenancy is one shared database with `IMultiTenant` on the aggregates and entities that are tenant-owned. A database or schema per tenant is not offered. | A database per tenant is exceptional and multiplies migrations and connection handling. |
+| 17 | The steps are prepared as briefs in `plans/`; a coding model executes them. | The maintainer's choice of how to work. |
+| 18 | The product, repository and plugin are named **mortis-starter**; the skills keep the names in decision 13. | Domain-driven design is one part of what the starter sets up. |
+| 19 | The finished skills hold snippets, never whole source files. Full source exists only in `examples/` while the skills are built. | The skills are knowledge, not a template. |
+| 20 | Generation must succeed on small models as well as large ones, and runs must be alike: a file manifest, a kernel shape file, a closed vocabulary, one way per thing, tools for what tools can do, and a measured sameness report. | `specs/generation-and-verification.md`, "Making runs alike". |
+| 21 | No document or skill names a codebase that was studied. Origins are kept only in `_sources/`, which is ignored by git and deleted at the end. | The product stands on its own. |
+| 22 | A command carries one `Context` property (user, correlation, tenant, language). The tenant id type is chosen per project. Generated Go has doc comments on exported names only. | Settled before coding started. |
+| 23 | Naming follows the chosen language; layer 1 names roles and each language has its own naming table. Database, JSON, route and event naming are project choices in `MORTIS.md` that the interview may ask. | A Go project must read as Go and a C# project as C#. |
+| 24 | Languages are pluggable: references, one adapter script per skill, and examples. C# first, Go second, others later without changing the language-neutral parts. | More languages are expected. |
+| 25 | A project's decisions are recorded in `MORTIS.md` in its root: markdown for readers and assistants, with one fixed table that scripts read. | It sits among the project's other markdown, explains itself, and points at the skills; one file cannot drift from itself. |
+| 26 | Three phases: build all the skills with no code generated; generate C# together with the maintainer; then Go. Code is never generated per option. | Generation costs tokens; a few runs that each exercise many options are enough. The accepted price: nothing is proven until phase 2, so everything written in phase 1 is listed in `docs/unverified.md`. |
+| 27 | The hand-written C# solution and its copy script live in `_temp/template/`, outside the skill, until phase 2 replaces them with generated projects. | The skill must hold no project source, and the working code is still needed to write the kernel pages from. |
 
 ## Open
 
-These were discussed and are **not** started. Each needs a go-ahead.
-
-- **`ddd-backend-develop`** (phase 2): add an aggregate, child entity, value object, event, command, mapping and test with the repository's rules.
-- **`ddd-backend-review`** (phase 3): a script and checklist that check a change against the rules.
-- **Messaging and scheduling**: `--with-messaging` (a broker adapter and an outbox) and `--with-scheduler`.
-- **A Go template** under `assets/go/`.
-- **A Query split** for the `Get*` commands, which are queries in everything but name.
-- **One `AuditUser User` property** on writing commands in place of `UserId` and `UserEmail` (ADR 0002).
-- **Authentication**: not configured, so an Api write has an empty audit user until claims exist.
+- The questions at the end of `roadmap.md`.
+- Each step in `plans/` is open until its acceptance list is met.

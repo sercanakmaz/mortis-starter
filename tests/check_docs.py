@@ -3,8 +3,8 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILL = os.path.join(ROOT, "skills", "ddd-backend-scaffold")
-ASSETS = os.path.join(SKILL, "assets")
+SKILL = os.path.join(ROOT, "skills", "mortis-scaffold")
+ASSETS = os.path.join(ROOT, "_temp", "template", "assets")
 LANGS = sorted(name for name in os.listdir(ASSETS) if os.path.isdir(os.path.join(ASSETS, name)))
 FILE_RE = re.compile(r"^[\w.\-/]+\.(cs|csproj|json|md|yml|props|txt|sh|py|slnx)$")
 NAMED_FILES = {"Dockerfile", ".editorconfig", ".gitignore"}
@@ -78,7 +78,7 @@ def exists_anywhere(token, universe):
 
 
 def resolves_in_repo(token):
-    for base in (SKILL, ROOT):
+    for base in (SKILL, ROOT, os.path.join(ROOT, "_temp", "template")):
         if os.path.exists(os.path.join(base, token)):
             return True
     return False
