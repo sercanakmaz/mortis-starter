@@ -15,6 +15,10 @@ All notable changes to the skills and the template. Newest first.
 
 - Decisions 28 to 30: use cases may change several aggregates; standard preset has no translated messages; one repository is one service with one `MORTIS.md`.
 
+- Phase 1 step 03: `mortis-scaffold` rebuilt as knowledge and checks: 20 C# pages with member snippets, file manifest, kernel shape, naming table, `verify.sh` with structure, house-rule, shape and conformance checks, `tests/check_installable.sh`, `tests/check_docs.py` rewritten. The example domain is specified in roles (`example-domain.md`). Old per-layer references removed.
+
+- Pilot generation of the lean preset (mid-size model): 11 of 12 checks, the failure a skill defect (fixed). Procedure reordered, usings tables on every page, worked-slice order fixed (`docs/pilot.md`).
+
 ### Planned
 - The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
 - The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).

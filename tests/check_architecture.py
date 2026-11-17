@@ -10,7 +10,7 @@ TYPE_MAP = ROOT / "tests" / "fixtures" / "shared-type-map.json"
 QUESTIONS = ROOT / "tests" / "fixtures" / "placement-questions.json"
 
 FILES = ["layers.md", "building-blocks.md", "request-lifecycle.md", "events.md",
-         "placement-guide.md", "scenarios.md", "pseudo-code.md", "glossary.md"]
+         "placement-guide.md", "scenarios.md", "pseudo-code.md", "glossary.md", "example-domain.md"]
 
 BLOCKS = ["Entity", "AggregateRoot", "Child entity", "Value object", "Domain event",
           "Repository interface", "Domain service", "Command", "Validator", "Command handler",

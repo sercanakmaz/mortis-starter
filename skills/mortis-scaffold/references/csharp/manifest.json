@@ -1,0 +1,1572 @@
+{
+ "language": "csharp",
+ "manifest_version": 1,
+ "placeholders": {
+  "Name": "the `name` row of MORTIS.md",
+  "Aggregate": "an aggregate root's type name, singular PascalCase",
+  "Plural": "the aggregate's folder name, plural PascalCase"
+ },
+ "files": [
+  {
+   "path": ".editorconfig",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": ".gitignore",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": ".vscode/launch.json",
+   "page": "hosts.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": ".vscode/tasks.json",
+   "page": "hosts.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "AGENTS.md",
+   "page": "project-docs.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "BannedSymbols.txt",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "CLAUDE.md",
+   "page": "project-docs.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "Directory.Build.props",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "Directory.Packages.props",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "Dockerfile",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "MORTIS.md",
+   "page": "project-docs.md",
+   "source": "tool",
+   "kernel": false
+  },
+  {
+   "path": "README.md",
+   "page": "project-docs.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docker-compose.yml",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0000-template.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0001-commands-are-sent-through-a-dispatcher.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0002-commands-are-records-that-implement-interfaces.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0003-the-user-is-data-on-the-command.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0004-event-handlers-live-in-application-and-send-commands.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0005-the-console-runs-commands-and-does-not-migrate.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0006-command-handlers-are-the-use-cases.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/architecture.md",
+   "page": "project-docs-architecture.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "global.json",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "plans/README.md",
+   "page": "project-docs.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Controllers/CustomersController.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Controllers/OrdersController.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Controllers/ProductsController.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Filters/UserCommandFilter.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/ApiConstants.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/CorrelationIdMiddleware.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/ErrorResponseModel.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/ExceptionHandler.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Program.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/appsettings.json",
+   "page": "hosts.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/{Name}.Api.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/ApplicationModule.cs",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Application/Customers/BlockCustomerCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/CreateCustomerCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/CustomerDto.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/GetCustomerCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/RegisterCompletedOrderCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandler.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/AddOrderLineCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CancelOrderLineCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CancelOrderWhenAllLinesCancelledCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CancelOrderWhenOrderLineCancelledEventHandler.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CompleteOrderCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CreateOrderCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/GetOrderCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/OrderDto.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/CreateProductCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/DecreaseProductStockCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/GetProductCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/IncreaseProductStockCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/ProductDto.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/{Name}.Application.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/Program.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/BlockedCustomerScenario.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/CommandScenario.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/CommandScenarioExtensions.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/ConsoleUserExtensions.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/IScenario.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/OrderFlowScenario.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/ScenarioConstants.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/ScenarioModule.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/Scenarios/StockFlowScenario.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/appsettings.json",
+   "page": "hosts.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/{Name}.Console.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/Customer.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/Events/Blocked.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/Events/Created.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerRepository.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Events/Cancelled.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Events/Completed.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Events/Created.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Events/LineAdded.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Events/LineCancelled.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Money.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/Order.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderConstants.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderLine.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderLineModel.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderStatus.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/Created.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/StockDecreased.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/StockIncreased.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Product.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/ProductConstants.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/DomainModule.cs",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Domain/{Name}.Domain.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/InfrastructureModule.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/AsyncEventHandlerDispatcher.cs",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/LoggingEventDispatcher.cs",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/MessagingConstants.cs",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/AppDbContext.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/ConfigurationExtensions.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerRepository.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/DatabaseExceptionHandler.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/DesignTimeDbContextFactory.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/EfRepository.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "tool",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false,
+   "glob": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "tool",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false,
+   "glob": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "tool",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderConfiguration.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/PersistenceConstants.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/PersistenceModule.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/UnitOfWork.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/{Name}.Infrastructure.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Shared/Application/BaseCommandHandler.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/CommandDispatcher.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/CommandHandlerExtensions.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/CommandPipeline.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/CommandResult.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/ICommand.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/ICommandDispatcher.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/ICommandHandlerMiddleware.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/IUserCommand.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/AggregateRoot.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/AuditUser.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/BaseAsyncEventHandler.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/BaseSyncEventHandler.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/Entity.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/EventBase.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/EventContext.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/EventHandlerExecutor.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/IEventDispatcher.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/SystemUser.cs",
+   "page": "shared-domain.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/BusinessRuleException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/DuplicateException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/ExceptionBase.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/ForbiddenException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/InvalidParameterException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/NotFoundException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/ReferenceViolationException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/TransactionRequiredException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/ValidationFailedException.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Persistence/IRepository.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Persistence/IUnitOfWork.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/SharedModule.cs",
+   "page": "shared-other.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/{Name}.Shared.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Api/Filters/UserCommandFilterTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Customers/BlockCustomerCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Customers/CreateCustomerCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Customers/RegisterCompletedOrderCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/AddOrderLineCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/CancelOrderLineCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/CancelOrderWhenAllLinesCancelledCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/CancelOrderWhenOrderLineCancelledEventHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/CompleteOrderCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Orders/CreateOrderCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/CreateProductCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Console/CommandScenarioTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Domain/Customers/CustomerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Domain/Orders/MoneyTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Domain/Orders/OrderTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Domain/Products/ProductTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderConfigurationTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderRepositoryTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductConfigurationTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductRepositoryTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Application/CommandDispatcherTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Application/CommandPipelineTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Application/UserCommandTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Domain/AggregateRootTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Domain/EventContextTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Domain/EventHandlerExecutorTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Customers/CustomerRepositoryBuilder.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Customers/FakeCustomer.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Orders/FakeOrder.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Orders/OrderRepositoryBuilder.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Products/FakeProduct.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/AsyncEventHandlerDispatcherBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Persistence/AppDbContextBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandHandlerMiddlewareBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandPipelineBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeCommand.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeCommandHandler.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeTransactionalCommandHandler.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeUserCommandHandler.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/EventHandlerExecutorBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/FakeAggregate.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/FakeAuditUser.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/FakeEvent.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/RecordingAsyncEventHandler.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/RecordingEventHandler.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Persistence/UnitOfWorkBuilder.cs",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/{Name}.Tests.csproj",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "{Name}.slnx",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  }
+ ],
+ "aggregate_files": {
+  "description": "Files a project adds per aggregate. Every file in these folders must match one pattern; verify.sh fails on any other file there.",
+  "folders": {
+   "src/{Name}.Domain/Aggregates/{Plural}": [
+    "*.cs",
+    "Events/*.cs"
+   ],
+   "src/{Name}.Application/{Plural}": [
+    "{Aggregate}Dto.cs",
+    "*Command.cs",
+    "*When*EventHandler.cs"
+   ],
+   "src/{Name}.Infrastructure/Persistence/{Plural}": [
+    "{Aggregate}Configuration.cs",
+    "{Aggregate}Repository.cs"
+   ],
+   "src/{Name}.Api/Controllers": [
+    "{Plural}Controller.cs"
+   ],
+   "test/{Name}.Tests/Domain/{Plural}": [
+    "*Tests.cs"
+   ],
+   "test/{Name}.Tests/Application/{Plural}": [
+    "*CommandHandlerTests.cs",
+    "*EventHandlerTests.cs"
+   ],
+   "test/{Name}.Tests/Infrastructure/Persistence/{Plural}": [
+    "{Aggregate}ConfigurationTests.cs",
+    "{Aggregate}RepositoryTests.cs"
+   ],
+   "test/{Name}.Tests/TestSupport/Domain/{Plural}": [
+    "Fake*.cs",
+    "{Aggregate}RepositoryBuilder.cs"
+   ]
+  }
+ },
+ "always_allowed": {
+  "description": "Paths a project may add at any time. A file outside the manifest, the aggregate folders and these patterns is an extra file and fails verify.sh.",
+  "patterns": [
+   "src/{Name}.Domain/Services/*.cs",
+   "src/{Name}.Domain/Ports/*.cs",
+   "src/{Name}.Infrastructure/Integrations/*.cs",
+   "test/{Name}.Tests/Domain/Services/*Tests.cs",
+   "test/{Name}.Tests/Infrastructure/Integrations/*Tests.cs",
+   "src/{Name}.Infrastructure/Persistence/Migrations/*.cs",
+   "src/{Name}.Console/Scenarios/*Scenario.cs",
+   "docs/adr/*.md",
+   "docs/*.md",
+   "plans/**",
+   ".mortis/**",
+   "README.md"
+  ]
+ }
+}

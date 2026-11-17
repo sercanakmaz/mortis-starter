@@ -1,17 +1,18 @@
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILL = os.path.join(ROOT, "skills", "mortis-scaffold")
-ASSETS = os.path.join(ROOT, "_temp", "template", "assets")
-LANGS = sorted(name for name in os.listdir(ASSETS) if os.path.isdir(os.path.join(ASSETS, name)))
-FILE_RE = re.compile(r"^[\w.\-/]+\.(cs|csproj|json|md|yml|props|txt|sh|py|slnx)$")
-NAMED_FILES = {"Dockerfile", ".editorconfig", ".gitignore"}
-TYPE_SUFFIXES = ("Command", "CommandHandler", "Service", "Repository", "Dto", "Module", "Filter", "Scenario",
-                 "Middleware", "Constants", "Builder", "Handler", "Exception", "Dispatcher", "Extensions",
-                 "Configuration", "Executor", "Pipeline", "Factory")
+SCAFFOLD = os.path.join(ROOT, "skills", "mortis-scaffold")
+TEMPLATE = os.path.join(ROOT, "_temp", "template", "assets", "csharp")
+CSHARP = os.path.join(SCAFFOLD, "references", "csharp")
+SUPERSEDED = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSupport/Domain/\w+/\w+ServiceBuilder\.cs|Tests/Domain/\w+/\w+ServiceTests\.cs)$")
+ONE_WAY = re.compile(r"\b(alternatively|you may also|you can also|or use|optionally use)\b", re.I)
+
+sys.path.insert(0, os.path.join(SCAFFOLD, "scripts", "lang"))
+from csharp_shape import mask, shape_of_file  # noqa: E402
 
 failures = []
 
@@ -20,157 +21,104 @@ def fail(message):
     failures.append(message)
 
 
-def walk(base):
-    for directory, directories, files in os.walk(base):
-        directories[:] = [name for name in directories if name not in ("bin", "obj")]
+def template_files():
+    for base, dirs, files in os.walk(TEMPLATE):
+        dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
         for name in files:
-            yield os.path.relpath(os.path.join(directory, name), base)
+            yield os.path.relpath(os.path.join(base, name), TEMPLATE).replace(os.sep, "/")
 
 
-def normalized(path):
-    return path.replace("Boilerplate.", "")
+def manifest():
+    return json.load(open(os.path.join(CSHARP, "manifest.json"), encoding="utf-8"))
 
 
-def example_prefixes(lang):
-    prefixes = []
-    manifest = os.path.join(ASSETS, f"{lang}-example.txt")
-    with open(manifest, encoding="utf-8") as handle:
-        for line in handle:
-            parts = line.split()
-            if len(parts) == 2 and parts[0] == "delete":
-                prefixes.append(normalized(parts[1]))
-    return prefixes
-
-
-def build_universe(lang):
-    everything = {normalized(path): path for path in walk(os.path.join(ASSETS, lang))}
-    prefixes = example_prefixes(lang)
-    example = {path: original for path, original in everything.items() if any(path == prefix or path.startswith(prefix + "/") for prefix in prefixes)}
-    template = {path: original for path, original in everything.items() if path not in example}
-    return template, example
-
-
-def declared_types(lang):
-    names = set()
-    pattern = re.compile(r"\b(?:class|record|interface|struct|enum)\s+([A-Z]\w*)")
-    base = os.path.join(ASSETS, lang)
-    for path in walk(base):
-        if path.endswith(".cs"):
-            with open(os.path.join(base, path), encoding="utf-8") as handle:
-                names.update(pattern.findall(handle.read()))
-    return names
-
-
-def skill_doc_paths():
-    paths = [os.path.join(SKILL, "SKILL.md")]
-    references = os.path.join(SKILL, "references")
-    paths += [os.path.join(references, name) for name in sorted(os.listdir(references)) if name.endswith(".md")]
-    return paths
-
-
-def exists_anywhere(token, universe):
-    candidate = normalized(token)
-    if candidate.startswith("./"):
-        candidate = candidate[2:]
-    for path in universe:
-        if path == candidate or path.endswith("/" + candidate):
-            return True
-    return False
-
-
-def resolves_in_repo(token):
-    for base in (SKILL, ROOT, os.path.join(ROOT, "_temp", "template")):
-        if os.path.exists(os.path.join(base, token)):
-            return True
-    return False
-
-
-def check_tokens(lang, universe, types):
-    for doc in skill_doc_paths():
-        label = os.path.relpath(doc, ROOT)
-        with open(doc, encoding="utf-8") as handle:
-            text = handle.read()
-        text_without_fences = re.sub(r"```.*?```", "", text, flags=re.S)
-        for token in sorted(set(re.findall(r"`([^`\n]+)`", text_without_fences))):
-            if any(character in token for character in "<>*$ {}|=:,()'\"@"):
-                continue
-            if token.startswith(("-", "http", "dotnet", "docker")):
-                continue
-            if FILE_RE.match(token) or token in NAMED_FILES:
-                if token.startswith(("assets/", "scripts/", "references/", "tests/", "skills/")):
-                    if not resolves_in_repo(token):
-                        fail(f"{label}: path `{token}` does not exist")
-                elif "/" in token or token.endswith((".cs", ".csproj")):
-                    if not exists_anywhere(token, universe):
-                        fail(f"{label}: file `{token}` is in neither the template nor the example")
-            elif re.match(r"^[A-Z][A-Za-z0-9]+$", token) and token.endswith(TYPE_SUFFIXES) and token not in TYPE_SUFFIXES:
-                if token not in types and token not in KNOWN_NON_TYPES:
-                    fail(f"{label}: type `{token}` is declared nowhere in the template or the example")
-
-
-KNOWN_NON_TYPES = {
-    "AddCommandScenario", "AddScoped", "DbContext", "IDesignTimeModel", "ApplicationModule", "InfrastructureModule",
-    "DomainModule", "SharedModule", "PersistenceModule", "ScenarioModule", "FluentValidation", "AggregateConfiguration",
-    "ChildEntityConfiguration", "AbstractValidator", "IEntityTypeConfiguration", "DbUpdateConcurrencyException",
-    "ComplexProperty", "UpdateAsync", "CreateAsync", "DeleteAsync", "DbSet", "IUserContext",
-}
-
-
-def parse_tree(text):
-    match = re.search(r"## Where every file lives.*?```\n(.*?)```", text, flags=re.S)
-    if not match:
-        fail("architecture-overview.md has no 'Where every file lives' tree")
-        return []
-    entries = []
-    current = ""
-    for line in match.group(1).splitlines():
-        if not line.strip():
+def check_manifest_covers_template():
+    if not os.path.isdir(TEMPLATE):
+        return
+    paths = {e["path"] for e in manifest()["files"]}
+    for f in template_files():
+        if "/Migrations/" in f or SUPERSEDED.search(f):
             continue
-        if line.startswith("repo root"):
-            current = ""
-            line = line[len("repo root"):]
-        elif not line.startswith(" ") and line.split()[0].endswith("/"):
-            current = line.split()[0]
-            line = line[len(current):]
-        chunks = [chunk.strip() for chunk in re.split(r"\s{2,}", line.strip()) if chunk.strip()]
-        for chunk in chunks:
-            if chunk.startswith("(") or " " in chunk:
-                continue
-            if FILE_RE.match(chunk) or chunk in NAMED_FILES:
-                entries.append(chunk if "/" in chunk else current + chunk)
-    return entries
+        if f.replace("Boilerplate", "{Name}") not in paths:
+            fail(f"manifest.json has no entry for the template file {f}")
+    for entry in manifest()["files"]:
+        if not os.path.exists(os.path.join(CSHARP, entry["page"])):
+            fail(f"manifest.json names a page that does not exist: {entry['page']}")
 
 
-def check_tree(template, example):
-    with open(os.path.join(SKILL, "references", "architecture-overview.md"), encoding="utf-8") as handle:
-        text = handle.read()
-    entries = parse_tree(text)
-    listed = set()
-    for entry in entries:
-        if entry.startswith("test/Tests/TestSupport") or entry.startswith("test/Tests/"):
+def check_kernel_shape():
+    if not os.path.isdir(TEMPLATE):
+        return
+    kernel = [e["path"].replace("{Name}", "Boilerplate") for e in manifest()["files"] if e["kernel"]]
+    expected = []
+    for f in kernel:
+        expected += shape_of_file(os.path.join(TEMPLATE, f), "Boilerplate")
+    written = [l for l in open(os.path.join(CSHARP, "kernel-shape.txt"), encoding="utf-8").read().splitlines() if l and not l.startswith("#")]
+    if expected != written:
+        missing = [l for l in expected if l not in written][:5]
+        extra = [l for l in written if l not in expected][:5]
+        fail(f"kernel-shape.txt differs from the template kernel; missing {missing}, extra {extra}")
+
+
+def code_blocks():
+    blocks = []
+    for name in sorted(os.listdir(CSHARP)):
+        if name.endswith(".md"):
+            text = open(os.path.join(CSHARP, name), encoding="utf-8").read()
+            blocks += [(name, b) for b in re.findall(r"```csharp\n(.*?)```", text, re.S)]
+    return blocks
+
+
+def non_trivial_members(path):
+    text = open(path, encoding="utf-8").read()
+    masked = mask(text)
+    for match in re.finditer(r"^[ \t]*(?:public|protected)[^\n;=]*?\b(\w+)\s*(?:<[^>\n]*>)?\s*\([^)]*\)[^\n{;]*\n?\s*\{", masked, re.M):
+        depth = 0
+        i = masked.index("{", match.start())
+        start = i
+        while i < len(masked):
+            depth += masked[i] == "{"
+            depth -= masked[i] == "}"
+            i += 1
+            if depth == 0:
+                break
+        if masked[start:i].count(";") > 1:
+            yield match.group(1), masked[match.start():masked.index("{", match.start())].strip()
+
+
+def check_snippets_cover_members():
+    if not os.path.isdir(TEMPLATE):
+        return
+    blocks = "\n".join(b for _, b in code_blocks())
+    for entry in manifest()["files"]:
+        if not entry["kernel"]:
             continue
-        listed.add(entry)
-        if entry not in template:
-            fail(f"architecture-overview.md lists {entry}, which is not in the template")
-    for path in template:
-        if path.startswith("src/") and path.endswith((".cs", ".json")) and path not in listed:
-            fail(f"architecture-overview.md does not list the template file {path}")
-    root_listed = {entry for entry in entries if "/" not in entry}
-    for path in template:
-        if "/" not in path and path.endswith(("Dockerfile", ".md", ".props", ".json", "docker-compose.yml", ".txt", ".editorconfig")) and path not in root_listed:
-            if path not in ("Boilerplate.slnx", "slnx", ".gitignore"):
-                fail(f"architecture-overview.md does not list the root file {path}")
+        path = os.path.join(TEMPLATE, entry["path"].replace("{Name}", "Boilerplate"))
+        if not path.endswith(".cs") or os.path.basename(path) == "Program.cs":
+            continue
+        for name, head in non_trivial_members(path):
+            signature = re.sub(r"\s+", " ", head.split("(")[0]).strip()
+            if not any(re.sub(r"\s+", " ", line).strip().startswith(signature) for line in blocks.splitlines()):
+                fail(f"{entry['path']}: the member {name} has a body of several statements and no snippet")
 
 
-def check_example_coverage(example):
-    docs = ""
-    for doc in skill_doc_paths():
-        with open(doc, encoding="utf-8") as handle:
-            docs += handle.read()
-    aggregates = sorted({path.split("/")[3] for path in example if path.startswith("src/Domain/Aggregates/")})
-    for aggregate in aggregates:
-        if f"`{aggregate}`" not in docs and aggregate not in docs:
-            fail(f"no reference mentions the example aggregate folder {aggregate}")
+def check_one_way():
+    for skill in ("mortis-scaffold", "mortis-architect"):
+        for base, _, files in os.walk(os.path.join(ROOT, "skills", skill)):
+            for name in files:
+                if name.endswith(".md"):
+                    path = os.path.join(base, name)
+                    for number, line in enumerate(open(path, encoding="utf-8"), 1):
+                        if ONE_WAY.search(line):
+                            fail(f"{os.path.relpath(path, ROOT)}:{number}: offers an alternative ('{ONE_WAY.search(line).group(0)}'); a page gives one way")
+
+
+def check_copies():
+    pairs = [("skills/mortis-architect/scripts/decisions.py", "skills/mortis-scaffold/scripts/decisions.py"),
+             ("skills/mortis-architect/references/schema.json", "skills/mortis-scaffold/references/schema.json")]
+    for a, b in pairs:
+        if open(os.path.join(ROOT, a), encoding="utf-8").read() != open(os.path.join(ROOT, b), encoding="utf-8").read():
+            fail(f"{b} is not an exact copy of {a}")
 
 
 ARCHITECT = os.path.join(ROOT, "skills", "mortis-architect")
@@ -237,13 +185,11 @@ def check_decisions_schema():
 
 
 def main():
-    for lang in LANGS:
-        template, example = build_universe(lang)
-        universe = set(template) | set(example)
-        types = declared_types(lang)
-        check_tokens(lang, universe, types)
-        check_tree(template, example)
-        check_example_coverage(example)
+    check_manifest_covers_template()
+    check_kernel_shape()
+    check_snippets_cover_members()
+    check_one_way()
+    check_copies()
     check_decisions_schema()
     if failures:
         for message in failures:

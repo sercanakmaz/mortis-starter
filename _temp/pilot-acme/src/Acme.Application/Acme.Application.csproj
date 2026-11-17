@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Acme.Domain/Acme.Domain.csproj" />
+    <ProjectReference Include="../Acme.Shared/Acme.Shared.csproj" />
+  </ItemGroup>
+</Project>

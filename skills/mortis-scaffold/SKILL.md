@@ -1,96 +1,93 @@
 ---
 name: mortis-scaffold
-description: Scaffolds a new .NET 10 backend solution built from domain-driven-design building blocks (aggregates, child entities, value objects, domain events with sync and async handlers, repositories, domain services, commands) on EF Core and PostgreSQL, or copies just the building blocks into a solution that already exists. Use whenever the user wants to start, create, bootstrap or scaffold a C# / .NET backend, API, service or microservice, asks for a .NET "boilerplate", "starter", "template" or "DDD / clean project structure", or wants an existing .NET project to adopt this structure, even when they never say "DDD".
+description: Generates a new backend project from its MORTIS.md decisions file, writing every file from the skill's reference pages (contracts, rules and member snippets), then proves it with verify.sh (structure, kernel shape, house rules, build, tests and behaviour checks against a real database). Also brings the building blocks into an existing solution. C# (.NET 10, EF Core, PostgreSQL) today. Use whenever the user wants to create, generate, scaffold or bootstrap a backend, API or service, has a MORTIS.md and asks to build it, asks for a .NET "starter", "boilerplate" or "clean / DDD structure", or wants an existing solution to adopt this structure, even if they never say "scaffold".
 ---
 
-> **Being rebuilt.** The C# solution and `scripts/scaffold.sh` no longer ship in this skill; they are in `_temp/template/` in the repository until the skill generates projects from its references (see `plans/`). The commands below run from there.
+# Generate a project
 
-# Scaffold a DDD backend
+This skill holds knowledge and checks, never a project. Every file of the new project is written from the pages in `references/<language>/`, then judged by `scripts/verify.sh`. Nothing is copied from anywhere.
 
-This skill creates a solution that builds and passes its tests the moment it exists. The files come from a template that is itself compiled and tested, so run the script instead of writing the files by hand: retyping sixty files is slower and drifts from the tested version.
+## Before anything
 
-## What the solution contains
+1. **There must be a `MORTIS.md`.** If the project folder has none, hand over to the `mortis-architect` skill, which writes it. Then come back.
+2. **Read the decisions:** `python3 -I scripts/decisions.py MORTIS.md get <key>` for `name`, `language`, `database`, `example`, `events.outbox`, `naming.database`. Every choice comes from `MORTIS.md`; where it is silent, the manifest decides. When a choice is answered by neither, stop and ask.
+3. **Read the language's pages for what is on.** Today: `references/csharp/`. Read `naming.md` and `manifest.json` first, always.
 
+## The procedure
+
+Follow these steps in order. Keep `.mortis/progress.md` in the project: one line per step, ticked when its build is green. When a run is resumed, start at the first unticked step. Work on one step at a time, with only that step's page in view.
+
+| # | Step | Page | Done when |
+|---|---|---|---|
+| 1 | Create the solution and projects with the tools; write the root files and project files | `solution.md` | `dotnet build` succeeds |
+| 2 | Shared: domain building blocks | `shared-domain.md` | build |
+| 3 | Shared: failures, persistence contracts | `shared-other.md` | build |
+| 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`) | `shared-application.md` | build |
+| 5 | Domain and Application project roots: `DomainModule`, `ApplicationModule` with empty bodies | `domain.md`, `application.md` | build |
+| 6 | Infrastructure: in-process event dispatchers, then persistence, unit of work, logging, `PersistenceModule` (empty body) and `InfrastructureModule` | `events-inprocess.md`, `infrastructure-postgres.md` | build |
+| 7 | Hosts: Api and Console with `ScenarioModule` (empty body), VS Code files with the first launch configuration only | `hosts.md` | build |
+| 8 | Test support and the kernel tests | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
+| 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
+| 10 | Only when `example` is `true`: the example domain, in the order its page gives | `worked-slice.md`, `worked-slice-tests.md` | build and test after each line of that order |
+| 11 | Only when an aggregate exists: the first migration | `infrastructure-postgres.md` "Migrations" | the migration files exist |
+| 12 | `dotnet format` | | no changes left |
+| 13 | `scripts/verify.sh <project-dir>` | | every check passes or is skipped with a stated reason |
+
+Rules for every step:
+
+- A registration file (`DomainModule`, `ApplicationModule`, `PersistenceModule`, `ScenarioModule`) is written with an empty body first and gets its lines when the types it registers exist.
+- `.mortis/` is the skill's own working folder; `verify.sh` does not count it as an extra file.
+- Write exactly the files `manifest.json` lists for this `MORTIS.md`, at exactly those paths. No file outside the manifest; `verify.sh` fails on missing and on extra files.
+- A member with a snippet is written as the snippet shows. A member without one follows the page's rules and the nearest snippet. Never invent a member a page does not name.
+- Names come from `naming.md`. The project name replaces `{Name}`; `{database}` is the name in lower case without dots.
+- Build after every step. Fix the step before going on; never two steps at once.
+- No comments in code. No package that is not in `solution.md`.
+
+## Verify
+
+```bash
+bash scripts/verify.sh <project-dir>            # every check
+bash scripts/verify.sh <project-dir> --dry-run  # the plan: which checks this MORTIS.md turns on
 ```
-src/<Name>.Shared          building blocks, no database library
-src/<Name>.Domain          Aggregates/<Plural>/ with Events/ inside each aggregate folder
-src/<Name>.Application     commands (command + validator + handler in one file), DTOs, event handlers; hosts send commands through ICommandDispatcher
-src/<Name>.Infrastructure  EF Core + PostgreSQL: AppDbContext, EfRepository, UnitOfWork, repositories, mappings
-src/<Name>.Api             HTTP host
-src/<Name>.Console         manual-testing host with Scenarios/
-test/<Name>.Tests          TestSupport/ (fakes, builders) + tests
-AGENTS.md, CLAUDE.md, docs/architecture.md, docs/adr/ (decisions 0001-0005), plans/, Dockerfile, docker-compose.yml
-```
 
-It also carries its guards: `BannedSymbols.txt` makes `Guid.NewGuid()`, `DateTime.Now`, `.Result` and `.Wait()` build errors; a repository write outside a transaction throws; `UpdateAsync` refuses an aggregate that was not loaded for tracking.
+It checks, in order: `MORTIS.md`; the file structure against the manifest; the house rules; the kernel shape against `references/<language>/kernel-shape.txt`; the build (0 warnings); the tests; the formatter; then the conformance suite in `scripts/conformance/` for the options that are on. Conformance starts the project and checks behaviour only: Console scenarios, database rows, HTTP status codes and error bodies. It needs PostgreSQL (`docker compose up -d postgres`); without it those checks are skipped and named as skipped.
 
-## Reference map
+Do not report success on a red check. Fix the cause in the project and run `verify.sh` again.
 
-Start with [references/architecture-overview.md](references/architecture-overview.md): the projects, the dependency rule, where every template file lives, and the life of a request. Then read only what the task needs:
+## Report
 
-| The task | Read |
-|---|---|
-| Add or change an aggregate, a service or an event | [references/domain-layer.md](references/domain-layer.md) |
-| Add a command, a validator or a DTO; where the user on a command comes from | [references/application-layer.md](references/application-layer.md) |
-| Reactions to events, sync versus async, why an effect arrives late or fails silently | [references/event-handlers.md](references/event-handlers.md) |
-| EF mapping, repositories, transactions, concurrency, migrations | [references/persistence.md](references/persistence.md) |
-| Controllers, error responses, running commands from the Console, VS Code | [references/hosts.md](references/hosts.md) |
-| Write a test, a fake or a builder | [references/testing.md](references/testing.md) |
-| Change the template or the example themselves | [references/template-internals.md](references/template-internals.md) |
-| Bring the building blocks into an existing solution | [references/adopting-in-an-existing-project.md](references/adopting-in-an-existing-project.md) |
-
-The references describe the template and the example exactly: `tests/check_docs.py` in the skills repository fails when a file or type they name does not exist, or a template source file is missing from the overview. The scaffolded solution also carries `docs/architecture.md` (the long account of the request flow, events and persistence) and `AGENTS.md` (the rules), so what you read there is what the user gets.
-
-## Steps
-
-1. **Settle the name and the place.** The name is PascalCase and may contain dots (`Acme`, `Acme.Billing`). If the user gave none, ask. The script refuses a target folder that already has files in it, so never point it at a folder with work in it.
-2. **Decide on the example.** By default the solution includes a complete worked example: an `Order` aggregate with an `OrderLine` child entity and a `Money` value object, `Customer` and `Product` aggregates referenced by foreign key, sync event handlers (the customer is updated when an order completes; the order is cancelled when its last line is) and async ones (product stock moves when a line is added or cancelled), commands, controllers, Console scenarios, a migration and about a hundred tests. Keep it when the user wants to see how the pieces fit or says nothing either way; they can delete the example folders later. Pass `--no-example` when they ask for an empty or minimal solution.
-3. **Run the script.**
-
-   ```bash
-   bash <skill-dir>/scripts/scaffold.sh <Name> [--lang csharp] [--no-example] [--out <parent-dir>]
-   ```
-
-   `--lang` picks the folder under `assets/`; `csharp` is the only language today. It needs `bash` and `perl` (both ship with macOS and Linux). It does not need the .NET SDK.
-4. **Verify.** Run these in the new folder and read the output:
-
-   ```bash
-   dotnet --version        # needs 10.x; if it is older, say so and stop here
-   dotnet build            # expect: 0 Warning(s), 0 Error(s)
-   dotnet test             # expect: Passed!, 44 tests with `--no-example`, 141 with the example
-   ```
-
-   If the build or a test fails, fix the cause or report it with the output. Do not describe the solution as ready on the strength of the script finishing.
-5. **Offer the database check** when Docker or a PostgreSQL is available. This is what proves the persistence layer, which unit tests cannot fully do:
-
-   ```bash
-   docker compose up -d postgres
-   dotnet ef database update --project src/<Name>.Infrastructure
-   dotnet run --project src/<Name>.Console -- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'   # example only: any command by name
-   dotnet run --project src/<Name>.Console -- order-flow         # example only
-   dotnet run --project src/<Name>.Console -- stock-flow         # example only: sync and async handlers on one event
-   dotnet run --project src/<Name>.Console -- blocked-customer   # example only: a sync handler vetoes and the command rolls back
-   ```
-
-   With `--no-example` there are no tables yet, so `database update` has nothing to apply until the first aggregate and its migration exist.
-6. **Report** in a few lines: where the solution is, the build and test result as printed, whether the database check ran, and the next step (below).
-
-## After scaffolding
-
-- The first real change is usually an aggregate. `AGENTS.md` §3 in the new solution lists every file an aggregate touches, and the `mortis-develop` skill walks through it.
-- A new migration: `dotnet ef migrations add <Name> --project src/<Name>.Infrastructure --output-dir Persistence/Migrations` (needs `dotnet tool install --global dotnet-ef`).
-- The connection string is `ConnectionStrings:Default` in both `appsettings.json` files; the environment variable `ConnectionStrings__Default` overrides it.
+In a few lines: where the project is; the decisions that shaped it (preset and any change from it); the `verify.sh` summary line as printed; every skipped check and why; the next step (the `mortis-develop` skill for the first real aggregate).
 
 ## An existing solution
 
-When the user wants this structure inside a solution that already exists, do not scaffold over it. Use `--kernel-only`, which copies only `<Name>.Shared` and the build guards, and follow [references/adopting-in-an-existing-project.md](references/adopting-in-an-existing-project.md).
+Do not generate over a solution that has code. Read `references/csharp/adopting.md` and bring the kernel in beside what exists, one aggregate at a time.
 
-## Changing the template itself
+## Reference map
 
-Read [references/template-internals.md](references/template-internals.md) first, and the decision records in the template's `docs/adr/` for why it is the way it is. In short: the solution in `assets/csharp/` is a real one named `Boilerplate` with the example inside, `--no-example` removes it through `assets/csharp-example.txt`, and `tests/smoke.sh` in the skills repository is the proof that a change still works. When you change a file the references name, change the reference in the same edit; `tests/check_docs.py` (run by the smoke script) catches the ones you forget.
+| File | Read it when |
+|---|---|
+| `references/csharp/naming.md` | always, first: every type, file and folder name |
+| `references/csharp/manifest.json` | always: the file plan for this `MORTIS.md` |
+| `references/csharp/kernel-shape.txt` | when `verify.sh` reports a shape difference |
+| `references/csharp/solution.md` | step 1: tools, project files, pinned versions, build guards |
+| `references/csharp/shared-domain.md` | step 2 |
+| `references/csharp/shared-application.md` | step 4 |
+| `references/csharp/shared-other.md` | steps 3 and 4 |
+| `references/csharp/domain.md` | step 5, and any aggregate, event, repository interface or domain service |
+| `references/csharp/application.md` | step 5, and any command, validator, handler, view or event handler |
+| `references/csharp/infrastructure-postgres.md` | steps 6 and 11, and any mapping or repository |
+| `references/csharp/events-inprocess.md` | step 6 |
+| `references/csharp/hosts.md` | step 7, and any controller or scenario |
+| `references/csharp/testing.md` | step 8: test layout, rules, kernel test support |
+| `references/csharp/testing-kernel.md` | step 8: the kernel tests |
+| `references/csharp/project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | step 9 |
+| `references/csharp/worked-slice.md`, `worked-slice-tests.md` | step 10, and as the pattern for any new aggregate |
+| `references/csharp/adopting.md` | the project already exists |
+| `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |
+| `../mortis-architect/references/architecture/` | why a block is where it is: `layers.md`, `building-blocks.md`, `placement-guide.md`, `example-domain.md` |
 
-## Limits to state plainly when they matter
+## Limits to state when they matter
 
-- Queue events (`IQueueEvent`) reach the in-process async handlers right after the commit and are logged. There is no message-broker adapter and no outbox table yet, so an async handler is lost if the process dies between the commit and its run.
-- Error messages are English only; authentication is not configured.
-- The target framework is .NET 10 and the database is PostgreSQL. Other databases need a different EF provider and their own error mapping in `DatabaseExceptionHandler`.
+- With `events.outbox` = `none`, an async handler that had not run when the process died is lost.
+- Error messages are English only; authentication is not configured unless `auth` says so.
+- C# is the only language with references today.

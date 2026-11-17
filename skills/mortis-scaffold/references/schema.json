@@ -1,0 +1,390 @@
+{
+ "schema_version": 1,
+ "presets": [
+  "lean",
+  "standard",
+  "advanced"
+ ],
+ "languages": {
+  "csharp": {
+   "available": true
+  },
+  "go": {
+   "available": false
+  }
+ },
+ "keys": {
+  "version": {
+   "kind": "enum",
+   "values": [
+    "1"
+   ],
+   "default": "1"
+  },
+  "name": {
+   "kind": "text",
+   "required": true,
+   "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$"
+  },
+  "language": {
+   "kind": "language",
+   "required": true
+  },
+  "preset": {
+   "kind": "enum",
+   "values": [
+    "lean",
+    "standard",
+    "advanced"
+   ],
+   "required": true
+  },
+  "database": {
+   "kind": "enum",
+   "values": [
+    "postgres",
+    "mongo"
+   ],
+   "required": true
+  },
+  "events.outbox": {
+   "kind": "enum",
+   "values": [
+    "none",
+    "after-command",
+    "background"
+   ],
+   "presets": {
+    "lean": "none",
+    "standard": "after-command",
+    "advanced": "background"
+   }
+  },
+  "events.transport": {
+   "kind": "enum",
+   "values": [
+    "in-process",
+    "database",
+    "rabbitmq"
+   ],
+   "presets": {
+    "lean": "in-process",
+    "standard": "database",
+    "advanced": "rabbitmq"
+   }
+  },
+  "keys.default": {
+   "kind": "enum",
+   "values": [
+    "guid",
+    "int",
+    "long"
+   ],
+   "presets": {
+    "lean": "guid",
+    "standard": "guid",
+    "advanced": "guid"
+   }
+  },
+  "naming.database": {
+   "kind": "enum",
+   "values": [
+    "snake_case",
+    "as-code"
+   ],
+   "presets": {
+    "lean": "snake_case",
+    "standard": "snake_case",
+    "advanced": "snake_case"
+   }
+  },
+  "naming.json": {
+   "kind": "enum",
+   "values": [
+    "camelCase",
+    "snake_case"
+   ],
+   "presets": {
+    "lean": "camelCase",
+    "standard": "camelCase",
+    "advanced": "camelCase"
+   }
+  },
+  "naming.routes": {
+   "kind": "enum",
+   "values": [
+    "kebab-case",
+    "lowercase"
+   ],
+   "presets": {
+    "lean": "kebab-case",
+    "standard": "kebab-case",
+    "advanced": "kebab-case"
+   }
+  },
+  "naming.events": {
+   "kind": "enum",
+   "values": [
+    "bare",
+    "prefixed"
+   ],
+   "presets": {
+    "lean": "bare",
+    "standard": "bare",
+    "advanced": "bare"
+   }
+  },
+  "exceptions": {
+   "kind": "enum",
+   "values": [
+    "minimal",
+    "coded",
+    "catalogued"
+   ],
+   "presets": {
+    "lean": "minimal",
+    "standard": "coded",
+    "advanced": "catalogued"
+   }
+  },
+  "queries": {
+   "kind": "enum",
+   "values": [
+    "commands",
+    "split",
+    "read-models"
+   ],
+   "presets": {
+    "lean": "commands",
+    "standard": "split",
+    "advanced": "read-models"
+   }
+  },
+  "tenancy.mode": {
+   "kind": "enum",
+   "values": [
+    "none",
+    "interface"
+   ],
+   "presets": {
+    "lean": "none",
+    "standard": "none",
+    "advanced": "interface"
+   }
+  },
+  "tenancy.key": {
+   "kind": "enum",
+   "values": [
+    "guid",
+    "text"
+   ],
+   "default": "guid",
+   "requires": {
+    "tenancy.mode": [
+     "interface"
+    ]
+   }
+  },
+  "tenancy.resolver": {
+   "kind": "enum",
+   "values": [
+    "header",
+    "claim",
+    "subdomain"
+   ],
+   "default": "claim",
+   "requires": {
+    "tenancy.mode": [
+     "interface"
+    ]
+   }
+  },
+  "languages.mode": {
+   "kind": "enum",
+   "values": [
+    "none",
+    "messages",
+    "data"
+   ],
+   "presets": {
+    "lean": "none",
+    "standard": "none",
+    "advanced": "data"
+   }
+  },
+  "languages.default": {
+   "kind": "text",
+   "default": "en",
+   "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+   "requires": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  "languages.supported": {
+   "kind": "list",
+   "default": [
+    "en"
+   ],
+   "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+   "requires": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  "testing": {
+   "kind": "enum",
+   "values": [
+    "unit",
+    "handlers",
+    "integration",
+    "architecture"
+   ],
+   "presets": {
+    "lean": "unit",
+    "standard": "integration",
+    "advanced": "architecture"
+   }
+  },
+  "auth": {
+   "kind": "enum",
+   "values": [
+    "none",
+    "jwt"
+   ],
+   "presets": {
+    "lean": "none",
+    "standard": "jwt",
+    "advanced": "jwt"
+   }
+  },
+  "hosts.worker": {
+   "kind": "enum",
+   "values": [
+    "none",
+    "in-api",
+    "separate"
+   ],
+   "presets": {
+    "lean": "none",
+    "standard": "in-api",
+    "advanced": "separate"
+   }
+  },
+  "addons": {
+   "kind": "list",
+   "values": [
+    "correlation",
+    "soft-delete",
+    "caching",
+    "scheduler",
+    "storage",
+    "secrets",
+    "loop-guard",
+    "contexts",
+    "events-project",
+    "idempotent-commands",
+    "observability",
+    "api-conventions"
+   ],
+   "presets": {
+    "lean": [],
+    "standard": [
+     "correlation",
+     "api-conventions"
+    ],
+    "advanced": [
+     "correlation",
+     "soft-delete",
+     "caching",
+     "scheduler",
+     "secrets",
+     "loop-guard",
+     "contexts",
+     "events-project",
+     "idempotent-commands",
+     "observability",
+     "api-conventions"
+    ]
+   }
+  },
+  "example": {
+   "kind": "enum",
+   "values": [
+    "true",
+    "false"
+   ],
+   "presets": {
+    "lean": "true",
+    "standard": "true",
+    "advanced": "false"
+   }
+  }
+ },
+ "rules": [
+  {
+   "id": "R1",
+   "text": "events.outbox = none requires events.transport = in-process, and the reverse.",
+   "fix": "Set both to the in-process pair, or give both an outbox and a database or rabbitmq transport."
+  },
+  {
+   "id": "R2",
+   "text": "events.transport = rabbitmq requires an outbox.",
+   "fix": "Set events.outbox to after-command or background, or use transport database."
+  },
+  {
+   "id": "R3",
+   "text": "Any outbox requires hosts.worker other than none.",
+   "fix": "Set hosts.worker to in-api or separate."
+  },
+  {
+   "id": "R4",
+   "text": "events.transport = rabbitmq requires hosts.worker = separate.",
+   "fix": "Set hosts.worker to separate."
+  },
+  {
+   "id": "R5",
+   "text": "languages.mode other than none requires exceptions other than minimal.",
+   "fix": "Set exceptions to coded or catalogued, or languages.mode to none."
+  },
+  {
+   "id": "R6",
+   "text": "languages.default must be in languages.supported.",
+   "fix": "Add the default language to languages.supported."
+  },
+  {
+   "id": "R7",
+   "text": "tenancy.mode = interface with any outbox adds the tenant to outbox and inbox rows. No choice to make; the scaffold applies it (note, never an error).",
+   "fix": "Nothing to fix."
+  },
+  {
+   "id": "R8",
+   "text": "database = mongo with any outbox requires a replica set; the generated compose file starts one (note, never an error).",
+   "fix": "Nothing to fix."
+  },
+  {
+   "id": "R9",
+   "text": "addons containing scheduler requires hosts.worker other than none.",
+   "fix": "Set hosts.worker to in-api or separate, or remove scheduler."
+  },
+  {
+   "id": "R10",
+   "text": "queries = read-models requires events.outbox other than none, because the projection is fed asynchronously.",
+   "fix": "Set events.outbox to after-command or background, or queries to split."
+  },
+  {
+   "id": "R11",
+   "text": "language must have references. A language is available only when the schema lists it as available.",
+   "fix": "Choose an available language."
+  },
+  {
+   "id": "R12",
+   "text": "database = mongo does not support keys.default = int or long.",
+   "fix": "Set keys.default to guid."
+  }
+ ]
+}

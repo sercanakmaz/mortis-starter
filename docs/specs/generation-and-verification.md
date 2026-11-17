@@ -35,6 +35,10 @@ docs/unverified.md                   what has been written but never compiled or
 docs/generation-log.md               every generation run: configuration, result, time, tokens, the fix it led to
 ```
 
+## As built (phase 1, step 03)
+
+`mortis-scaffold/scripts/`: `verify.sh` (language-neutral), `structure.py` (manifest, missing and extra files), `decisions.py` (a copy of the architect skill's parser), `lang/<lang>.sh` (tools, build, test, format, shape, rules, console, migrate, API start, wire name), `lang/csharp_shape.py`, `lang/csharp_rules.py`, `conformance/*.sh`. `references/schema.json` is a copy of the architect skill's; `tests/check_docs.py` fails when the copies differ.
+
 ## What layer 2 may contain
 
 The finished skills hold **snippets, never whole files** (decided). A page describes one type or one concern:

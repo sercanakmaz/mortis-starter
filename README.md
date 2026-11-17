@@ -6,9 +6,10 @@ A project starter for backends, delivered as Claude Code skills. Today it starts
 
 | Skill | State |
 |---|---|
-| `mortis-scaffold` | **Ready.** Creates a solution (with a worked Order / Customer / Product example, which you can leave out), or copies only the building blocks into an existing solution. Includes sync and async event handlers |
-| `mortis-develop` | Planned (phase 2): adding aggregates, child entities, value objects, events, commands, mappings and tests |
-| `mortis-review` | Planned (phase 3): a script and checklist that check a change against the rules |
+| `mortis-architect` | **Written, not yet proven.** Interviews you and writes `MORTIS.md`, the decisions file |
+| `mortis-scaffold` | **Being rebuilt (phase 1).** Generates a project from `MORTIS.md` and the C# reference pages, then runs `verify.sh`. Not proven until phase 2 |
+| `mortis-develop` | Planned (phase 1, step 17) |
+| `mortis-review` | Planned (phase 1, step 17) |
 
 ## Install
 
@@ -21,14 +22,9 @@ To use a skill in one project only, copy its folder into that project's `.claude
 
 ## Use
 
-In Claude Code, ask for what you want: "scaffold a new .NET backend called Acme.Billing". Or run the script yourself:
+In Claude Code, describe what you are building: "start a backend for a B2B invoicing product, C# and PostgreSQL". `mortis-architect` writes `MORTIS.md`; `mortis-scaffold` generates the project from it and runs `verify.sh`.
 
-```bash
-bash _temp/template/scripts/scaffold.sh Acme --out ~/code
-cd ~/code/Acme && dotnet build && dotnet test
-```
-
-Add `--no-example` for an empty solution without the Order / Customer / Product example.
+The old copy script still works from the repository while phase 1 runs: `bash _temp/template/scripts/scaffold.sh Acme --out ~/code`.
 
 Requirements for a scaffolded solution: .NET SDK 10, and PostgreSQL (the generated `docker-compose.yml` starts one).
 
@@ -36,7 +32,7 @@ Requirements for a scaffolded solution: .NET SDK 10, and PostgreSQL (the generat
 
 ```
 src/<Name>.Shared          Entity, AggregateRoot, EventBase, EventContext, BaseSyncEventHandler, BaseAsyncEventHandler, ICommand / IUserCommand, ICommandDispatcher, command pipeline, exceptions
-src/<Name>.Domain          Aggregates/<Plural>/ : aggregate, children, value objects, Events/, service, repository interface, module
+src/<Name>.Domain          Aggregates/<Plural>/ : aggregate, children, value objects, Events/, repository interface; Services/ when needed
 src/<Name>.Application     commands (record + validator + handler), DTOs, event handlers that send commands
 src/<Name>.Infrastructure  EF Core + PostgreSQL: repositories, mappings, unit of work, async handler dispatcher, migrations
 src/<Name>.Api             HTTP host
@@ -44,7 +40,7 @@ src/<Name>.Console         runs any registered command by name, plus scenarios: 
 test/<Name>.Tests          fakes, builders, tests
 ```
 
-`_temp/template/assets/csharp/docs/architecture.md` explains the request flow, the event pipeline and the persistence rules. `_temp/template/assets/csharp/AGENTS.md` lists the rules and what enforces each one. `skills/mortis-scaffold/references/event-handlers.md` explains when to use a sync handler (inside the transaction, can veto) and when an async one (after the commit, eventual consistency).
+`skills/mortis-architect/references/architecture/` explains, without a language, where each piece belongs and how a request and its events travel. `skills/mortis-scaffold/references/csharp/` is how each piece is written in C#.
 
 ## Why it is built this way
 
@@ -57,7 +53,11 @@ test/<Name>.Tests          fakes, builders, tests
 ## Checking the skills themselves
 
 ```bash
+bash tests/check_installable.sh                 # no project source in skills/, snippet rules, no origins
+python3 -I tests/check_docs.py                  # pages, manifest, kernel shape and schema agree
+python3 -I tests/check_architecture.py          # the language-neutral layer
+python3 -I tests/test_validate_decisions.py     # the MORTIS.md validator
 PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres bash tests/smoke.sh
 ```
 
-This checks that the skill's reference docs match the template and the example, then scaffolds three solutions and checks them against a real PostgreSQL: build, unit tests, the banned-API guard, migrations, a committed flow, sync and async handlers on one event, a rolled-back flow, concurrent stock updates, the Api's status codes, and kernel-only mode. It needs the .NET SDK 10, `psql`, `curl` and `python3`.
+`smoke.sh` belongs to the old copied template and is deleted with it. It checks that the reference docs match, then scaffolds three solutions and checks them against a real PostgreSQL: build, unit tests, the banned-API guard, migrations, a committed flow, sync and async handlers on one event, a rolled-back flow, concurrent stock updates, the Api's status codes, and kernel-only mode. It needs the .NET SDK 10, `psql`, `curl` and `python3`.

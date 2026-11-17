@@ -6,3 +6,4 @@ obj/
 *.user
 TestResults/
 _sources/
+__pycache__/

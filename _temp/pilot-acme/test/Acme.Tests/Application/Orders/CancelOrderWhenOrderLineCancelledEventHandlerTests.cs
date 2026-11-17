@@ -1,0 +1,53 @@
+using Acme.Application.Orders;
+using Acme.Domain.Aggregates.Orders;
+using Acme.Domain.Aggregates.Orders.Events;
+using Acme.Tests.TestSupport.Domain.Orders;
+using Acme.Tests.TestSupport.Shared.Application;
+using Moq;
+
+namespace Acme.Tests.Application.Orders;
+
+public class CancelOrderWhenOrderLineCancelledEventHandlerTests
+{
+    [Fact]
+    public async Task Handle_WhenEveryLineIsCancelled_Should_CancelTheOrderOfTheEvent()
+    {
+        Order writtenOrder = null;
+        var order = FakeOrder.Create().WithLine("SKU-1").WithCancelledLine("SKU-1").WithoutEvents();
+        var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(order).WithUpdateAsync(updatedOrder => writtenOrder = updatedOrder);
+        var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+        var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+        await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 1, "test"));
+
+        Assert.Equal(OrderStatus.Cancelled, writtenOrder.Status);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAnotherLineIsStillActive_Should_LeaveTheOrderOpenAndNotWrite()
+    {
+        var order = FakeOrder.Create().WithLine("SKU-1").WithLine("SKU-2").WithCancelledLine("SKU-1").WithoutEvents();
+        var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(order).WithUpdateAsync();
+        var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+        var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+        await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 1, "test"));
+
+        Assert.Equal(OrderStatus.Open, order.Status);
+        orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent()
+    {
+        Order writtenOrder = null;
+        var order = FakeOrder.Create().WithLine("SKU-1").WithCancelledLine("SKU-1").WithoutEvents();
+        var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(order).WithUpdateAsync(updatedOrder => writtenOrder = updatedOrder);
+        var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+        var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+        await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 1, "test") { UserId = "user-7", UserEmail = "user-7@localhost" });
+
+        Assert.Equal("user-7", writtenOrder.UpdatedUserId);
+    }
+}

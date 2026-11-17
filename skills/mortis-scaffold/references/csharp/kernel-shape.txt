@@ -1,0 +1,194 @@
+# Kernel shape, C#. One line per public type and member of every kernel file in manifest.json.
+# Produced by scripts/lang/csharp_shape.py; verify.sh extracts the same list from a generated project and compares.
+# {Name} is the project name from MORTIS.md; {database} is that name in lower case without dots.
+type {Name}.Api.Filters: public class UserCommandFilter : IAsyncActionFilter
+member {Name}.Api.Filters.UserCommandFilter: public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+type {Name}.Api.Middlewares: public static class ApiConstants
+member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdHeader = "X-Correlation-Id"
+member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorCode = "unexpected_error"
+member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorMessage = "An unexpected error occurred."
+type {Name}.Api.Middlewares: public class CorrelationIdMiddleware(RequestDelegate next)
+member {Name}.Api.Middlewares.CorrelationIdMiddleware: public async Task InvokeAsync(HttpContext httpContext)
+type {Name}.Api.Middlewares: public record ErrorResponseModel(string Code, string Message, IDictionary<string, string[]> Errors = null)
+type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHandler
+member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+type {Name}.Application: public static class ApplicationModule
+member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
+type {Name}.Console.Scenarios: public class CommandScenario<TCommand, TContent>(ICommandDispatcher commandDispatcher) : IScenario where TCommand : ICommand<TContent>
+member {Name}.Console.Scenarios.CommandScenario: public string Name
+member {Name}.Console.Scenarios.CommandScenario: public async Task RunAsync(string[] args)
+type {Name}.Console.Scenarios: public static class CommandScenarioExtensions
+member {Name}.Console.Scenarios.CommandScenarioExtensions: public static IServiceCollection AddCommandScenario<TCommand, TContent>(this IServiceCollection services) where TCommand : ICommand<TContent>
+type {Name}.Console.Scenarios: public static class ConsoleUserExtensions
+member {Name}.Console.Scenarios.ConsoleUserExtensions: public static TCommand AsConsoleUser<TCommand>(this TCommand command)
+type {Name}.Console.Scenarios: public interface IScenario
+member {Name}.Console.Scenarios.IScenario: string Name { get; }
+member {Name}.Console.Scenarios.IScenario: Task RunAsync(string[] args)
+type {Name}.Console.Scenarios: public static class ScenarioConstants
+member {Name}.Console.Scenarios.ScenarioConstants: public const string UserId = "console"
+member {Name}.Console.Scenarios.ScenarioConstants: public const string UserEmail = "console@localhost"
+member {Name}.Console.Scenarios.ScenarioConstants: public const string CommandSuffix = "Command"
+member {Name}.Console.Scenarios.ScenarioConstants: public const string FilePrefix = "@"
+member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions OutputOptions = new()
+member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions InputOptions = new()
+type {Name}.Console.Scenarios: public static class ScenarioModule
+member {Name}.Console.Scenarios.ScenarioModule: public static IServiceCollection AddScenariosModule(this IServiceCollection services)
+type {Name}.Domain: public static class DomainModule
+member {Name}.Domain.DomainModule: public static IServiceCollection AddDomainModule(this IServiceCollection services)
+type {Name}.Infrastructure: public static class InfrastructureModule
+member {Name}.Infrastructure.InfrastructureModule: public static IServiceCollection AddInfrastructureModule(this IServiceCollection services, IConfiguration configuration)
+type {Name}.Infrastructure.Logging: public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddleware> logger) : ICommandHandlerMiddleware
+member {Name}.Infrastructure.Logging.LoggingCommandHandlerMiddleware: public void Before(ICommand command)
+member {Name}.Infrastructure.Logging.LoggingCommandHandlerMiddleware: public void After(ICommand command, CommandResult commandResult)
+type {Name}.Infrastructure.Messaging: public class AsyncEventHandlerDispatcher(IServiceScopeFactory serviceScopeFactory, ILogger<AsyncEventHandlerDispatcher> logger) : IEventDispatcher
+member {Name}.Infrastructure.Messaging.AsyncEventHandlerDispatcher: public async Task Publish(EventBase @event)
+type {Name}.Infrastructure.Messaging: public class LoggingEventDispatcher(ILogger<LoggingEventDispatcher> logger) : IEventDispatcher
+member {Name}.Infrastructure.Messaging.LoggingEventDispatcher: public Task Publish(EventBase @event)
+type {Name}.Infrastructure.Messaging: public static class MessagingConstants
+member {Name}.Infrastructure.Messaging.MessagingConstants: public const int MaxAttempts = 10
+member {Name}.Infrastructure.Messaging.MessagingConstants: public const int RetryDelayMilliseconds = 20
+type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
+type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
+member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
+member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TEntity> ChildEntityConfiguration<TEntity, TKey>(this EntityTypeBuilder<TEntity> builder) where TEntity : Entity<TKey>
+type {Name}.Infrastructure.Persistence: public static class DatabaseExceptionHandler
+member {Name}.Infrastructure.Persistence.DatabaseExceptionHandler: public static void Handle(DbUpdateException exception)
+type {Name}.Infrastructure.Persistence: public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
+member {Name}.Infrastructure.Persistence.DesignTimeDbContextFactory: public AppDbContext CreateDbContext(string[] args)
+type {Name}.Infrastructure.Persistence: public abstract class EfRepository<TAggregate, TKey>(AppDbContext context, IUnitOfWork unitOfWork, EventContext eventContext) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
+member {Name}.Infrastructure.Persistence.EfRepository: protected readonly DbSet<TAggregate> DbSet = context.Set<TAggregate>()
+member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task CreateAsync(TAggregate aggregate)
+member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task UpdateAsync(TAggregate aggregate)
+member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task DeleteAsync(TAggregate aggregate)
+member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdAsync(TKey id)
+member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
+member {Name}.Infrastructure.Persistence.EfRepository: protected IQueryable<TAggregate> Query()
+member {Name}.Infrastructure.Persistence.EfRepository: protected void RaiseEvents(TAggregate aggregate)
+member {Name}.Infrastructure.Persistence.EfRepository: protected void EnsureTransaction()
+type {Name}.Infrastructure.Persistence: public static class PersistenceConstants
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringName = "Default"
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringVariable = "ConnectionStrings__Default"
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string DesignTimeConnectionString = "Host=localhost;Port=5432;Database={database};Username=postgres;Password=postgres"
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserIdMaxLength = 64
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserNameMaxLength = 256
+member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
+type {Name}.Infrastructure.Persistence: public static class PersistenceModule
+member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
+type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, IEnumerable<IEventDispatcher> eventDispatchers, ILogger<UnitOfWork> logger) : IUnitOfWork
+member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
+member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
+member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
+member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
+member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task RollbackTransactionAsync()
+member {Name}.Infrastructure.Persistence.UnitOfWork: public void OnCommitted(Func<Task> action)
+type {Name}.Shared.Application: public abstract class BaseCommandHandler<TCommand, TContent>(CommandPipeline<TCommand> commandPipeline) where TCommand : ICommand<TContent>
+member {Name}.Shared.Application.BaseCommandHandler: protected abstract Task<CommandResult<TContent>> OnHandle(TCommand command)
+member {Name}.Shared.Application.BaseCommandHandler: public Task<CommandResult<TContent>> Handle(TCommand command)
+type {Name}.Shared.Application: public sealed class CommandDispatcher(IServiceProvider serviceProvider) : ICommandDispatcher
+member {Name}.Shared.Application.CommandDispatcher: public Task<CommandResult<TContent>> Send<TContent>(ICommand<TContent> command)
+type {Name}.Shared.Application: public abstract class CommandHandlerInvoker<TContent>
+member {Name}.Shared.Application.CommandHandlerInvoker: public abstract Task<CommandResult<TContent>> Invoke(IServiceProvider serviceProvider, ICommand<TContent> command)
+type {Name}.Shared.Application: public sealed class CommandHandlerInvoker<TCommand, TContent> : CommandHandlerInvoker<TContent> where TCommand : ICommand<TContent>
+member {Name}.Shared.Application.CommandHandlerInvoker: public override Task<CommandResult<TContent>> Invoke(IServiceProvider serviceProvider, ICommand<TContent> command)
+type {Name}.Shared.Application: public static class CommandHandlerExtensions
+member {Name}.Shared.Application.CommandHandlerExtensions: public static IServiceCollection AddCommandHandler<TCommand, TContent, TCommandHandler>(this IServiceCollection services) where TCommand : ICommand<TContent> where TCommandHandler : BaseCommandHandler<TCommand, TContent>
+type {Name}.Shared.Application: public sealed class CommandPipeline<TCommand>(IEnumerable<IValidator<TCommand>> validators, IEnumerable<ICommandHandlerMiddleware> commandHandlerMiddlewares, IUnitOfWork unitOfWork) where TCommand : ICommand
+member {Name}.Shared.Application.CommandPipeline: public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
+type {Name}.Shared.Application: public class CommandResult
+member {Name}.Shared.Application.CommandResult: public Dictionary<string, object> Meta { get; set; }
+member {Name}.Shared.Application.CommandResult: public static CommandResult<TContent> FromContent<TContent>(TContent content)
+type {Name}.Shared.Application: public sealed class CommandResult<TContent>(TContent content) : CommandResult
+member {Name}.Shared.Application.CommandResult: public TContent Content { get; }
+type {Name}.Shared.Application: public interface ICommand
+type {Name}.Shared.Application: public interface ICommand<TContent> : ICommand
+type {Name}.Shared.Application: public interface ITransactionalCommand
+type {Name}.Shared.Application: public interface ICommandDispatcher
+member {Name}.Shared.Application.ICommandDispatcher: Task<CommandResult<TContent>> Send<TContent>(ICommand<TContent> command)
+type {Name}.Shared.Application: public interface ICommandHandlerMiddleware
+member {Name}.Shared.Application.ICommandHandlerMiddleware: void Before(ICommand command)
+member {Name}.Shared.Application.ICommandHandlerMiddleware: void After(ICommand command, CommandResult commandResult)
+type {Name}.Shared.Application: public interface IUserCommand
+member {Name}.Shared.Application.IUserCommand: string UserId { get; set; }
+member {Name}.Shared.Application.IUserCommand: string UserEmail { get; set; }
+type {Name}.Shared.Application: public static class UserCommandExtensions
+member {Name}.Shared.Application.UserCommandExtensions: public static AuditUser ToAuditUser(this IUserCommand userCommand)
+type {Name}.Shared.Domain: public abstract class AggregateRoot<TKey> : Entity<TKey>
+member {Name}.Shared.Domain.AggregateRoot: public DateTime CreatedAt { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public string CreatedUserId { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public string CreatedUserName { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public DateTime UpdatedAt { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public string UpdatedUserId { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public string UpdatedUserName { get; protected set; }
+member {Name}.Shared.Domain.AggregateRoot: public long Version
+member {Name}.Shared.Domain.AggregateRoot: public IReadOnlyCollection<EventBase> DomainEvents
+member {Name}.Shared.Domain.AggregateRoot: protected AggregateRoot()
+member {Name}.Shared.Domain.AggregateRoot: protected AggregateRoot(AuditUser user)
+member {Name}.Shared.Domain.AggregateRoot: public void SetUpdatedAudit(AuditUser user)
+member {Name}.Shared.Domain.AggregateRoot: public void ClearEvents()
+member {Name}.Shared.Domain.AggregateRoot: protected void RaiseEvent(EventBase @event)
+type {Name}.Shared.Domain: public sealed record AuditUser(string Id, string Email)
+type {Name}.Shared.Domain: public interface IAsyncEventHandler
+member {Name}.Shared.Domain.IAsyncEventHandler: int Sequence { get; }
+member {Name}.Shared.Domain.IAsyncEventHandler: Task Handle(EventBase @event)
+type {Name}.Shared.Domain: public abstract class BaseAsyncEventHandler<TEvent> : IAsyncEventHandler where TEvent : EventBase, IQueueEvent
+member {Name}.Shared.Domain.BaseAsyncEventHandler: public virtual int Sequence
+member {Name}.Shared.Domain.BaseAsyncEventHandler: protected abstract Task OnHandle(TEvent @event)
+member {Name}.Shared.Domain.BaseAsyncEventHandler: public Task Handle(EventBase @event)
+type {Name}.Shared.Domain: public interface ISyncEventHandler
+member {Name}.Shared.Domain.ISyncEventHandler: int Sequence { get; }
+member {Name}.Shared.Domain.ISyncEventHandler: Task Handle(EventBase @event)
+type {Name}.Shared.Domain: public abstract class BaseSyncEventHandler<TEvent> : ISyncEventHandler where TEvent : EventBase
+member {Name}.Shared.Domain.BaseSyncEventHandler: public virtual int Sequence
+member {Name}.Shared.Domain.BaseSyncEventHandler: protected abstract Task OnHandle(TEvent @event)
+member {Name}.Shared.Domain.BaseSyncEventHandler: public Task Handle(EventBase @event)
+type {Name}.Shared.Domain: public abstract class Entity<TKey>
+member {Name}.Shared.Domain.Entity: public TKey Id { get; protected set; }
+type {Name}.Shared.Domain: public abstract record EventBase
+member {Name}.Shared.Domain.EventBase: public Guid EventId { get; init; }
+member {Name}.Shared.Domain.EventBase: public DateTime OccurredAt { get; init; }
+member {Name}.Shared.Domain.EventBase: public Guid CorrelationId { get; init; }
+member {Name}.Shared.Domain.EventBase: public string UserId { get; init; }
+member {Name}.Shared.Domain.EventBase: public string UserEmail { get; init; }
+type {Name}.Shared.Domain: public interface IQueueEvent
+type {Name}.Shared.Domain: public sealed class EventContext
+member {Name}.Shared.Domain.EventContext: public int RaisedCount { get; }
+member {Name}.Shared.Domain.EventContext: public void AddRaised(EventBase @event)
+member {Name}.Shared.Domain.EventContext: public EventBase TakeRaised()
+member {Name}.Shared.Domain.EventContext: public void AddDispatched(EventBase @event)
+member {Name}.Shared.Domain.EventContext: public EventBase TakeDispatched()
+member {Name}.Shared.Domain.EventContext: public void Clear()
+type {Name}.Shared.Domain: public sealed class EventHandlerExecutor(IServiceProvider serviceProvider, EventContext eventContext)
+member {Name}.Shared.Domain.EventHandlerExecutor: public async Task ExecuteRaisedAsync()
+type {Name}.Shared.Domain: public interface IEventDispatcher
+member {Name}.Shared.Domain.IEventDispatcher: Task Publish(EventBase @event)
+type {Name}.Shared.Domain: public static class SystemUser
+member {Name}.Shared.Domain.SystemUser: public const string Id = "system"
+member {Name}.Shared.Domain.SystemUser: public const string Email = "system@localhost"
+type {Name}.Shared.Exceptions: public class BusinessRuleException(string code, string message) : ExceptionBase(code, HttpStatusCode.Conflict, message)
+type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException)
+type {Name}.Shared.Exceptions: public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null) : Exception(message, innerException)
+member {Name}.Shared.Exceptions.ExceptionBase: public string Code { get; }
+member {Name}.Shared.Exceptions.ExceptionBase: public HttpStatusCode HttpStatusCode { get; }
+type {Name}.Shared.Exceptions: public class ForbiddenException(string action) : ExceptionBase("forbidden", HttpStatusCode.Forbidden, $"{action} is not allowed.")
+type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException)
+type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.")
+type {Name}.Shared.Exceptions: public class ReferenceViolationException(string constraintName, Exception innerException = null) : ExceptionBase("reference_violation", HttpStatusCode.BadRequest, $"The reference {constraintName} points at a missing record, or the record is still referenced.", innerException)
+type {Name}.Shared.Exceptions: public class TransactionRequiredException(string aggregateName) : ExceptionBase("transaction_required", HttpStatusCode.InternalServerError, $"A write to {aggregateName} ran outside a transaction. The command must implement ITransactionalCommand.")
+type {Name}.Shared.Exceptions: public class ValidationFailedException(IDictionary<string, string[]> errors) : ExceptionBase("validation_failed", HttpStatusCode.UnprocessableEntity, "The request is not valid.")
+member {Name}.Shared.Exceptions.ValidationFailedException: public IDictionary<string, string[]> Errors { get; }
+type {Name}.Shared.Persistence: public interface IRepository<TAggregate, in TKey> where TAggregate : AggregateRoot<TKey>
+member {Name}.Shared.Persistence.IRepository: Task CreateAsync(TAggregate aggregate)
+member {Name}.Shared.Persistence.IRepository: Task UpdateAsync(TAggregate aggregate)
+member {Name}.Shared.Persistence.IRepository: Task DeleteAsync(TAggregate aggregate)
+member {Name}.Shared.Persistence.IRepository: Task<TAggregate> FindByIdAsync(TKey id)
+member {Name}.Shared.Persistence.IRepository: Task<TAggregate> FindByIdTrackingAsync(TKey id)
+type {Name}.Shared.Persistence: public interface IUnitOfWork
+member {Name}.Shared.Persistence.IUnitOfWork: bool HasTransaction { get; }
+member {Name}.Shared.Persistence.IUnitOfWork: Task<int> SaveChangesAsync()
+member {Name}.Shared.Persistence.IUnitOfWork: Task BeginTransactionAsync(string transactionKey)
+member {Name}.Shared.Persistence.IUnitOfWork: Task CommitTransactionAsync(string transactionKey)
+member {Name}.Shared.Persistence.IUnitOfWork: Task RollbackTransactionAsync()
+member {Name}.Shared.Persistence.IUnitOfWork: void OnCommitted(Func<Task> action)
+type {Name}.Shared: public static class SharedModule
+member {Name}.Shared.SharedModule: public static IServiceCollection AddSharedModule(this IServiceCollection services)
