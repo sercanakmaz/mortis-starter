@@ -14,7 +14,7 @@ Three kinds of choice, because they behave differently in code:
 | **Add-on** | Zero or more; each adds files and registration lines | multi-tenancy, correlation, caching |
 | **Level** | One axis with rungs from lean to full | exception handling, testing, validation |
 
-Each option has a **tier**: **L** (lean: a small service or a prototype), **S** (standard: a real product with one team), **A** (advanced: a platform with several processes and many tenants). A preset picks a whole tier; the interview then lets the user move single options up or down.
+Each option has a **tier**: **L** (lean: a small service or a prototype), **S** (standard: a real product with one team), **A** (advanced: one service of a platform, with a broker and many tenants; each service is its own repository). A preset picks a whole tier; the interview then lets the user move single options up or down.
 
 ## 1. Slots
 
@@ -185,7 +185,7 @@ The house rules stay at every rung: fakes and builders live in `TestSupport`, a 
 | Validation | validator per command | same | same |
 | Queries | `Get*` commands | separate queries | read models |
 | Tenancy | no | no | `IMultiTenant` |
-| Language | no | translated messages | plus translated data |
+| Language | no | no (asked when languages are mentioned) | translated messages and data |
 | Testing | unit | plus handlers, hosts, integration | plus architecture and contract |
 | Hosts | Api, Console | plus Worker, authentication | plus scheduler, caching, storage |
 | Layout | flat aggregates | flat aggregates | bounded contexts, `Events` project |

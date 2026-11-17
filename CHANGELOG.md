@@ -4,6 +4,17 @@ All notable changes to the skills and the template. Newest first.
 
 ## 2026-11
 
+### Added
+- Phase 1 step 01: the language-neutral architecture layer in `skills/mortis-architect/references/architecture/` (layers, 18 building blocks, request lifecycle, events, 50-row placement guide, 10 scenarios, notation, glossary), `tests/check_architecture.py` and placement fixtures. Ledger `docs/unverified.md` and `docs/generation-log.md` created. The pilot generation after step 03 is switched on.
+
+- Phase 1 step 02: the `mortis-architect` skill: interview, `MORTIS.md` schema (25 keys, rules R1 to R12), shared parser, validator, preset writer, 15 option pages, four evals; 26 validator tests.
+
+- Architecture layer: explicit cardinality (one command can raise many events, one event can have many handlers), scenario 11, and a decision cheat sheet with a flow diagram and common pitfalls in the placement guide.
+
+- Architecture layer, decision 28: command handlers are use cases that may change several aggregates when the action is about all of them; domain services hold logic that fits no single aggregate; new anti-corruption layer block; the cheat sheet decides between the command handler and an event handler for a second aggregate.
+
+- Decisions 28 to 30: use cases may change several aggregates; standard preset has no translated messages; one repository is one service with one `MORTIS.md`.
+
 ### Planned
 - The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
 - The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).

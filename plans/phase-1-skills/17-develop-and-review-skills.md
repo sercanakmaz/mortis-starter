@@ -55,3 +55,7 @@ The two skills; eval prompts written (at least five each, including a lean and a
 ## Out of scope
 
 Automatic refactoring of an existing non-Mortis codebase (the "adopting in an existing project" reference stays a manual guide).
+
+## Traps
+
+- Decision 28: `mortis-review` judges a command handler that changes several aggregates by the second-aggregate test in the placement guide (is the second change the intent of the action, or a consequence?), never by counting calls. `mortis-develop` adds a consequence as an event handler, never as a new line in an existing command handler.

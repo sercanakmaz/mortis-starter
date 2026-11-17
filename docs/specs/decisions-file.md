@@ -1,6 +1,6 @@
 # The decisions file: MORTIS.md
 
-Written by `mortis-architect`, read by `mortis-scaffold`, `mortis-develop`, `mortis-review` and `verify.sh`. It sits in the root of the generated project and is committed with it. Finalised in [phase 1, step 02](../../plans/phase-1-skills/02-decision-model.md); this is the starting design.
+One file per repository, and one repository per service (decision 30). Written by `mortis-architect`, read by `mortis-scaffold`, `mortis-develop`, `mortis-review` and `verify.sh`. It sits in the root of the generated project and is committed with it. Finalised in [phase 1, step 02](../../plans/phase-1-skills/02-decision-model.md). The single source of keys, values, defaults and rules is `skills/mortis-architect/references/schema.json`; the tables below are checked against it by `tests/check_docs.py`.
 
 ## Why markdown
 
@@ -58,11 +58,14 @@ Parsing rules, so every script reads it the same way:
 - Only the table under the heading `## Decisions` is read. Everything else is for readers.
 - One row per key. Keys are dotted, values are plain text; a list is comma-separated. The `Why` column is free text and is ignored by scripts.
 - A key that is absent takes the preset's value. An unknown key or value is an error that names the row.
-- The validator and `verify.sh` share one small parser (Python standard library), shipped in the skill.
+- The validator and `verify.sh` share one small parser (`scripts/decisions.py`, Python standard library), shipped in the skill. `decisions.py FILE get KEY` prints a resolved value for shell use.
+- A key that only applies with another (`tenancy.key`, `tenancy.resolver`, `languages.default`, `languages.supported`) is an error when its parent does not enable it, and takes its default when the parent does.
 
 The generated `AGENTS.md` and `CLAUDE.md` link to `MORTIS.md` in their first lines, so every assistant session in the project sees the decisions and knows which skill to reach for.
 
 ## Values
+
+The keys `version` (always `1`), `name` (letters, digits, dot, dash, underscore) and `preset` are also required in the file. `language`, `database` and `name` are always asked.
 
 | Key | Values | Lean | Standard | Advanced |
 |---|---|---|---|---|
@@ -80,7 +83,9 @@ The generated `AGENTS.md` and `CLAUDE.md` link to `MORTIS.md` in their first lin
 | `tenancy.mode` | `none`, `interface` | `none` | `none` | `interface` |
 | `tenancy.key` | `guid`, `text` | | | `guid` |
 | `tenancy.resolver` | `header`, `claim`, `subdomain` | | | `claim` |
-| `languages.mode` | `none`, `messages`, `data` | `none` | `messages` | `data` |
+| `languages.default` | a language tag such as `en`; only with `languages.mode` other than `none` | | | |
+| `languages.supported` | tags, comma separated; same condition | | | |
+| `languages.mode` | `none`, `messages`, `data` | `none` | `none` | `data` |
 | `testing` | `unit`, `handlers`, `integration`, `architecture` | `unit` | `integration` | `architecture` |
 | `auth` | `none`, `jwt` | `none` | `jwt` | `jwt` |
 | `hosts.worker` | `none`, `in-api`, `separate` | `none` | `in-api` | `separate` |
@@ -101,11 +106,12 @@ The validator refuses a file that breaks one; the interview never offers a combi
 | R4 | `events.transport` = `rabbitmq` requires `hosts.worker` = `separate`. |
 | R5 | `languages.mode` other than `none` requires `exceptions` other than `minimal`. |
 | R6 | `languages.default` must be in `languages.supported`. |
-| R7 | `tenancy.mode` = `interface` with any outbox adds the tenant to outbox and inbox rows (no user choice; the scaffold skill applies it). |
-| R8 | `database` = `mongo` with any outbox requires a replica set; the generated compose file starts one. |
+| R7 | `tenancy.mode` = `interface` with any outbox adds the tenant to outbox and inbox rows (a note, never an error; the scaffold skill applies it). |
+| R8 | `database` = `mongo` with any outbox requires a replica set; the generated compose file starts one (a note, never an error). |
 | R9 | `addons` containing `scheduler` requires `hosts.worker` other than `none`. |
-| R10 | `queries` = `read-models` requires `events.outbox` other than `none` when the projection is asynchronous. |
-| R11 | `language` = `go` allows only the values the Go references exist for; the validator reads that list from the schema. |
+| R10 | `queries` = `read-models` requires `events.outbox` other than `none`, because the projection is fed asynchronously. |
+| R11 | `language` must be available: the schema lists which languages have references. `go` is listed as not available until it has. |
+| R12 | `database` = `mongo` does not support `keys.default` = `int` or `long`. |
 
 ## Interview order
 
@@ -116,5 +122,7 @@ The validator refuses a file that breaks one; the interview never offers a combi
 5. Write `MORTIS.md` (the table, with the reason the user gave in the `Why` column) and one decision record for every value that differs from the preset.
 
 Naming choices are asked only when the description mentions something existing that the project must fit (a database, an API style, consumers of its events). Identifier casing is never asked: the language decides it.
+
+When the session cannot ask, the skill moves off the preset only for a value the description states outright; a value it only hints at keeps the preset's value and is listed under open questions.
 
 A user who says "just give me the lean one in C# with PostgreSQL" gets no further questions.

@@ -34,6 +34,10 @@ Decisions about the skills repository itself: what it contains, how it is laid o
 | 26 | Three phases: build all the skills with no code generated; generate C# together with the maintainer; then Go. Code is never generated per option. | Generation costs tokens; a few runs that each exercise many options are enough. The accepted price: nothing is proven until phase 2, so everything written in phase 1 is listed in `docs/unverified.md`. |
 | 27 | The hand-written C# solution and its copy script live in `_temp/template/`, outside the skill, until phase 2 replaces them with generated projects. | The skill must hold no project source, and the working code is still needed to write the kernel pages from. |
 
+| 28 | The command handler is the use case (application service): it loads the aggregates one action needs, calls their operations or a domain service, and saves. It may change several aggregates when the action is about all of them (the test: without the second change, does the command still do what its name says?); a consequence of the action is an event handler. A domain service holds logic that fits no single aggregate: it may load several entities and call other systems through anti-corruption layers. | Replaces the template's rule "a handler calls one method of the aggregate's service". Maintainer's decision, 2026-11-17. No `*Service` per aggregate: handlers load and save; a domain service decides and reads, the command handler saves what it changed. |
+| 29 | The standard preset has `languages.mode` = `none`; translated messages are asked only when the description mentions languages. | An eval showed the default surprised users who never asked for translations. |
+| 30 | One repository is one service, with one `MORTIS.md` in its root. A platform of several services is several repositories, each started with its own interview; shared choices (broker, tenancy, wire naming) are repeated in each file. | The maintainer keeps every service in its own repository; the shared wire format keeps the services compatible. |
+
 ## Open
 
 - The questions at the end of `roadmap.md`.

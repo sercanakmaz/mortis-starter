@@ -67,6 +67,8 @@ Any new option; Go; running anything.
 
 ## Traps
 
+- Decision 28 overrides the template: a command handler loads and saves its aggregates and may change several when the action is about all of them; there is no `*Service` per aggregate by reflex. Do not copy the template's "one service call" shape.
+
 - A reference page may not be a source file with prose around it. Give the contract, the rules, and a snippet for each member that has a real body.
 - Do not let `verify.sh` depend on the example's names. It reads `MORTIS.md` and the manifest.
 - Pin package versions and the SDK; "latest" makes results differ from day to day.

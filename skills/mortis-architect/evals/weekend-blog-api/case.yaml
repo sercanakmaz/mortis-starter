@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: weekend-blog-api
+expected_outcome: |
+  A valid MORTIS.md with preset lean, language csharp, database postgres, name Inkwell, outbox none, transport in-process, worker none.

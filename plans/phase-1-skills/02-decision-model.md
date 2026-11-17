@@ -16,7 +16,7 @@ A skill that interviews the person starting a project and writes `MORTIS.md`, pl
 skills/mortis-architect/
   SKILL.md                      under 300 lines: when to use, the interview, the output, the hand-off to mortis-scaffold
   references/architecture/      from step 01
-  references/options/<key>.md   one per key of MORTIS.md: what it is, each value, when to choose it, what it costs, which rules it triggers, a two-line example
+  references/options/<group>.md one file per group of keys (events, tenancy, naming, ...); a `##` section per key and a `###` section per value: what it is, when to choose it, what it costs, which rules it triggers, a two-line example
   references/presets.md         the three presets as complete decision tables, and who each is for
   references/interview.md       the question order, the wording of each question, which answers skip which questions
   scripts/validate_decisions.py reads MORTIS.md; exit 0 or a list of broken rules with the rule number and a fix
@@ -42,7 +42,7 @@ The validator implements rules R1 to R11. It accepts for `language` whatever lan
 
 ## Acceptance
 
-- [ ] `python3 -I -m unittest tests/test_validate_decisions.py` passes; each rule has a test that fails when the rule is removed.
+- [ ] `python3 -I tests/test_validate_decisions.py` passes; each rule has a test that fails when the rule is removed.
 - [ ] The three eval prompts, run by a fresh model with the skill, produce files that pass the validator and contain the expected values.
 - [ ] "lean, C#, PostgreSQL, called Acme" produces a valid file with no question asked.
 - [ ] `SKILL.md` names every reference file and says when to read it.
@@ -56,3 +56,11 @@ Generating anything from the decisions (phase 2). Go values are listed but marke
 
 - The interview must not become a forty-question form. The preset answers almost everything.
 - Every option text must say what the choice *costs*; "more robust" is not information.
+
+## Notes (done)
+
+- Delivered: `references/schema.json` (25 keys, 12 rules), `scripts/decisions.py` (parser, resolver, rules, `get`), `validate_decisions.py`, `new_decisions.py` (`--set`, `--why`), 15 option pages, `presets.md`, `interview.md`, `adr-template.md`, `SKILL.md` (74 lines), four eval cases, `tests/test_validate_decisions.py` (26 tests; each of R1-R6, R9-R12 shown to fail the suite when removed; R7 and R8 are notes), `tests/check_docs.py` extended. `scripts/install.sh` already installs every skill folder, so it needed no change.
+- Changed from the plan: option pages are per group of keys, not per key; added rule R12 (mongo has no integer keys); `languages.default` and `languages.supported` are keys; the unattended path keeps the preset's value for hinted values.
+- Eval runs: Haiku-class model, four prompts, all produced valid files with the expected values. The first run of the B2B prompt guessed `tenancy.mode = interface`; the interview page now says to keep the preset's value and list it as an open question, and the re-run did.
+- Limits of the evals: subagents cannot ask questions, so the interactive path (rounds of questions) is untested; 'asked no question' holds trivially.
+- Found, not done: `tests/check_installable.sh` named in the phase README does not exist yet; `mortis-scaffold` will need its own copy of `decisions.py` or a sync step (step 03).

@@ -15,7 +15,7 @@ The work has three phases. Each phase has its own folder and its own README.
 **What that costs, and how the plan contains it.** Nothing written in phase 1 has been compiled, so mistakes accumulate until phase 2 finds them. Three things keep that manageable:
 - every page and check written in phase 1 is listed in `docs/unverified.md`, so phase 2 knows exactly what has never been proven;
 - phase 2 starts with the smallest project (the lean preset), so a flaw in the foundations shows up in the first run, not the last;
-- the maintainer may ask for one pilot generation of the lean preset at the end of phase 1 step 03, before the other options are written. It is off unless asked for.
+- the maintainer may ask for one pilot generation of the lean preset at the end of phase 1 step 03, before the other options are written. The maintainer has asked for it; it runs after step 03.
 
 ## The one idea to hold on to
 

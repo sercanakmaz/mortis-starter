@@ -38,7 +38,9 @@ aggregate Order(id: OrderId)
 
 command CompleteOrder(orderId) -> OrderView    [transactional, carries context]
 handler CompleteOrder
-  order := orderService.complete(context.actor, command.orderId)
+  order := orders.findByIdForUpdate(command.orderId) or throw NotFound("order")
+  order.complete(context.actor)
+  orders.update(order)
   return OrderView.from(order)
 ```
 
@@ -63,3 +65,12 @@ Options that do not exist yet are described only in `events.md` (delivery models
 
 - Do not translate the C# code into pseudo-code line by line. Write what the block *is*; the C# is one rendering of it.
 - "Application coordinates, Domain decides" must survive contact with the scenarios. If a scenario needs a rule in a handler, the scenario is showing a missing domain method.
+
+## Notes (done)
+
+- Eight files written; `python3 -I tests/check_architecture.py` passes; every Shared type of the template maps to a block (`tests/fixtures/shared-type-map.json`; the nine exception types and the module file map to Host adapter and Dispatcher because the step's block list has no exceptions section).
+- Reader test: 19/20 on a re-test; see `docs/unverified.md`.
+- Found, not done: exceptions deserve their own block (the failure family and its statuses); add in step 07. ADR 0002/0003 still describe the old user pair; revised to one `Context` in step 04.
+- Revised after the first handover: cardinality made explicit (one command runs one handler and one service operation, which can raise N events; one event can have M handlers; each handler sends one command) in `events.md` ("How many of each"), `layers.md`, `building-blocks.md`, `request-lifecycle.md`, `glossary.md` and scenario 11. The placement guide now opens with a flow diagram, an eight-question decision cheat sheet and a list of common pitfalls before the fifty-row lookup table. The cheat sheet's pitfalls follow this design: a domain service coordinates one kind of aggregate and its own repository; cross-aggregate reactions are events. Reader test re-run: 19/20.
+- Revised again (decision 28): the command handler is the use case; it may load and change several aggregates when the action is about all of them, and the cheat sheet has a section "A second aggregate: in the command handler or in an event handler?" with the deciding question and two tables. The domain service is optional and holds logic that fits no single aggregate (several entities, anti-corruption layers). New block: anti-corruption layer. Scenarios 1, 6, 11 reworded; 12 (transfer) and 13 (outside tax service) added. Reader test: 20/20, with one question replaced by a transfer question.
+- Found, not done: the template in `_temp/template` still has one `*Service` per aggregate and the rule "a handler calls one service method" (its `AGENTS.md`, `docs/architecture.md`, ADR 0001). The C# pages written in step 03 follow decision 28, not the template; step 17 (`mortis-develop`, `mortis-review`) must check handlers by the second-aggregate test, not by counting calls.

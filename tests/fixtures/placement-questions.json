@@ -1,0 +1,102 @@
+[
+ {
+  "question": "Check that an order has at least one line before it is completed",
+  "layer": "Domain",
+  "block": "Aggregate operation"
+ },
+ {
+  "question": "Check that an email field is present and well formed",
+  "layer": "Application",
+  "block": "Validator"
+ },
+ {
+  "question": "Update the customer's completed-order count together with completing an order",
+  "layer": "Application",
+  "block": "Sync event handler"
+ },
+ {
+  "question": "Reduce product stock after a line is added, allowed to lag",
+  "layer": "Application",
+  "block": "Async event handler"
+ },
+ {
+  "question": "Move stock from one warehouse to another, where both warehouses must change or neither",
+  "layer": "Application",
+  "block": "Command handler"
+ },
+ {
+  "question": "Find the current user's id for an audit stamp",
+  "layer": "Host",
+  "block": "Host adapter"
+ },
+ {
+  "question": "Run validation, then begin the transaction, then call the handler, in one fixed order for every command",
+  "layer": "Shared",
+  "block": "Command pipeline"
+ },
+ {
+  "question": "Write the SQL that finds open orders of a customer",
+  "layer": "Infrastructure",
+  "block": "Repository interface"
+ },
+ {
+  "question": "Decide whether a status change from Shipped to Open is allowed",
+  "layer": "Domain",
+  "block": "Aggregate operation"
+ },
+ {
+  "question": "Publish a message to a broker after commit",
+  "layer": "Infrastructure",
+  "block": "Event dispatcher"
+ },
+ {
+  "question": "Hold a street, city and postal code together",
+  "layer": "Domain",
+  "block": "Value object"
+ },
+ {
+  "question": "Map an order to the flat result the client sees",
+  "layer": "Application",
+  "block": "DTO"
+ },
+ {
+  "question": "Choose which handler runs for a command",
+  "layer": "Shared",
+  "block": "Dispatcher"
+ },
+ {
+  "question": "React to a committed event after the commit, in a new scope, as the system actor",
+  "layer": "Application",
+  "block": "Async event handler"
+ },
+ {
+  "question": "Read the tenant of the caller from the credential",
+  "layer": "Host",
+  "block": "Host adapter"
+ },
+ {
+  "question": "Compute an order's total from several products' prices and an outside tax service's rate",
+  "layer": "Domain",
+  "block": "Domain service"
+ },
+ {
+  "question": "Model one line that exists only inside an order",
+  "layer": "Domain",
+  "block": "Child entity"
+ },
+ {
+  "question": "Name a past-tense fact that other parts may react to",
+  "layer": "Domain",
+  "block": "Domain event"
+ },
+ {
+  "question": "Read a file and send one command for each of its thousand rows, each in its own transaction",
+  "layer": "Host",
+  "block": "Host adapter"
+ },
+ {
+  "question": "Turn a business failure into a code, message and status for the client",
+  "layer": "Host",
+  "block": "Host adapter"
+ }
+]

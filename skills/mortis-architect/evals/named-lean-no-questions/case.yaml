@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: named-lean-no-questions
+expected_outcome: |
+  A valid lean MORTIS.md for Acme written without asking any question.

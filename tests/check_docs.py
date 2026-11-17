@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -172,6 +173,69 @@ def check_example_coverage(example):
             fail(f"no reference mentions the example aggregate folder {aggregate}")
 
 
+ARCHITECT = os.path.join(ROOT, "skills", "mortis-architect")
+
+
+def read_option_sections():
+    folder = os.path.join(ARCHITECT, "references", "options")
+    sections = {}
+    for name in sorted(os.listdir(folder)):
+        current = None
+        for line in open(os.path.join(folder, name), encoding="utf-8"):
+            if line.startswith("## "):
+                current = line[3:].strip()
+                sections[current] = set()
+            elif line.startswith("### ") and current:
+                sections[current].add(line[4:].strip())
+    return sections
+
+
+def cell_values(cell):
+    cell = cell.strip()
+    if cell.lower() in ("none", ""):
+        return []
+    return [part.strip().strip("`") for part in cell.split(",")]
+
+
+def check_decisions_schema():
+    schema = json.load(open(os.path.join(ARCHITECT, "references", "schema.json"), encoding="utf-8"))
+    sections = read_option_sections()
+    for key, spec in schema["keys"].items():
+        if key not in sections:
+            fail(f"references/options has no '## {key}' section")
+            continue
+        values = spec.get("values", []) if spec["kind"] in ("enum", "list") else []
+        for value in values:
+            if value not in sections[key]:
+                fail(f"references/options: '## {key}' has no '### {value}' section")
+    spec_text = open(os.path.join(ROOT, "docs", "specs", "decisions-file.md"), encoding="utf-8").read()
+    rule_ids = set(re.findall(r"^\| (R\d+) \|", spec_text, re.M))
+    schema_ids = {rule["id"] for rule in schema["rules"]}
+    if rule_ids != schema_ids:
+        fail(f"decisions-file.md rules {sorted(rule_ids)} differ from schema.json rules {sorted(schema_ids)}")
+    for line in spec_text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 5 or not cells[0].startswith("`"):
+            continue
+        key = cells[0].strip("`")
+        if key not in schema["keys"] or "presets" not in schema["keys"][key]:
+            continue
+        for index, preset in enumerate(("lean", "standard", "advanced"), start=2):
+            expected = schema["keys"][key]["presets"][preset]
+            expected = expected if isinstance(expected, list) else [expected]
+            cell = cells[index]
+            if cell.startswith("all but"):
+                excluded = {part.strip("` ") for part in cell[len("all but"):].split(",")}
+                actual = [v for v in schema["keys"][key]["values"] if v not in excluded]
+            else:
+                actual = cell_values(cell)
+            if sorted(actual) != sorted(expected):
+                fail(f"decisions-file.md: {key} / {preset} is {actual}, schema.json says {expected}")
+    for key in schema["keys"]:
+        if f"`{key}`" not in spec_text:
+            fail(f"decisions-file.md does not mention the key {key}")
+
+
 def main():
     for lang in LANGS:
         template, example = build_universe(lang)
@@ -180,6 +244,7 @@ def main():
         check_tokens(lang, universe, types)
         check_tree(template, example)
         check_example_coverage(example)
+    check_decisions_schema()
     if failures:
         for message in failures:
             print("DOC-MISMATCH", message)

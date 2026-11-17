@@ -39,7 +39,7 @@ Steps 04 to 16 each add the knowledge of one option. The words "the example", "g
 
 ## The optional pilot
 
-After step 03 the maintainer may ask for **one** generation of the lean preset, on one model, to see whether a project can be rebuilt from snippets at all before fifteen more options are written on the same foundations. It is not run unless the maintainer asks. Its result goes to `docs/pilot.md`.
+After step 03 the maintainer may ask for **one** generation of the lean preset, on one model, to see whether a project can be rebuilt from snippets at all before fifteen more options are written on the same foundations. **The maintainer has asked for it (decided at the start of step 01).** It runs after step 03 and is recorded in `docs/pilot.md` and `docs/generation-log.md`.
 
 ## Exit
 
