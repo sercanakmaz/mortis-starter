@@ -126,24 +126,26 @@ public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception e
 {
     var exceptionBase = exception as ExceptionBase;
     var httpStatusCode = exceptionBase?.HttpStatusCode ?? HttpStatusCode.InternalServerError;
+    var code = exceptionBase?.Code ?? ApiConstants.UnexpectedErrorCode;
+    var reference = ErrorReference.Of(exception);
+    var isServerError = httpStatusCode >= HttpStatusCode.InternalServerError;
 
-    if (httpStatusCode >= HttpStatusCode.InternalServerError)
-    {
-        logger.LogError(exception, "Request failed with {StatusCode}", (int)httpStatusCode);
-    }
+    logger.Log(isServerError ? LogLevel.Error : LogLevel.Warning, isServerError ? exception : null, "Request failed with {StatusCode} {Code} reference {Reference}", (int)httpStatusCode, code, reference);
 
     httpContext.Response.StatusCode = (int)httpStatusCode;
 
     await httpContext.Response.WriteAsJsonAsync(new ErrorResponseModel(
-        exceptionBase?.Code ?? ApiConstants.UnexpectedErrorCode,
-        exceptionBase?.Message ?? ApiConstants.UnexpectedErrorMessage,
+        code,
+        exceptionBase?.Message ?? $"{ApiConstants.UnexpectedErrorMessage} Reference {reference}.",
         (exception as ValidationFailedException)?.Errors), cancellationToken);
 
     return true;
 }
 ```
 
-- Every failure answers `{ code, message, errors }` with the exception's status; `errors` is set only for `validation_failed`. Anything that is not an `ExceptionBase` answers 500 `unexpected_error` and is logged.
+It uses `ErrorReference` (`failures.md`), written at every level.
+
+- Every failure answers `{ code, message, errors }` with the exception's status; `errors` is set only for `validation_failed`. Anything that is not an `ExceptionBase` answers 500 `unexpected_error` with a reference, never its own message. 4xx is logged as a warning, 5xx as an error with the exception. The table of statuses is in `failures.md`.
 
 ### Correlation
 

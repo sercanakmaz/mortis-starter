@@ -43,3 +43,14 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 Translated messages (step 12).
+
+## Notes (done)
+
+- The maintainer's answers (decision 32) changed the plan: the same statuses at every level (the plan's table gave `minimal` other statuses); `minimal` drops only the database error translation (no `DatabaseExceptionHandler`, `SaveChangesAsync` without a `catch`); the error body keeps `errors` as `{ field: [messages] }`.
+- At every level: `ExceptionHandler` logs 4xx as a warning and 5xx as an error with the exception, and answers an unexpected failure with `ErrorReference.Of(exception)` (8 hex characters, the same for the same failure at the same place), never with its own message. New kernel file `ErrorReference.cs`, new kernel test `ExceptionHandlerTests`.
+- `catalogued`: `src/{Name}.Domain/ErrorCatalogue.cs` (the seven shared codes and every rule code by its constant) and `ErrorCatalogueTests` (fails when a `*Code` constant of a `*Constants` class is missing). Message parameters are left to step 12.
+- House rule at every level: a rule code is a constant; `new BusinessRuleException("...")` fails `verify.sh`.
+- Layer 1 has a `Failure` building block now (the gap noted in step 01); the template's exception types map to it.
+- `manifest.json`: a `when` may list values ("one of"); `DatabaseExceptionHandler.cs` is `{"exceptions": ["coded", "catalogued"]}`.
+- Conformance: `example-http.sh` reads `EXCEPTIONS` and expects 500 `unexpected_error` for duplicates and foreign keys at `minimal`. An unexpected failure cannot be caused through the example's requests; `ExceptionHandlerTests` proves it.
+- Not done: comparing `minimal` and `coded` generations for identical controllers and handlers is a phase 2 comparison; by design they differ only in the files above.

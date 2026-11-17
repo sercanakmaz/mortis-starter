@@ -12,7 +12,12 @@ superseded = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSup
 OPTION_FILES = {
     "src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs": {"addons": "correlation"},
     "test/Boilerplate.Tests/Api/Middlewares/CorrelationIdMiddlewareTests.cs": {"addons": "correlation"},
+    "src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": {"exceptions": ["coded", "catalogued"]},
+    "src/Boilerplate.Domain/ErrorCatalogue.cs": {"exceptions": "catalogued"},
+    "test/Boilerplate.Tests/Domain/ErrorCatalogueTests.cs": {"exceptions": "catalogued"},
 }
+OPTION_PAGES = {"src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": "infrastructure-postgres.md"}
+KERNEL_PAGES = {"src/Boilerplate.Api/Middlewares/ErrorReference.cs": "failures.md"}
 
 
 def page_of(f):
@@ -46,13 +51,13 @@ for f in files:
     if "/Migrations/" in f:
         continue
     ex = is_example(f) or f in ("src/Boilerplate.Console/Scenarios/BlockedCustomerScenario.cs","src/Boilerplate.Console/Scenarios/OrderFlowScenario.cs","src/Boilerplate.Console/Scenarios/StockFlowScenario.cs")
-    entry = {"path": f.replace("Boilerplate", "{Name}"), "page": page_of(f), "source": source_of(f)}
+    entry = {"path": f.replace("Boilerplate", "{Name}"), "page": KERNEL_PAGES.get(f, page_of(f)), "source": source_of(f)}
     if ex: entry["when"] = {"example": "true"}
     entry["kernel"] = (not ex) and f.endswith(".cs") and not f.startswith("test/")
     if f in OPTION_FILES:
         entry["when"] = OPTION_FILES[f]
         entry["kernel"] = False
-        entry["page"] = "correlation.md"
+        entry["page"] = OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "failures.md")
     out.append(entry)
 # decision 28 additions: handler tests replacing service tests
 for cmd,plural in [("CreateCustomer","Customers"),("BlockCustomer","Customers"),("RegisterCompletedOrder","Customers"),("AddOrderLine","Orders"),("CancelOrderLine","Orders"),("CompleteOrder","Orders"),("CancelOrderWhenAllLinesCancelled","Orders")]:
@@ -65,6 +70,7 @@ out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/AppDbContex
 out.append({"path":"docs/adr/0006-command-handlers-are-the-use-cases.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0007-one-context-on-the-command.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0008-each-aggregate-chooses-its-key.md","page":"project-docs-adr.md","source":"data","kernel":False})
+out.append({"path":"docs/adr/0010-one-error-body.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0009-correlation-header.md","page":"project-docs-adr.md","source":"data","kernel":False,"when":{"addons":"correlation"}})
 out.append({"path":"MORTIS.md","page":"project-docs.md","source":"tool","kernel":False})
 out.sort(key=lambda e:e["path"])

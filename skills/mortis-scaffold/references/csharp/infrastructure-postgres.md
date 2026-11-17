@@ -280,7 +280,7 @@ public void OnCommitted(Func<Task> action)
 
 ## DatabaseExceptionHandler
 
-File `Persistence/DatabaseExceptionHandler.cs`. Needs `using Npgsql;`.
+File `Persistence/DatabaseExceptionHandler.cs`, only when `exceptions` is `coded` or `catalogued` (`failures.md`). Needs `using Npgsql;`.
 
 ```csharp
 public static class DatabaseExceptionHandler

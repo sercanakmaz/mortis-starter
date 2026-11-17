@@ -24,6 +24,10 @@ Every project has these tests, written exactly so. Each class lives in the folde
 
 @@members test/Boilerplate.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs::AsyncEventHandlerDispatcherTests@@
 
+## Api/Middlewares
+
+@@members test/Boilerplate.Tests/Api/Middlewares/ExceptionHandlerTests.cs::ExceptionHandlerTests@@
+
 ## Api/Filters
 
 @@members test/Boilerplate.Tests/Api/Filters/ContextCommandFilterTests.cs::ContextCommandFilterTests@@

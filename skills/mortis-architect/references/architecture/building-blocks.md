@@ -269,6 +269,21 @@ eventDispatcher.dispatch(events)       implementations: in-process async handler
 - Failure of one never blocks the others.
 - **Commonest mistake:** publishing before the commit; a rollback then leaves a message about something that never happened.
 
+## Failure
+
+**Purpose:** says what went wrong, in a stable shape every caller can branch on.
+
+```
+failure Rule(code, message)            a business rule refused; the code is a constant of the aggregate
+failure NotFound(name), Duplicate(name), InvalidParameter(name, reason), ReferenceViolation(name), Forbidden(action)
+failure ValidationFailed(errors: map<field, list<message>>)
+anything else                          an unexpected failure: answered with a reference, never its own message
+```
+
+- Every failure has a code and a status; the host turns it into `code, message, errors`. The shape and the statuses never change with the project's level of error handling; the level only adds detail (`options/exceptions.md`).
+- A rule's code is declared once, next to the aggregate, never written at the throw.
+- **Commonest mistake:** returning an exception's own message for an unexpected failure, which leaks internals; and a status that changes when the level changes.
+
 ## Host adapter
 
 **Purpose:** converts the outside world into a command with its context filled, and the outcome back.

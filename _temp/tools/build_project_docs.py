@@ -11,7 +11,7 @@ def fence(text):
 readme = (T / "README.md").read_text().replace("- [docs/adr/](docs/adr/): why it is built this way (the dispatcher, commands as interfaces, the user on the command, event handlers, the Console).", "- [MORTIS.md](MORTIS.md): the decisions this project was started with.\n- [docs/adr/](docs/adr/): why it is built this way (the dispatcher, commands as interfaces, the user on the command, event handlers, the Console, handlers as use cases, one context on the command).")
 pd = ["# Project documents, C#", "", "The markdown files a generated project gets. They are data: write each one exactly as shown, replacing `{Name}`. Remove a line only where this page says so. `MORTIS.md` is written by `mortis-architect` and stays as it is.", "",
       "| File | Content |", "|---|---|", "| `MORTIS.md` | from `mortis-architect`, unchanged |", "| `AGENTS.md` | below |", "| `CLAUDE.md` | below |", "| `README.md` | below |", "| `plans/README.md` | below |",
-      "| `docs/architecture.md` | `project-docs-architecture.md` |", "| `docs/adr/0000` to `0008`, and `0009` with the correlation add-on | `project-docs-adr.md` |", "",
+      "| `docs/architecture.md` | `project-docs-architecture.md` |", "| `docs/adr/0000` to `0008`, `0010`, and `0009` with the correlation add-on | `project-docs-adr.md` |", "",
       "Without the example, remove from `README.md` and `AGENTS.md` §5 the lines that run `CreateProduct`; keep everything else.", "",
       "## AGENTS.md", "", fence((S / "AGENTS.md").read_text()), "## CLAUDE.md", "", fence((S / "CLAUDE.md").read_text()), "## README.md", "", fence(readme), "## plans/README.md", "", fence((T / "plans/README.md").read_text())]
 (O / "project-docs.md").write_text("\n".join(pd))

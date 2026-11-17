@@ -12,7 +12,7 @@ The rung of exception handling.
 
 **Choose when:** a prototype.
 
-**Costs:** failures have a kind and a message but no stable code; translated messages are not possible.
+**Costs:** a unique or foreign-key violation in the database is an unexpected failure (500) instead of `duplicate` or `reference_violation`; translated messages are not possible. Statuses and the error body are the same as at the other levels.
 
 **Rules:** R5.
 
@@ -20,13 +20,13 @@ The rung of exception handling.
 
 **Choose when:** a real API: clients and tests rely on a stable code.
 
-**Costs:** a code to invent and keep for every failure; database errors are mapped by hand.
+**Costs:** a code to keep for every rule; the database's unique and foreign-key errors are translated to `duplicate` (409) and `reference_violation` (400).
 
 ### catalogued
 
-**Choose when:** many modules, translated messages with parameters, log level by status class.
+**Choose when:** many developers or translated messages: every code must be declared once with its default message.
 
-**Costs:** a catalogue to maintain and a wrapper for unexpected failures.
+**Costs:** a catalogue to keep in step with the code, and a test that fails when a rule code is missing from it.
 
 Example:
 

@@ -665,6 +665,64 @@ public async Task Publish_WithAnEventThatIsNotAQueueEvent_Should_DoNothing()
 }
 ```
 
+## Api/Middlewares
+
+```csharp
+public class ExceptionHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task TryHandleAsync_WithABusinessRule_Should_WriteItsCodeAndStatusAndLogAWarning()
+{
+    var logger = new RecordingLogger<ExceptionHandler>();
+    var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+    await new ExceptionHandler(logger).TryHandleAsync(httpContext, new BusinessRuleException("order_not_open", "The order is not open."), CancellationToken.None);
+
+    httpContext.Response.Body.Position = 0;
+    var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
+    Assert.Equal(409, httpContext.Response.StatusCode);
+    Assert.Equal("order_not_open", body.GetProperty("code").GetString());
+    Assert.Equal(LogLevel.Warning, Assert.Single(logger.Entries).Level);
+}
+```
+
+```csharp
+[Fact]
+public async Task TryHandleAsync_WithValidationFailed_Should_WriteTheFailingFields()
+{
+    var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+    await new ExceptionHandler(new RecordingLogger<ExceptionHandler>()).TryHandleAsync(httpContext, new ValidationFailedException(new Dictionary<string, string[]> { ["Lines"] = ["required"] }), CancellationToken.None);
+
+    httpContext.Response.Body.Position = 0;
+    var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
+    Assert.Equal(422, httpContext.Response.StatusCode);
+    Assert.Equal("required", body.GetProperty("errors").GetProperty("Lines")[0].GetString());
+}
+```
+
+```csharp
+[Fact]
+public async Task TryHandleAsync_WithAnUnexpectedFailure_Should_Write500WithAReferenceAndLogAnError()
+{
+    var logger = new RecordingLogger<ExceptionHandler>();
+    var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+    var exception = new InvalidOperationException("secret detail");
+
+    await new ExceptionHandler(logger).TryHandleAsync(httpContext, exception, CancellationToken.None);
+
+    httpContext.Response.Body.Position = 0;
+    var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
+    Assert.Equal(500, httpContext.Response.StatusCode);
+    Assert.Equal(ApiConstants.UnexpectedErrorCode, body.GetProperty("code").GetString());
+    Assert.Contains(ErrorReference.Of(exception), body.GetProperty("message").GetString());
+    Assert.DoesNotContain("secret detail", body.GetProperty("message").GetString());
+    Assert.Equal(LogLevel.Error, Assert.Single(logger.Entries).Level);
+}
+```
+
 ## Api/Filters
 
 ```csharp
@@ -836,6 +894,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | File | Namespace | Usings |
 |---|---|---|
 | `test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs` | `{Name}.Tests.Api.Filters` | {Name}.Api.Filters, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Api, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Api/Middlewares/ExceptionHandlerTests.cs` | `{Name}.Tests.Api.Middlewares` | Microsoft.AspNetCore.Http, Microsoft.Extensions.Logging, System.Text.Json, {Name}.Api.Middlewares, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Messaging |
 | `test/{Name}.Tests/Console/CommandScenarioTests.cs` | `{Name}.Tests.Console` | {Name}.Console.Scenarios, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs` | `{Name}.Tests.Infrastructure.Messaging` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Infrastructure.Messaging, {Name}.Tests.TestSupport.Shared.Domain, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Shared/Application/CommandContextTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain |

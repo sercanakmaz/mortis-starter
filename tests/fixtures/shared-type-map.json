@@ -21,13 +21,13 @@
  "Persistence/IRepository.cs": "Repository interface",
  "Persistence/IUnitOfWork.cs": "Unit of work",
  "SharedModule.cs": "Dispatcher",
- "Exceptions/BusinessRuleException.cs": "Host adapter",
- "Exceptions/DuplicateException.cs": "Host adapter",
- "Exceptions/ExceptionBase.cs": "Host adapter",
- "Exceptions/ForbiddenException.cs": "Host adapter",
- "Exceptions/InvalidParameterException.cs": "Host adapter",
- "Exceptions/NotFoundException.cs": "Host adapter",
- "Exceptions/ReferenceViolationException.cs": "Host adapter",
- "Exceptions/TransactionRequiredException.cs": "Host adapter",
- "Exceptions/ValidationFailedException.cs": "Host adapter"
+ "Exceptions/BusinessRuleException.cs": "Failure",
+ "Exceptions/DuplicateException.cs": "Failure",
+ "Exceptions/ExceptionBase.cs": "Failure",
+ "Exceptions/ForbiddenException.cs": "Failure",
+ "Exceptions/InvalidParameterException.cs": "Failure",
+ "Exceptions/NotFoundException.cs": "Failure",
+ "Exceptions/ReferenceViolationException.cs": "Failure",
+ "Exceptions/TransactionRequiredException.cs": "Failure",
+ "Exceptions/ValidationFailedException.cs": "Failure"
 }

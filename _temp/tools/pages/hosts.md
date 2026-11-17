@@ -48,7 +48,9 @@ File `Middlewares/ExceptionHandler.cs`:
 
 @@member src/Boilerplate.Api/Middlewares/ExceptionHandler.cs::ExceptionHandler::TryHandleAsync@@
 
-- Every failure answers `{ code, message, errors }` with the exception's status; `errors` is set only for `validation_failed`. Anything that is not an `ExceptionBase` answers 500 `unexpected_error` and is logged.
+It uses `ErrorReference` (`failures.md`), written at every level.
+
+- Every failure answers `{ code, message, errors }` with the exception's status; `errors` is set only for `validation_failed`. Anything that is not an `ExceptionBase` answers 500 `unexpected_error` with a reference, never its own message. 4xx is logged as a warning, 5xx as an error with the exception. The table of statuses is in `failures.md`.
 
 ### Correlation
 

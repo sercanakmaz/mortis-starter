@@ -30,6 +30,7 @@
 | Event dispatcher | carries committed events to handlers or the broker |
 | Event handler | receives one event, sends one command; one event may have many handlers |
 | Host | the entry point that turns the outside world into a command |
+| Failure | a stable code, status and message for what went wrong; the shape is the same at every level |
 | Inbox | records handled message ids so a repeat is skipped |
 | Message | an event or command as it travels between processes |
 | Middleware | see before/after middleware |

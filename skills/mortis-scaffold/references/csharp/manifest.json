@@ -149,6 +149,12 @@
    }
   },
   {
+   "path": "docs/adr/0010-one-error-body.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -222,6 +228,12 @@
    "when": {
     "addons": "correlation"
    }
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/ErrorReference.cs",
+   "page": "failures.md",
+   "source": "snippets",
+   "kernel": true
   },
   {
    "path": "src/{Name}.Api/Middlewares/ErrorResponseModel.cs",
@@ -812,6 +824,15 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Domain/ErrorCatalogue.cs",
+   "page": "failures.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "exceptions": "catalogued"
+   }
+  },
+  {
    "path": "src/{Name}.Domain/{Name}.Domain.csproj",
    "page": "solution.md",
    "source": "data",
@@ -899,7 +920,13 @@
    "path": "src/{Name}.Infrastructure/Persistence/DatabaseExceptionHandler.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": false,
+   "when": {
+    "exceptions": [
+     "coded",
+     "catalogued"
+    ]
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/DesignTimeDbContextFactory.cs",
@@ -1216,6 +1243,12 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Api/Middlewares/ExceptionHandlerTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1380,6 +1413,15 @@
    "source": "snippets",
    "when": {
     "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Domain/ErrorCatalogueTests.cs",
+   "page": "failures.md",
+   "source": "snippets",
+   "when": {
+    "exceptions": "catalogued"
    },
    "kernel": false
   },

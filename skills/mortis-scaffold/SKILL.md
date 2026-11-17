@@ -24,8 +24,8 @@ Follow these steps in order. Keep `.mortis/progress.md` in the project: one line
 | 3 | Shared: failures, persistence contracts | `shared-other.md` | build |
 | 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`) | `shared-application.md` | build |
 | 5 | Domain and Application project roots: `DomainModule`, `ApplicationModule` with empty bodies | `domain.md`, `application.md` | build |
-| 6 | Infrastructure: in-process event dispatchers, then persistence, unit of work, logging, `PersistenceModule` (empty body) and `InfrastructureModule` | `events-inprocess.md`, `infrastructure-postgres.md` | build |
-| 7 | Hosts: Api and Console with `ScenarioModule` (empty body), VS Code files with the first launch configuration only | `hosts.md` | build |
+| 6 | Infrastructure: in-process event dispatchers, then persistence, unit of work (its `SaveChangesAsync` by the `exceptions` level), logging, `PersistenceModule` (empty body) and `InfrastructureModule` | `events-inprocess.md`, `infrastructure-postgres.md`, `failures.md` | build |
+| 7 | Hosts: Api and Console with `ScenarioModule` (empty body), `ErrorReference`, VS Code files with the first launch configuration only; the add-ons' host files (`correlation.md`) | `hosts.md`, `failures.md` | build |
 | 8 | Test support and the kernel tests | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
 | 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
 | 10 | Only when `example` is `true`: the example domain, in the order its page gives | `worked-slice.md`, `worked-slice-tests.md` | build and test after each line of that order |
@@ -82,6 +82,8 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/testing-kernel.md` | step 8: the kernel tests |
 | `references/csharp/project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | step 9 |
 | `references/csharp/worked-slice.md`, `worked-slice-tests.md` | step 10, and as the pattern for any new aggregate |
+| `references/csharp/failures.md` | the `exceptions` level: what each level adds, the status table, `ErrorReference`, the catalogue |
+| `references/csharp/correlation.md` | `addons` contains `correlation` |
 | `references/csharp/adopting.md` | the project already exists |
 | `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |
 | `../mortis-architect/references/architecture/` | why a block is where it is: `layers.md`, `building-blocks.md`, `placement-guide.md`, `example-domain.md` |

@@ -37,7 +37,10 @@ def pattern_to_regex(pattern, name):
 def applies(entry, values):
     for key, expected in entry.get("when", {}).items():
         actual = values.get(key)
-        if isinstance(actual, list):
+        if isinstance(expected, list):
+            if actual not in expected:
+                return False
+        elif isinstance(actual, list):
             if expected not in actual:
                 return False
         elif actual != expected:

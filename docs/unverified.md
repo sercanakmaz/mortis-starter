@@ -25,6 +25,8 @@ Everything written in phase 1 that has never been compiled or generated. Phase 2
 | 06 | The `correlation` add-on: `CorrelationIdMiddleware` with a logging scope, its tests, ADR 0009, `correlation.md`; core: correlation and causation on the command log lines, the async failure log line, the Console printing its run's id | Written by hand, never compiled |
 | 06 | `conformance/addon-correlation.sh` (header returned, malformed header, three log checks with the example) | Never run |
 | 06 | `structure.py` treats a `when` on a list key (`addons`) as "contains" | Never run on a project with an add-on |
+| 07 | `failures.md`, `ErrorReference`, the new `ExceptionHandler`, `ErrorCatalogue` and its test, `ExceptionHandlerTests`, the minimal `SaveChangesAsync`, ADR 0010, the `Failure` block in layer 1 | Written by hand, never compiled |
+| 07 | Conformance: `example-http.sh` expects 500 `unexpected_error` for database failures at `minimal`, 409/400 from `coded` up | Never run; the pilot (lean, minimal) predates it and answered 409 |
 
 ## Reader test (step 01)
 

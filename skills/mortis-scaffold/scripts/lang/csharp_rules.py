@@ -85,6 +85,8 @@ def check(root):
             masked_text = mask(text)
             if len(re.findall(r"\[JsonIgnore\]", masked_text)) > 1 or re.search(r"\b(UserId|UserEmail|CorrelationId|TenantId)\s*\{\s*get", masked_text):
                 problems.append(f"{relative}: a command declares its context in one line, Context, and nothing else")
+        if re.search(r'new BusinessRuleException\(\s*"', text):
+            problems.append(f"{relative}: a rule code is a constant of the aggregate's Constants, never a string at the throw")
         if re.search(r"^src/[^/]+\.Domain/", relative):
             masked_text = mask(text)
             if re.search(r"\.(CreateAsync|UpdateAsync|DeleteAsync|UpsertAsync|SaveChangesAsync|CommitTransactionAsync|BeginTransactionAsync)\(|\bIUnitOfWork\b", masked_text):

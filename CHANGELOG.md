@@ -27,6 +27,8 @@ All notable changes to the skills and the template. Newest first.
 
 - Phase 1 step 06: the `correlation` add-on (header in and out, logging scope, ADR 0009); correlation and causation on every command log line; the Console prints its run's id.
 
+- Phase 1 step 07: three error levels with one body and fixed statuses (decision 32); `ErrorReference` for unexpected failures; `ErrorCatalogue` at `catalogued`; a `Failure` block in layer 1; ADR 0010.
+
 ### Planned
 - The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
 - The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).

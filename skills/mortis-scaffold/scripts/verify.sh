@@ -42,11 +42,12 @@ NAME="$(get name)"
 LANGUAGE="$(get language)"
 EXAMPLE="$(get example)"
 DATABASE_KIND="$(get database)"
+EXCEPTIONS="$(get exceptions)"
 LANG_SH="$HERE/lang/$LANGUAGE.sh"
 SHAPE_FILE="$HERE/../references/$LANGUAGE/kernel-shape.txt"
 mkdir -p "$PROJECT/.mortis"
 WORK="$(mktemp -d)"
-export PROJECT NAME LANG_SH WORK
+export PROJECT NAME LANG_SH WORK EXCEPTIONS
 
 if [ ! -x "$LANG_SH" ]; then
   fail "the language '$LANGUAGE' has an adapter" "missing $LANG_SH"
