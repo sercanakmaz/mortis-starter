@@ -98,3 +98,5 @@ an event handler sends its command with context := from(event):
     correlation := event.correlation, causation := event.id, actor := event.actor (sync) or system (async)
 a command sent inside a running one is marked running on top of it; its events get its own context; the outer one is restored after
 ```
+
+The log line of every command and every published event shows its correlation id (and its causation id). Where the correlation id of a request comes from is the `correlation` add-on's choice: without it, a new id per request; with it, the caller's `X-Correlation-Id` when it sends a valid one, returned in the response.

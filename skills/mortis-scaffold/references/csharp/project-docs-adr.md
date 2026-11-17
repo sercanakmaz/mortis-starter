@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -286,4 +286,76 @@ Which facts about a call travel with it. A new one is a property of `CommandCont
 ## How it is enforced
 
 `ContextCommandTests`, `CommandContextTests`, `EventContextTests`, `CommandPipelineTests`, `verify.sh` (one context line per command), and the conformance check that reads correlation and causation from the `stock-flow` log.
+~~~~
+
+## 0008-each-aggregate-chooses-its-key.md
+
+~~~~markdown
+# 0008 — Each aggregate chooses its key; an integer key is assigned by the database
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Most aggregates get a time-ordered `Guid` made in the program, so the id is known before the insert and can be sent by the client. Some need a small integer the database assigns (a person-readable number, an existing system). Such an id does not exist until the insert, which changes how the aggregate raises its first event.
+
+## Decision
+
+`MORTIS.md` `keys.default` gives new aggregates their key type; an aggregate may differ. A `Guid` key is assigned in the constructor and mapped with `ValueGeneratedNever()`. An `int` or `long` key is mapped with `IdentityAggregateConfiguration` (`ValueGeneratedOnAdd()`); the aggregate's constructor raises nothing; the command handler calls `CreateAsync` (which flushes, so the id exists), then the aggregate's `MarkCreated()` raises `Created` with the real id, then `UpdateAsync` hands the event over, all in one transaction. Its create command has no `Id`.
+
+## What varies
+
+Who assigns the id, and so when it is known.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| `Guid` everywhere | None; larger ids | Some aggregates need an integer |
+| Integer key with `Created` raised in the constructor | None in code | The event carries `0` |
+| **Integer key, `Created` raised by `MarkCreated` after the insert** | One more operation and one more call in the handler | n/a |
+
+## Consequences
+
+- Gained: integer keys where they are needed, with correct events.
+- Lost or owed: statement order in the handler is behaviour; the client cannot choose such an id.
+- Cost of going back: moderate (the column type and every reference change).
+
+## How it is enforced
+
+`CategoryTests`, `CreateCategoryCommandHandlerTests`, `CategoryConfigurationTests`, and the conformance checks on `POST /categories`.
+~~~~
+
+## 0009-correlation-header.md
+
+~~~~markdown
+# 0009 — A caller's correlation id is honoured and returned
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Every command and event carries a correlation id (0007). A caller that already has one (a front end, another service) must be able to pass it in and find every log line of what it caused.
+
+## Decision
+
+`CorrelationIdMiddleware` reads `X-Correlation-Id`; a valid `Guid` is used, anything else is ignored and a new id is made. It puts the id in `HttpContext.Items` for `ContextCommandFilter`, returns it in the response header, and opens a logging scope with it. Command, event and failure log lines carry the correlation id as a structured property.
+
+## What varies
+
+Where the correlation id of a request comes from.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| A new id per request | None | A caller cannot follow its own request |
+| W3C trace context (OpenTelemetry) | A collector and settings | Comes with the observability add-on |
+| **The `X-Correlation-Id` header, echoed** | One middleware | n/a |
+
+## Consequences
+
+- Gained: one id from the caller through every command, event and log line.
+- Lost or owed: a caller can choose the id; it is a label, never a security boundary.
+- Cost of going back: low.
+
+## How it is enforced
+
+`CorrelationIdMiddlewareTests` and the conformance checks of the correlation add-on.
 ~~~~

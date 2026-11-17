@@ -56,6 +56,8 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | Console | one `AddCommandScenario<...>()` line in `ScenarioModule.cs` per command you want to run from arguments, and a scenario in `Scenarios/` when a manual test needs several steps |
 | Tests | `TestSupport/Domain/<Plural>/Fake<Aggregate>.cs`, `<Aggregate>RepositoryBuilder.cs`; `Domain/<Plural>/<Aggregate>Tests.cs`; `Infrastructure/Persistence/<Plural>/<Aggregate>RepositoryTests.cs`, `<Aggregate>ConfigurationTests.cs`; `Application/<Plural>/<Command>HandlerTests.cs` per command that writes, and one per event handler |
 
+An aggregate whose key the database assigns (`int`, `long`) raises `Created` from `MarkCreated()` after the insert, never in its constructor (ADR 0008).
+
 Write the fakes, builders and tests first, watch them fail, then write the code.
 
 ## 4. How work is done

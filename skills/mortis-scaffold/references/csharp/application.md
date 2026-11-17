@@ -125,6 +125,23 @@ protected override async Task<CommandResult<OrderDto>> OnHandle(CreateOrderComma
 }
 ```
 
+**Create an aggregate whose id the database assigns:** create, mark created, hand the event over:
+
+```csharp
+protected override async Task<CommandResult<CategoryDto>> OnHandle(CreateCategoryCommand command)
+{
+    var category = new Category(command.Name, command.Context.User);
+
+    await categoryRepository.CreateAsync(category);
+
+    category.MarkCreated();
+
+    await categoryRepository.UpdateAsync(category);
+
+    return CommandResult.FromContent(CategoryDto.Map(category));
+}
+```
+
 **Read:**
 
 ```csharp
@@ -276,4 +293,4 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
-| `src/{Name}.Application/ApplicationModule.cs` | `{Name}.Application` | FluentValidation, Microsoft.Extensions.DependencyInjection, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
+| `src/{Name}.Application/ApplicationModule.cs` | `{Name}.Application` | FluentValidation, Microsoft.Extensions.DependencyInjection, {Name}.Application.Categories, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |

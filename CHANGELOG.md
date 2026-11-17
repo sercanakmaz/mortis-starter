@@ -23,6 +23,10 @@ All notable changes to the skills and the template. Newest first.
 
 - Decision 31: domain services are pure by default, may read through domain interfaces (narrow read ports preferred), never write; `verify.sh` enforces the no-write rule in the Domain project.
 
+- Phase 1 step 05: integer keys assigned by the database (`IdentityAggregateConfiguration`, `MarkCreated` after the insert); a `Category` aggregate in the example; ADR 0008.
+
+- Phase 1 step 06: the `correlation` add-on (header in and out, logging scope, ADR 0009); correlation and causation on every command log line; the Console prints its run's id.
+
 ### Planned
 - The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
 - The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).

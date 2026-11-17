@@ -12,6 +12,12 @@ for _ in $(seq 1 60); do curl -fs "http://localhost:$API_PORT/health" >/dev/null
 request() { curl -s -o "$WORK/body.json" -w "%{http_code}" -X "$1" "http://localhost:$API_PORT$2" -H "Content-Type: application/json" ${3:+-d "$3"}; }
 body_field() { python3 -c "import json,sys; d=json.load(open('$WORK/body.json')); print(d$1)"; }
 
+expect_equal "api: POST /categories creates a category" "201" "$(request POST /categories '{"name":"Tools"}')"
+CATEGORY_ID="$(body_field "['id']")"
+expect_equal "api: ... with the integer id the database assigned" "True" "$(python3 -I -c "import sys; print(sys.argv[1].isdigit() and int(sys.argv[1]) > 0)" "$CATEGORY_ID")"
+expect_equal "api: GET /categories/{id} reads it back by that id" "200|Tools" "$(request GET "/categories/$CATEGORY_ID")|$(body_field "['name']")"
+expect_equal "api: a product may name the category" "201|$CATEGORY_ID" "$(request POST /products "{\"sku\":\"CAT-1\",\"name\":\"In a category\",\"stock\":1,\"categoryId\":$CATEGORY_ID}")|$(body_field "['categoryId']")"
+expect_equal "api: a product naming an unknown category is rejected by the foreign key" "400|reference_violation" "$(request POST /products '{"sku":"CAT-2","name":"Lost","stock":1,"categoryId":999999}')|$(body_field "['code']")"
 expect_equal "api: POST /products creates a product" "201" "$(request POST /products '{"sku":"S","name":"Small","stock":100}')"
 expect_equal "api: the same sku again is a 409" "409" "$(request POST /products '{"sku":"S","name":"Small","stock":100}')"
 expect_equal "api: POST /customers creates a customer" "201" "$(request POST /customers '{"name":"Ada","email":"Ada@Example.com"}')"

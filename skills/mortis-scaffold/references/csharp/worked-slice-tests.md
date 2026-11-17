@@ -5,6 +5,71 @@ The tests and test support of the example domain (`worked-slice.md`). Layout and
 ## Test support
 
 ```csharp
+public class FakeCategory : Category
+```
+
+```csharp
+private FakeCategory(string name) : base(name, FakeAuditUser.Create())
+{
+}
+```
+
+```csharp
+public static FakeCategory Create(string name = "Default Category") => new(name);
+```
+
+```csharp
+public FakeCategory WithId(int id)
+{
+    Id = id;
+
+    return this;
+}
+```
+
+```csharp
+public class CategoryRepositoryBuilder
+```
+
+```csharp
+private readonly Mock<ICategoryRepository> _mock = new();
+```
+
+```csharp
+public static CategoryRepositoryBuilder Create() => new();
+```
+
+```csharp
+public CategoryRepositoryBuilder WithCreateAsyncAssigningId(int id, List<string> calls)
+{
+    _mock.Setup(categoryRepository => categoryRepository.CreateAsync(It.IsAny<Category>()))
+        .Callback<Category>(category =>
+        {
+            typeof(Entity<int>).GetProperty(nameof(Entity<int>.Id)).SetValue(category, id);
+            calls.Add(nameof(ICategoryRepository.CreateAsync));
+        })
+        .Returns(Task.CompletedTask);
+
+    return this;
+}
+```
+
+```csharp
+public CategoryRepositoryBuilder WithUpdateAsync(Action<Category> callback)
+{
+    _mock.Setup(categoryRepository => categoryRepository.UpdateAsync(It.IsAny<Category>()))
+        .Callback<Category>(category => callback(category))
+        .Returns(Task.CompletedTask);
+
+    return this;
+}
+```
+
+```csharp
+public ICategoryRepository Build() => _mock.Object;
+```
+
+```csharp
 public class FakeProduct : Product
 ```
 
@@ -261,7 +326,45 @@ public ProductRepositoryBuilder WithFindBySkuTrackingAsync(Product product)
 
 ## Domain tests
 
-`ProductTests`, `CustomerTests`, `OrderTests`, `MoneyTests` in `test/{Name}.Tests/Domain/{Plural}/`. Every test, in order:
+`CategoryTests`, `ProductTests`, `CustomerTests`, `OrderTests`, `MoneyTests` in `test/{Name}.Tests/Domain/{Plural}/`. Every test, in order:
+
+```csharp
+public class CategoryTests
+```
+
+```csharp
+[Fact]
+public void Constructor_Should_RaiseNothingBecauseTheIdIsNotKnownYet()
+{
+    var fakeCategory = FakeCategory.Create(" Tools ");
+
+    Assert.Equal("Tools", fakeCategory.Name);
+    Assert.Equal(0, fakeCategory.Id);
+    Assert.Empty(fakeCategory.DomainEvents ?? []);
+}
+```
+
+```csharp
+[Fact]
+public void MarkCreated_WithTheDatabaseId_Should_RaiseCreatedCarryingIt()
+{
+    var fakeCategory = FakeCategory.Create().WithId(42);
+
+    fakeCategory.MarkCreated();
+
+    Assert.Equal("42", Assert.IsType<Created>(Assert.Single(fakeCategory.DomainEvents)).Id);
+}
+```
+
+```csharp
+[Fact]
+public void MarkCreated_BeforeTheDatabaseAssignedAnId_Should_Throw()
+{
+    var fakeCategory = FakeCategory.Create();
+
+    Assert.Throws<InvalidOperationException>(() => fakeCategory.MarkCreated());
+}
+```
 
 ```csharp
 public class ProductTests
@@ -804,6 +907,52 @@ public void Complete_WhenAlreadyCompleted_Should_ThrowNotOpen()
 
 One class per command handler that writes, in `test/{Name}.Tests/Application/{Plural}/`. The handler is built from repository builders and a `CommandPipelineBuilder`; a `UnitOfWorkBuilder` with recorded calls proves the transaction.
 
+`CreateCategoryCommandHandlerTests`, the shape for an aggregate whose id the database assigns:
+
+```csharp
+public class CreateCategoryCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_RaiseCreatedWithTheIdTheDatabaseAssignedAndHandItOverInTheSameTransaction()
+{
+    var calls = new List<string>();
+    Category writtenCategory = null;
+    var categoryRepository = CategoryRepositoryBuilder.Create()
+        .WithCreateAsyncAssigningId(42, calls)
+        .WithUpdateAsync(updatedCategory =>
+        {
+            writtenCategory = updatedCategory;
+            calls.Add(nameof(ICategoryRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<CreateCategoryCommand>.Create()
+        .WithValidator(new CreateCategoryCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new CreateCategoryCommandHandler(categoryRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new CreateCategoryCommand { Name = "Tools" });
+
+    Assert.Equal(42, commandResult.Content.Id);
+    Assert.Equal("42", Assert.IsType<Created>(Assert.Single(writtenCategory.DomainEvents)).Id);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(ICategoryRepository.CreateAsync), nameof(ICategoryRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithoutAName_Should_ThrowValidationFailedForName()
+{
+    var commandHandler = new CreateCategoryCommandHandler(CategoryRepositoryBuilder.Create().Build(), CommandPipelineBuilder<CreateCategoryCommand>.Create().WithValidator(new CreateCategoryCommandValidator()).Build());
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new CreateCategoryCommand { Name = "" }));
+
+    Assert.Equal([nameof(CreateCategoryCommand.Name)], exception.Errors.Keys);
+}
+```
+
 `CreateOrderCommandHandlerTests`:
 
 ```csharp
@@ -1175,6 +1324,33 @@ public void Model_Should_LetOrderLinesReferenceTheProductSkuThroughARestrictingF
 }
 ```
 
+
+```csharp
+public class CategoryConfigurationTests
+```
+
+```csharp
+[Fact]
+public void Model_Should_LetTheDatabaseGenerateTheCategoryId()
+{
+    var entityType = AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(Category));
+
+    Assert.Equal("categories", entityType.GetTableName());
+    Assert.Equal(ValueGenerated.OnAdd, entityType.FindProperty(nameof(Category.Id)).ValueGenerated);
+}
+```
+
+```csharp
+[Fact]
+public void Model_Should_LetAProductReferenceACategoryThroughARestrictingForeignKey()
+{
+    var foreignKey = Assert.Single(AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(Product)).GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Category));
+
+    Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+    Assert.False(foreignKey.IsRequired);
+}
+```
+
 ## Namespaces and usings
 
 Every file of this page, with its namespace and the `using` lines it needs (`ImplicitUsings` covers `System`, `System.Linq`, `System.Threading.Tasks` and the like). A file the table does not list follows the namespace rule in `naming.md`.
@@ -1184,6 +1360,7 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 
 | File | Namespace | Usings |
 |---|---|---|
+| `test/{Name}.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs` | `{Name}.Tests.Application.Categories` | {Name}.Application.Categories, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Categories.Events, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Categories, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandlerTests.cs` | `{Name}.Tests.Application.Customers` | Moq, {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders.Events, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Application/Orders/CancelOrderWhenOrderLineCancelledEventHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Application/Orders/CreateOrderCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
@@ -1192,14 +1369,18 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | `test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Domain/Categories/CategoryTests.cs` | `{Name}.Tests.Domain.Categories` | {Name}.Domain.Aggregates.Categories.Events, {Name}.Tests.TestSupport.Domain.Categories |
 | `test/{Name}.Tests/Domain/Customers/CustomerTests.cs` | `{Name}.Tests.Domain.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Domain/Orders/MoneyTests.cs` | `{Name}.Tests.Domain.Orders` | System.Globalization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Exceptions |
 | `test/{Name}.Tests/Domain/Orders/OrderTests.cs` | `{Name}.Tests.Domain.Orders` | {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Orders |
 | `test/{Name}.Tests/Domain/Products/ProductTests.cs` | `{Name}.Tests.Domain.Products` | {Name}.Domain.Aggregates.Products, {Name}.Domain.Aggregates.Products.Events, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Domain |
+| `test/{Name}.Tests/Infrastructure/Persistence/Categories/CategoryConfigurationTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Categories` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Products, {Name}.Tests.TestSupport.Infrastructure.Persistence |
 | `test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderConfigurationTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Orders` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Tests.TestSupport.Infrastructure.Persistence |
 | `test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderRepositoryTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Orders` | Microsoft.EntityFrameworkCore, Moq, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Persistence.Orders, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Infrastructure.Persistence, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Infrastructure/Persistence/Products/ProductConfigurationTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Infrastructure, Microsoft.EntityFrameworkCore.Metadata, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Infrastructure.Persistence, {Name}.Tests.TestSupport.Infrastructure.Persistence |
 | `test/{Name}.Tests/Infrastructure/Persistence/Products/ProductRepositoryTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Products` | {Name}.Domain.Aggregates.Products.Events, {Name}.Infrastructure.Persistence.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Infrastructure.Persistence, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/TestSupport/Domain/Categories/CategoryRepositoryBuilder.cs` | `{Name}.Tests.TestSupport.Domain.Categories` | Moq, {Name}.Domain.Aggregates.Categories, {Name}.Shared.Domain |
+| `test/{Name}.Tests/TestSupport/Domain/Categories/FakeCategory.cs` | `{Name}.Tests.TestSupport.Domain.Categories` | {Name}.Domain.Aggregates.Categories, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Domain/Customers/CustomerRepositoryBuilder.cs` | `{Name}.Tests.TestSupport.Domain.Customers` | Moq, {Name}.Domain.Aggregates.Customers |
 | `test/{Name}.Tests/TestSupport/Domain/Customers/FakeCustomer.cs` | `{Name}.Tests.TestSupport.Domain.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Domain/Orders/FakeOrder.cs` | `{Name}.Tests.TestSupport.Domain.Orders` | {Name}.Domain.Aggregates.Orders, {Name}.Tests.TestSupport.Shared.Domain |

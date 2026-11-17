@@ -20,6 +20,11 @@ Everything written in phase 1 that has never been compiled or generated. Phase 2
 | 04 | `csharp_rules.py`: one context line per command | Shown to flag the old shape in the pilot project; never run on a project with the new shape |
 | 04 | Conformance: correlation and causation read from the `stock-flow` log | The log parser was run on a sample log only |
 | 04 | Generated `AGENTS.md` rule 20, `docs/architecture.md` "Who did it", ADR 0007 | Never read back in a generated project |
+| 05 | `IdentityAggregateConfiguration`, the example's `Category` (domain, application, infrastructure, controller, tests), `Product.CategoryId`, ADR 0008 | Written by hand, never compiled; whether EF translates `aggregate.Id.Equals(id)` in `FindByIdAsync` for an `int` key is unproven |
+| 05 | Conformance: categories table identity column, the product foreign key, `POST /categories`, `GET /categories/{id}`, a product with an unknown category | Never run |
+| 06 | The `correlation` add-on: `CorrelationIdMiddleware` with a logging scope, its tests, ADR 0009, `correlation.md`; core: correlation and causation on the command log lines, the async failure log line, the Console printing its run's id | Written by hand, never compiled |
+| 06 | `conformance/addon-correlation.sh` (header returned, malformed header, three log checks with the example) | Never run |
+| 06 | `structure.py` treats a `when` on a list key (`addons`) as "contains" | Never run on a project with an add-on |
 
 ## Reader test (step 01)
 

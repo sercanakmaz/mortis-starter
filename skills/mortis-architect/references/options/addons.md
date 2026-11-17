@@ -10,9 +10,9 @@ The add-ons switched on.
 
 ### correlation
 
-**Choose when:** every log line and event must be traceable to one request.
+**Choose when:** a caller (a front end, another service) must pass its own correlation id in and find every log line of what it caused. Without the add-on every command and event still carries a correlation and a causation id, made per request.
 
-**Costs:** a header in, a field on every command and event.
+**Costs:** one middleware: the `X-Correlation-Id` header read and returned, and a logging scope per request.
 
 ### soft-delete
 

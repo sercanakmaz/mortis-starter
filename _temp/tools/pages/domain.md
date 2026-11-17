@@ -30,6 +30,7 @@ public class Order : AggregateRoot<Guid>
 - State is `{ get; protected set; }`; a collection is a private `List<T>` exposed as `IReadOnlyCollection<T>`.
 - A protected parameterless constructor for the mapper, marked `[DebuggerStepThrough]` (`using System.Diagnostics;`).
 - A public constructor takes the id, the data and `AuditUser user = null`, passes `user` to the base, and raises `Created`.
+- **An aggregate whose key the database assigns** (`int` or `long`, `keys.default` or chosen for that aggregate) takes no id, raises nothing in its constructor, and has an operation `MarkCreated()` that raises `Created` with the real id; the handler calls it after `CreateAsync` (`worked-slice.md`, Categories). Its create command has no `Id`; references to it are `int?` or `int`.
 - Every operation is a public method named for the business action. It checks its rules, changes state and raises an event. It never saves.
 - A rule that fails throws `BusinessRuleException` with a code from `{Aggregate}Constants`; a bad argument throws `InvalidParameterException`.
 - A computed value is an expression-bodied property.

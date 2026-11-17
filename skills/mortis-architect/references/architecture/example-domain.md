@@ -17,9 +17,17 @@ aggregate Customer(id: CustomerId)
     require not isBlocked                      else Rule("customer_blocked")
     completedOrderCount := completedOrderCount + 1
 
+aggregate Category(id: CategoryId, assigned by storage)
+  state: name (max 100, trimmed, unique)
+  create(name, by)                             raises nothing: the id is not known yet
+  operation markCreated()                      called by the handler after the insert
+    require id is assigned                     else a programming error
+    raise Created(id, name)
+
 aggregate Product(id: ProductId)
-  state: sku (max 64, unique, referenced by order lines), name (max 200), stock (never below zero, also guarded by storage)
-  create(id, sku, name, stock, by)
+  state: sku (max 64, unique, referenced by order lines), name (max 200), stock (never below zero, also guarded by storage),
+         categoryId (optional, references Category)
+  create(id, sku, name, stock, by, categoryId)
     require stock >= 0                         else InvalidParameter("stock")
     raise Created(id, sku)
   operation increaseStock(quantity)
@@ -84,7 +92,9 @@ Every operation that changes an aggregate is followed by stamping who changed it
 | `BlockCustomer(id)` | yes | `block` | customer view |
 | `GetCustomer(id)` | no | reads | customer view |
 | `RegisterCompletedOrder(id)` | yes | `registerCompletedOrder` on the customer | customer view |
-| `CreateProduct(id, sku, name, stock)` | yes | creates a product | product view |
+| `CreateCategory(name)` | yes | creates the category, saves it, then `markCreated` and saves the event; the unique name is enforced by storage | category view |
+| `GetCategory(id)` | no | reads | category view |
+| `CreateProduct(id, sku, name, stock, categoryId?)` | yes | creates a product; an unknown category is refused by storage | product view |
 | `GetProduct(id)` | no | reads | product view |
 | `IncreaseProductStock(sku, quantity)` | yes | loads by sku, `increaseStock` | product view |
 | `DecreaseProductStock(sku, quantity)` | yes | loads by sku, `decreaseStock` | product view |
@@ -111,7 +121,8 @@ Every command handler changes one aggregate: in this domain every second change 
 ## Views
 
 - Customer view: id, name, email, isBlocked, completedOrderCount.
-- Product view: id, sku, name, stock.
+- Category view: id, name.
+- Product view: id, sku, name, stock, categoryId.
 - Order view: id, orderNumber, customerId, status (as its name), totalAmount, lines; a line view: id, sku, price (the amount), currency, quantity, isCancelled, cancellationReason.
 
 ## Requests
@@ -121,6 +132,8 @@ Every command handler changes one aggregate: in this domain every second change 
 | `POST /customers` | `CreateCustomer` | 201 |
 | `GET /customers/{id}` | `GetCustomer` | 200 |
 | `PUT /customers/{id}/block` | `BlockCustomer` | 200 |
+| `POST /categories` | `CreateCategory` | 201, with the id the database assigned |
+| `GET /categories/{id}` | `GetCategory` | 200 |
 | `POST /products` | `CreateProduct` | 201 |
 | `GET /products/{id}` | `GetProduct` | 200 |
 | `POST /orders` | `CreateOrder` | 201 |

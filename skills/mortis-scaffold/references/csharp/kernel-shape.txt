@@ -8,8 +8,6 @@ member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdHea
 member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdItem = "CorrelationId"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorCode = "unexpected_error"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorMessage = "An unexpected error occurred."
-type {Name}.Api.Middlewares: public class CorrelationIdMiddleware(RequestDelegate next)
-member {Name}.Api.Middlewares.CorrelationIdMiddleware: public async Task InvokeAsync(HttpContext httpContext)
 type {Name}.Api.Middlewares: public record ErrorResponseModel(string Code, string Message, IDictionary<string, string[]> Errors = null)
 type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHandler
 member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
@@ -53,6 +51,7 @@ type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptio
 member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
 type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
 member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
+member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> IdentityAggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
 member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TEntity> ChildEntityConfiguration<TEntity, TKey>(this EntityTypeBuilder<TEntity> builder) where TEntity : Entity<TKey>
 type {Name}.Infrastructure.Persistence: public static class DatabaseExceptionHandler
 member {Name}.Infrastructure.Persistence.DatabaseExceptionHandler: public static void Handle(DbUpdateException exception)

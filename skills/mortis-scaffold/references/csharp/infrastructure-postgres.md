@@ -6,7 +6,7 @@ Project `{Name}.Infrastructure`. Applies when `database` is `postgres`. Layer 1:
 
 - **Writes flush immediately.** Each repository write ends with `SaveChangesAsync`, so a later read in the same command sees it and a database error surfaces at the line that caused it.
 - **Tracking.** `FindByIdAsync` is a no-tracking read; `FindByIdTrackingAsync` is the read you change and save. `UpdateAsync` refuses an aggregate that is not tracked.
-- **Ids never come from the database.** `ValueGeneratedNever()` on every key. With database-generated keys EF treats a new child that already has an id as an existing row.
+- **Ids come from the program**, `ValueGeneratedNever()`, for every `Guid` key and every child entity: with database-generated keys EF treats a new child that already has an id as an existing row. **An aggregate with an `int` or `long` key** is the one exception: the database assigns it (`IdentityAggregateConfiguration`), so its id exists only after `CreateAsync`, which flushes at once.
 - **Child entities** are mapped with `HasMany(...).WithOne()` plus `Navigation(...).AutoInclude()`: an aggregate always loads whole. No `DbSet` for a child.
 - **Value objects** are mapped with `ComplexProperty(...)` and `IsRequired()`.
 - **References to other aggregates** are foreign keys with an explicit delete behaviour, `Restrict` unless the child belongs to the parent.
@@ -328,6 +328,16 @@ public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, T
 ```
 
 ```csharp
+public static EntityTypeBuilder<TAggregate> IdentityAggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
+{
+    builder.AggregateConfiguration<TAggregate, TKey>();
+    builder.Property(aggregate => aggregate.Id).ValueGeneratedOnAdd();
+
+    return builder;
+}
+```
+
+```csharp
 public static EntityTypeBuilder<TEntity> ChildEntityConfiguration<TEntity, TKey>(this EntityTypeBuilder<TEntity> builder) where TEntity : Entity<TKey>
 {
     builder.HasKey(entity => entity.Id);
@@ -414,14 +424,18 @@ public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddle
 ```csharp
 public void Before(ICommand command)
 {
-    logger.LogInformation("{Command} started", command.GetType().Name);
+    var commandContext = (command as IContextCommand)?.Context;
+
+    logger.LogInformation("{Command} started correlation {CorrelationId} causation {CausationId}", command.GetType().Name, commandContext?.CorrelationId, commandContext?.CausationId);
 }
 ```
 
 ```csharp
 public void After(ICommand command, CommandResult commandResult)
 {
-    logger.LogInformation("{Command} finished", command.GetType().Name);
+    var commandContext = (command as IContextCommand)?.Context;
+
+    logger.LogInformation("{Command} finished correlation {CorrelationId}", command.GetType().Name, commandContext?.CorrelationId);
 }
 ```
 
@@ -514,6 +528,11 @@ public void Configure(EntityTypeBuilder<Product> builder)
 
     builder.HasAlternateKey(product => product.Sku);
 
+    builder.HasOne<Category>()
+        .WithMany()
+        .HasForeignKey(product => product.CategoryId)
+        .OnDelete(DeleteBehavior.Restrict);
+
     builder.Property<uint>(PersistenceConstants.RowVersionColumn).IsRowVersion();
 
     builder.ToTable("products", table => table.HasCheckConstraint("ck_products_stock_not_negative", "stock >= 0"));
@@ -547,6 +566,8 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Infrastructure/InfrastructureModule.cs` | `{Name}.Infrastructure` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Persistence, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `src/{Name}.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs` | `{Name}.Infrastructure.Logging` | Microsoft.Extensions.Logging, {Name}.Shared.Application |
 | `src/{Name}.Infrastructure/Persistence/AppDbContext.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore |
+| `src/{Name}.Infrastructure/Persistence/Categories/CategoryConfiguration.cs` | `{Name}.Infrastructure.Persistence.Categories` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Categories |
+| `src/{Name}.Infrastructure/Persistence/Categories/CategoryRepository.cs` | `{Name}.Infrastructure.Persistence.Categories` | {Name}.Domain.Aggregates.Categories, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `src/{Name}.Infrastructure/Persistence/ConfigurationExtensions.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Shared.Domain |
 | `src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs` | `{Name}.Infrastructure.Persistence.Customers` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Customers |
 | `src/{Name}.Infrastructure/Persistence/Customers/CustomerRepository.cs` | `{Name}.Infrastructure.Persistence.Customers` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Domain, {Name}.Shared.Persistence |
@@ -557,7 +578,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Infrastructure/Persistence/Orders/OrderConfiguration.cs` | `{Name}.Infrastructure.Persistence.Orders` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products |
 | `src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs` | `{Name}.Infrastructure.Persistence.Orders` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `src/{Name}.Infrastructure/Persistence/PersistenceConstants.cs` | `{Name}.Infrastructure.Persistence` | none |
-| `src/{Name}.Infrastructure/Persistence/PersistenceModule.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.Extensions.DependencyInjection, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Infrastructure.Persistence.Customers, {Name}.Infrastructure.Persistence.Orders, {Name}.Infrastructure.Persistence.Products |
-| `src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs` | `{Name}.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Products |
+| `src/{Name}.Infrastructure/Persistence/PersistenceModule.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.Extensions.DependencyInjection, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Infrastructure.Persistence.Categories, {Name}.Infrastructure.Persistence.Customers, {Name}.Infrastructure.Persistence.Orders, {Name}.Infrastructure.Persistence.Products |
+| `src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs` | `{Name}.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Products |
 | `src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs` | `{Name}.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `src/{Name}.Infrastructure/Persistence/UnitOfWork.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Storage, Microsoft.Extensions.Logging, {Name}.Shared.Domain, {Name}.Shared.Persistence |

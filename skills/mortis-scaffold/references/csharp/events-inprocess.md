@@ -91,7 +91,7 @@ public async Task Publish(EventBase @event)
             {
                 await unitOfWork.RollbackTransactionAsync();
 
-                logger.LogError(exception, "Async handler {EventHandler} failed for {EventType} {EventId}; the transaction that raised the event stays committed", eventHandler.GetType().Name, @event.GetType().FullName, @event.EventId);
+                logger.LogError(exception, "Async handler {EventHandler} failed for {EventType} {EventId} correlation {CorrelationId}; the transaction that raised the event stays committed", eventHandler.GetType().Name, @event.GetType().FullName, @event.EventId, @event.CorrelationId);
 
                 break;
             }

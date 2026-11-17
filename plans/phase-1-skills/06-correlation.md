@@ -37,3 +37,11 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 OpenTelemetry trace context (step 16).
+
+## Notes (done)
+
+- Step 04 already made correlation and causation core: every command and event carries them. What is always on now: the command log lines (`LoggingCommandHandlerMiddleware`) and the async failure line show correlation and causation, the published-event line shows both (step 04), and the Console prints `correlation <id>` for its run.
+- What the `correlation` add-on adds: `CorrelationIdMiddleware` (moved out of the kernel; it reads and returns `X-Correlation-Id`, hands the id to the filter through `HttpContext.Items`, opens a logging scope), one line in the Api's `Program.cs`, its tests, ADR 0009. Without it, `ContextCommandFilter` makes a new id per request. Page: `references/csharp/correlation.md`.
+- `manifest.json` entries for an add-on carry `"when": {"addons": "correlation"}`; `structure.py` reads a `when` on a list key as "contains". `verify.sh` runs `conformance/addon-correlation.sh` when the add-on is on: the header comes back, a malformed header gets a new id, and with the example three log checks (the command, the published event, the command an async handler sent, with its causation).
+- The chain test asked for here (command, event, handler, command, event under one correlation, each causation the previous event) is covered by step 04's `EventContextTests` and `CommandPipelineTests` plus the `stock-flow` conformance checks; no new unit test was added.
+- Found, not done: the Console prints its correlation id on stdout before the scenario output; the conformance parsers skip it because they look for the first line that starts with `{`.

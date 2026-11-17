@@ -4,6 +4,10 @@ The tests and test support of the example domain (`worked-slice.md`). Layout and
 
 ## Test support
 
+@@members test/Boilerplate.Tests/TestSupport/Domain/Categories/FakeCategory.cs::FakeCategory@@
+
+@@members test/Boilerplate.Tests/TestSupport/Domain/Categories/CategoryRepositoryBuilder.cs::CategoryRepositoryBuilder@@
+
 @@members test/Boilerplate.Tests/TestSupport/Domain/Products/FakeProduct.cs::FakeProduct@@
 
 @@members test/Boilerplate.Tests/TestSupport/Domain/Customers/FakeCustomer.cs::FakeCustomer@@
@@ -36,7 +40,9 @@ A repository builder wraps a `Mock<I{Aggregate}Repository>`, one `With...` per m
 
 ## Domain tests
 
-`ProductTests`, `CustomerTests`, `OrderTests`, `MoneyTests` in `test/{Name}.Tests/Domain/{Plural}/`. Every test, in order:
+`CategoryTests`, `ProductTests`, `CustomerTests`, `OrderTests`, `MoneyTests` in `test/{Name}.Tests/Domain/{Plural}/`. Every test, in order:
+
+@@members test/Boilerplate.Tests/Domain/Categories/CategoryTests.cs::CategoryTests@@
 
 @@members test/Boilerplate.Tests/Domain/Products/ProductTests.cs::ProductTests@@
 
@@ -49,6 +55,10 @@ A repository builder wraps a `Mock<I{Aggregate}Repository>`, one `With...` per m
 ## Handler tests
 
 One class per command handler that writes, in `test/{Name}.Tests/Application/{Plural}/`. The handler is built from repository builders and a `CommandPipelineBuilder`; a `UnitOfWorkBuilder` with recorded calls proves the transaction.
+
+`CreateCategoryCommandHandlerTests`, the shape for an aggregate whose id the database assigns:
+
+@@members test/Boilerplate.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs::CreateCategoryCommandHandlerTests@@
 
 `CreateOrderCommandHandlerTests`:
 
@@ -198,6 +208,9 @@ These need no database: the context is built against a connection string that is
 @@members test/Boilerplate.Tests/Infrastructure/Persistence/Products/ProductRepositoryTests.cs::ProductRepositoryTests@@
 
 @@members test/Boilerplate.Tests/Infrastructure/Persistence/Products/ProductConfigurationTests.cs::ProductConfigurationTests@@
+
+
+@@members test/Boilerplate.Tests/Infrastructure/Persistence/Categories/CategoryConfigurationTests.cs::CategoryConfigurationTests@@
 
 ## Namespaces and usings
 

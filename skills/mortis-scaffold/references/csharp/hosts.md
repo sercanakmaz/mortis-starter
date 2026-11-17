@@ -34,7 +34,6 @@ builder.Services
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.MapOpenApi();
 app.MapControllers();
@@ -148,28 +147,7 @@ public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception e
 
 ### Correlation
 
-File `Middlewares/CorrelationIdMiddleware.cs`:
-
-```csharp
-public class CorrelationIdMiddleware(RequestDelegate next)
-```
-
-```csharp
-public async Task InvokeAsync(HttpContext httpContext)
-{
-    var correlationId = Guid.TryParse(httpContext.Request.Headers[ApiConstants.CorrelationIdHeader], out var requestCorrelationId)
-        ? requestCorrelationId
-        : Guid.CreateVersion7();
-
-    httpContext.Items[ApiConstants.CorrelationIdItem] = correlationId;
-
-    httpContext.Response.Headers[ApiConstants.CorrelationIdHeader] = correlationId.ToString();
-
-    await next(httpContext);
-}
-```
-
-- The id is handed to the filter through `HttpContext.Items`, never through an ambient value.
+The header middleware belongs to the `correlation` add-on (`correlation.md`). Without it, `ContextCommandFilter` makes a new correlation id per request.
 
 ### Controllers
 
@@ -271,6 +249,8 @@ if (scenario is null)
 
     return 1;
 }
+
+System.Console.WriteLine($"correlation {ScenarioConstants.RunCorrelationId}");
 
 try
 {
@@ -559,12 +539,12 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
+| `src/{Name}.Api/Controllers/CategoriesController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Categories, {Name}.Shared.Application |
 | `src/{Name}.Api/Controllers/CustomersController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Customers, {Name}.Shared.Application |
 | `src/{Name}.Api/Controllers/OrdersController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Orders, {Name}.Shared.Application |
 | `src/{Name}.Api/Controllers/ProductsController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Products, {Name}.Shared.Application |
 | `src/{Name}.Api/Filters/ContextCommandFilter.cs` | `{Name}.Api.Filters` | Microsoft.AspNetCore.Mvc.Filters, System.Security.Claims, {Name}.Api.Middlewares, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Api/Middlewares/ApiConstants.cs` | `{Name}.Api.Middlewares` | none |
-| `src/{Name}.Api/Middlewares/CorrelationIdMiddleware.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ErrorResponseModel.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ExceptionHandler.cs` | `{Name}.Api.Middlewares` | Microsoft.AspNetCore.Diagnostics, System.Net, {Name}.Shared.Exceptions |
 | `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Shared |
@@ -576,5 +556,5 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Console/Scenarios/IScenario.cs` | `{Name}.Console.Scenarios` | none |
 | `src/{Name}.Console/Scenarios/OrderFlowScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
 | `src/{Name}.Console/Scenarios/ScenarioConstants.cs` | `{Name}.Console.Scenarios` | System.Text.Json |
-| `src/{Name}.Console/Scenarios/ScenarioModule.cs` | `{Name}.Console.Scenarios` | Microsoft.Extensions.DependencyInjection, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products |
+| `src/{Name}.Console/Scenarios/ScenarioModule.cs` | `{Name}.Console.Scenarios` | Microsoft.Extensions.DependencyInjection, {Name}.Application.Categories, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products |
 | `src/{Name}.Console/Scenarios/StockFlowScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |

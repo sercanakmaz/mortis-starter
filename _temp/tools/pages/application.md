@@ -83,6 +83,10 @@ protected override async Task<CommandResult<OrderDto>> OnHandle(CreateOrderComma
 }
 ```
 
+**Create an aggregate whose id the database assigns:** create, mark created, hand the event over:
+
+@@member src/Boilerplate.Application/Categories/CreateCategoryCommand.cs::CreateCategoryCommandHandler::OnHandle@@
+
 **Read:**
 
 ```csharp

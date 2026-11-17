@@ -11,7 +11,7 @@ entity Entity(id)
   state: id, createdAt, createdBy, updatedAt, updatedBy
 ```
 
-- Identity is assigned by the program, never by the database, before the entity is saved.
+- Identity is assigned by the program before the entity is saved. The one exception is an aggregate whose key type is an integer the database assigns: its id exists only after the insert, so it raises its `Created` event in a separate operation the handler calls after saving (`markCreated`), never in its constructor.
 - Two entities are the same when their ids are the same.
 - **Commonest mistake:** letting the database generate the id; a new child that already carries an id is then mistaken for an existing row.
 

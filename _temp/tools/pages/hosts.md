@@ -52,13 +52,7 @@ File `Middlewares/ExceptionHandler.cs`:
 
 ### Correlation
 
-File `Middlewares/CorrelationIdMiddleware.cs`:
-
-@@decl src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs::CorrelationIdMiddleware@@
-
-@@member src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs::CorrelationIdMiddleware::InvokeAsync@@
-
-- The id is handed to the filter through `HttpContext.Items`, never through an ambient value.
+The header middleware belongs to the `correlation` add-on (`correlation.md`). Without it, `ContextCommandFilter` makes a new correlation id per request.
 
 ### Controllers
 

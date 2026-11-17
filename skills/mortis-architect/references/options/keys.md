@@ -18,7 +18,7 @@ The key type new aggregates use unless one overrides it.
 
 **Choose when:** an existing system or a person-readable number is required.
 
-**Costs:** the database makes the id, so it is unknown until the insert and the client cannot send one.
+**Costs:** the database makes the id, so it is unknown until the insert and the client cannot send one; the aggregate raises `Created` only after the insert (the handler saves, marks it created, saves again), and references to it are integers.
 
 **Rules:** R12.
 

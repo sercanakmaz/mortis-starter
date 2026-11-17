@@ -6,12 +6,42 @@ Generated when `example` is `true`. Its tests are in `worked-slice-tests.md`. Th
 
 Event handlers of products and customers react to order events, so the domain comes first for all three, then the rest. Build after each line:
 
-1. Domain of Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
-2. Application of Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
-3. Infrastructure of the three (configuration, repository, registration line) and their tests.
-4. The three controllers.
+1. Domain of Category, then Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
+2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
+3. Infrastructure of the four (configuration, repository, registration line) and their tests.
+4. The four controllers.
 
 Then the Console scenarios and their registration, then the migration (`infrastructure-postgres.md` "Migrations").
+
+## Categories
+
+The one aggregate of the example with a key the database assigns (`int`). Its id is unknown until the insert, so its constructor raises nothing; the handler creates it, then calls `MarkCreated`, which raises `Created` with the real id, then hands the event over with `UpdateAsync`.
+
+### Domain
+
+@@members src/Boilerplate.Domain/Aggregates/Categories/CategoryConstants.cs::CategoryConstants@@
+
+@@members src/Boilerplate.Domain/Aggregates/Categories/Category.cs::Category@@
+
+@@decl src/Boilerplate.Domain/Aggregates/Categories/Events/Created.cs::Created@@
+
+@@decl src/Boilerplate.Domain/Aggregates/Categories/ICategoryRepository.cs::ICategoryRepository@@
+
+### Application
+
+@@members src/Boilerplate.Application/Categories/CategoryDto.cs::CategoryDto@@
+
+@@members src/Boilerplate.Application/Categories/CreateCategoryCommand.cs::CreateCategoryCommand@@
+
+@@member src/Boilerplate.Application/Categories/CreateCategoryCommand.cs::CreateCategoryCommandValidator::CreateCategoryCommandValidator@@
+
+@@decl src/Boilerplate.Application/Categories/CreateCategoryCommand.cs::CreateCategoryCommandHandler@@
+
+@@member src/Boilerplate.Application/Categories/CreateCategoryCommand.cs::CreateCategoryCommandHandler::OnHandle@@
+
+@@decl src/Boilerplate.Application/Categories/GetCategoryCommand.cs::GetCategoryCommand@@
+
+@@member src/Boilerplate.Application/Categories/GetCategoryCommand.cs::GetCategoryCommandHandler::OnHandle@@
 
 ## Products
 
@@ -42,7 +72,7 @@ public interface IProductRepository : IRepository<Product, Guid>
 
 | Command | Properties | Validator | Handler loads | Calls | Saves |
 |---|---|---|---|---|---|
-| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock` | id not empty; sku, name required within their lengths; stock `>= 0` | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User)` | `CreateAsync` |
+| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock`, `int? CategoryId` | id not empty; sku, name required within their lengths; stock `>= 0`; category id `> 0` when given | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User, command.CategoryId)` | `CreateAsync` |
 | `GetProductCommand(Guid Id)` | | none | `FindByIdAsync` | | |
 | `IncreaseProductStockCommand` | `Sku`, `Quantity` | sku required within length; quantity `> 0` | `FindBySkuTrackingAsync(command.Sku)` | `IncreaseStock(command.Quantity)` | `UpdateAsync` |
 | `DecreaseProductStockCommand` | `Sku`, `Quantity` | as above | `FindBySkuTrackingAsync(command.Sku)` | `DecreaseStock(command.Quantity)` | `UpdateAsync` |
@@ -168,17 +198,20 @@ Event handler (sync, as the user of the event), in `Orders/`:
 
 ## Infrastructure
 
+@@member src/Boilerplate.Infrastructure/Persistence/Categories/CategoryConfiguration.cs::CategoryConfiguration::Configure@@
+
 @@member src/Boilerplate.Infrastructure/Persistence/Products/ProductConfiguration.cs::ProductConfiguration::Configure@@
 
 @@member src/Boilerplate.Infrastructure/Persistence/Customers/CustomerConfiguration.cs::CustomerConfiguration::Configure@@
 
 The order and order-line configurations are in `infrastructure-postgres.md`.
 
-`CustomerRepository` and `OrderRepository` add nothing to `EfRepository`. `ProductRepository` adds `FindBySkuTrackingAsync` (`infrastructure-postgres.md`).
+`CategoryRepository` (`EfRepository<Category, int>`), `CustomerRepository` and `OrderRepository` add nothing to `EfRepository`. `ProductRepository` adds `FindBySkuTrackingAsync` (`infrastructure-postgres.md`).
 
 ```csharp
 public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
 {
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
     services.AddScoped<ICustomerRepository, CustomerRepository>();
     services.AddScoped<IOrderRepository, OrderRepository>();
     services.AddScoped<IProductRepository, ProductRepository>();
@@ -188,6 +221,8 @@ public static IServiceCollection AddPersistenceModule(this IServiceCollection se
 ```
 
 ## Controllers
+
+@@members src/Boilerplate.Api/Controllers/CategoriesController.cs::CategoriesController@@
 
 @@members src/Boilerplate.Api/Controllers/ProductsController.cs::ProductsController@@
 

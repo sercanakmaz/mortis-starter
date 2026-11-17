@@ -6,7 +6,7 @@ Project `{Name}.Infrastructure`. Applies when `database` is `postgres`. Layer 1:
 
 - **Writes flush immediately.** Each repository write ends with `SaveChangesAsync`, so a later read in the same command sees it and a database error surfaces at the line that caused it.
 - **Tracking.** `FindByIdAsync` is a no-tracking read; `FindByIdTrackingAsync` is the read you change and save. `UpdateAsync` refuses an aggregate that is not tracked.
-- **Ids never come from the database.** `ValueGeneratedNever()` on every key. With database-generated keys EF treats a new child that already has an id as an existing row.
+- **Ids come from the program**, `ValueGeneratedNever()`, for every `Guid` key and every child entity: with database-generated keys EF treats a new child that already has an id as an existing row. **An aggregate with an `int` or `long` key** is the one exception: the database assigns it (`IdentityAggregateConfiguration`), so its id exists only after `CreateAsync`, which flushes at once.
 - **Child entities** are mapped with `HasMany(...).WithOne()` plus `Navigation(...).AutoInclude()`: an aggregate always loads whole. No `DbSet` for a child.
 - **Value objects** are mapped with `ComplexProperty(...)` and `IsRequired()`.
 - **References to other aggregates** are foreign keys with an explicit delete behaviour, `Restrict` unless the child belongs to the parent.
@@ -105,6 +105,8 @@ File `Persistence/ConfigurationExtensions.cs`. Every aggregate and child configu
 @@decl src/Boilerplate.Infrastructure/Persistence/ConfigurationExtensions.cs::ConfigurationExtensions@@
 
 @@member src/Boilerplate.Infrastructure/Persistence/ConfigurationExtensions.cs::ConfigurationExtensions::AggregateConfiguration@@
+
+@@member src/Boilerplate.Infrastructure/Persistence/ConfigurationExtensions.cs::ConfigurationExtensions::IdentityAggregateConfiguration@@
 
 @@member src/Boilerplate.Infrastructure/Persistence/ConfigurationExtensions.cs::ConfigurationExtensions::ChildEntityConfiguration@@
 

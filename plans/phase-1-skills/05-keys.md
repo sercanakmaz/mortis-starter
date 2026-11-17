@@ -47,3 +47,12 @@ Strongly typed id wrappers, string keys, MongoDB ids (step 13).
 ## Traps
 
 `CreateAsync` must flush for the id to exist. If the repository today defers the insert to commit, change it for identity keys only and say so in the reference; statement order is then part of the behaviour.
+
+## Notes (done)
+
+- Kernel: `ConfigurationExtensions.IdentityAggregateConfiguration<TAggregate, TKey>` (the aggregate configuration plus `ValueGeneratedOnAdd()`). Nothing else in the kernel changes: `Entity<TKey>`, `IRepository<TAggregate, TKey>` and `EfRepository` were already generic, and `CreateAsync` already flushes at once, so the trap does not bite.
+- Pattern (decision 28 puts it in the handler, not a service): construct (raises nothing), `CreateAsync`, `MarkCreated()` (raises `Created` with the real id), `UpdateAsync` to hand the event over, all in the command's transaction.
+- Example: `Category` with an `int` key, `CreateCategory`, `GetCategory`, `CategoriesController`, and an optional `Product.CategoryId` (an optional last constructor parameter, so no existing call changes). Domain, handler and configuration tests; the test repository builder assigns the id the way the database would.
+- ADR 0008 for every generated project; `AGENTS.md` §3 mentions the rule.
+- Conformance: two database checks (identity column, the optional foreign key) and five HTTP checks; the table list now includes `categories`.
+- Not covered: a project with `keys.default` = `int` and no example changes nothing in the kernel; it matters when `mortis-develop` adds an aggregate (step 17).

@@ -134,6 +134,21 @@
    "kernel": false
   },
   {
+   "path": "docs/adr/0008-each-aggregate-chooses-its-key.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "docs/adr/0009-correlation-header.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "addons": "correlation"
+   }
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -149,6 +164,15 @@
    "path": "plans/README.md",
    "page": "project-docs.md",
    "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Controllers/CategoriesController.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
    "kernel": false
   },
   {
@@ -192,9 +216,12 @@
   },
   {
    "path": "src/{Name}.Api/Middlewares/CorrelationIdMiddleware.cs",
-   "page": "hosts.md",
+   "page": "correlation.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": false,
+   "when": {
+    "addons": "correlation"
+   }
   },
   {
    "path": "src/{Name}.Api/Middlewares/ErrorResponseModel.cs",
@@ -231,6 +258,33 @@
    "page": "application.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Application/Categories/CategoryDto.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Categories/CreateCategoryCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Categories/GetCategoryCommand.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
   },
   {
    "path": "src/{Name}.Application/Customers/BlockCustomerCommand.cs",
@@ -509,6 +563,42 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Categories/Category.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Categories/CategoryConstants.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Categories/Events/Created.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Categories/ICategoryRepository.cs",
+   "page": "worked-slice.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Customers/Customer.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -762,6 +852,24 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryConfiguration.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryRepository.cs",
+   "page": "infrastructure-postgres.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/ConfigurationExtensions.cs",
@@ -1099,6 +1207,24 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Api/Middlewares/CorrelationIdMiddlewareTests.cs",
+   "page": "correlation.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "correlation"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Application/Customers/BlockCustomerCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1240,6 +1366,15 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Domain/Categories/CategoryTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Domain/Customers/CustomerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1279,6 +1414,15 @@
    "path": "test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Categories/CategoryConfigurationTests.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
    "kernel": false
   },
   {
@@ -1363,6 +1507,24 @@
    "path": "test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs",
    "page": "testing.md",
    "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Categories/CategoryRepositoryBuilder.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Categories/FakeCategory.cs",
+   "page": "worked-slice-tests.md",
+   "source": "snippets",
+   "when": {
+    "example": "true"
+   },
    "kernel": false
   },
   {

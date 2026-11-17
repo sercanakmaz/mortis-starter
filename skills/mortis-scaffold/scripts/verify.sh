@@ -99,6 +99,10 @@ else
       run_conformance example-http.sh
     fi
   fi
+
+  ADDONS=",$(get addons),"
+  export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
+  case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac
 fi
 
 rm -rf "$WORK"

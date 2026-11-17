@@ -5,9 +5,16 @@ OV = Path("/home/claude/zeyrek-skills/_temp/tools/overlay")
 removed = set((OV/"REMOVED.txt").read_text().split())
 files = sorted((set(str(p.relative_to(T)) for p in T.rglob("*") if p.is_file() and not ({"bin","obj"} & set(p.parts))) | set(str(p.relative_to(OV)) for p in OV.rglob("*.cs"))) - removed)
 deletes = [l.split(" ",1)[1] for l in (T.parent/"csharp-example.txt").read_text().splitlines() if l.startswith("delete ")]
+deletes += ["src/Boilerplate.Application/Categories", "src/Boilerplate.Infrastructure/Persistence/Categories"]
 def is_example(f):
     return any(f == d or f.startswith(d + "/") for d in deletes)
 superseded = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSupport/Domain/\w+/\w+ServiceBuilder\.cs|Tests/Domain/\w+/\w+ServiceTests\.cs)$")
+OPTION_FILES = {
+    "src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs": {"addons": "correlation"},
+    "test/Boilerplate.Tests/Api/Middlewares/CorrelationIdMiddlewareTests.cs": {"addons": "correlation"},
+}
+
+
 def page_of(f):
     if f in ("BannedSymbols.txt","Directory.Build.props","Directory.Packages.props","global.json",".editorconfig",".gitignore","Boilerplate.slnx","Dockerfile","docker-compose.yml") or f.endswith(".csproj"): return "solution.md"
     if f.startswith(".vscode/"): return "hosts.md"
@@ -42,6 +49,10 @@ for f in files:
     entry = {"path": f.replace("Boilerplate", "{Name}"), "page": page_of(f), "source": source_of(f)}
     if ex: entry["when"] = {"example": "true"}
     entry["kernel"] = (not ex) and f.endswith(".cs") and not f.startswith("test/")
+    if f in OPTION_FILES:
+        entry["when"] = OPTION_FILES[f]
+        entry["kernel"] = False
+        entry["page"] = "correlation.md"
     out.append(entry)
 # decision 28 additions: handler tests replacing service tests
 for cmd,plural in [("CreateCustomer","Customers"),("BlockCustomer","Customers"),("RegisterCompletedOrder","Customers"),("AddOrderLine","Orders"),("CancelOrderLine","Orders"),("CompleteOrder","Orders"),("CancelOrderWhenAllLinesCancelled","Orders")]:
@@ -53,6 +64,8 @@ out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.D
 out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False})
 out.append({"path":"docs/adr/0006-command-handlers-are-the-use-cases.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0007-one-context-on-the-command.md","page":"project-docs-adr.md","source":"data","kernel":False})
+out.append({"path":"docs/adr/0008-each-aggregate-chooses-its-key.md","page":"project-docs-adr.md","source":"data","kernel":False})
+out.append({"path":"docs/adr/0009-correlation-header.md","page":"project-docs-adr.md","source":"data","kernel":False,"when":{"addons":"correlation"}})
 out.append({"path":"MORTIS.md","page":"project-docs.md","source":"tool","kernel":False})
 out.sort(key=lambda e:e["path"])
 manifest={

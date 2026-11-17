@@ -6,12 +6,142 @@ Generated when `example` is `true`. Its tests are in `worked-slice-tests.md`. Th
 
 Event handlers of products and customers react to order events, so the domain comes first for all three, then the rest. Build after each line:
 
-1. Domain of Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
-2. Application of Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
-3. Infrastructure of the three (configuration, repository, registration line) and their tests.
-4. The three controllers.
+1. Domain of Category, then Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
+2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
+3. Infrastructure of the four (configuration, repository, registration line) and their tests.
+4. The four controllers.
 
 Then the Console scenarios and their registration, then the migration (`infrastructure-postgres.md` "Migrations").
+
+## Categories
+
+The one aggregate of the example with a key the database assigns (`int`). Its id is unknown until the insert, so its constructor raises nothing; the handler creates it, then calls `MarkCreated`, which raises `Created` with the real id, then hands the event over with `UpdateAsync`.
+
+### Domain
+
+```csharp
+public static class CategoryConstants
+```
+
+```csharp
+public const int NameMaxLength = 100;
+```
+
+```csharp
+public class Category : AggregateRoot<int>
+```
+
+```csharp
+public string Name { get; protected set; }
+```
+
+```csharp
+[DebuggerStepThrough]
+protected Category() { }
+```
+
+```csharp
+public Category(string name, AuditUser user = null) : base(user)
+{
+    Name = name.Trim();
+}
+```
+
+```csharp
+public void MarkCreated()
+{
+    if (Id == 0)
+    {
+        throw new InvalidOperationException("A category is marked created only after the database has assigned its id.");
+    }
+
+    RaiseEvent(new Created(Id.ToString(), Name));
+}
+```
+
+```csharp
+public record Created(string Id, string Name) : EventBase;
+```
+
+```csharp
+public interface ICategoryRepository : IRepository<Category, int>;
+```
+
+### Application
+
+```csharp
+public record CategoryDto
+```
+
+```csharp
+public int Id { get; set; }
+```
+
+```csharp
+public string Name { get; set; }
+```
+
+```csharp
+public static CategoryDto Map(Category category) => new()
+{
+    Id = category.Id,
+    Name = category.Name
+};
+```
+
+```csharp
+public record CreateCategoryCommand : ICommand<CategoryDto>, IContextCommand, ITransactionalCommand
+```
+
+```csharp
+[JsonIgnore] public CommandContext Context { get; set; }
+```
+
+```csharp
+public string Name { get; set; }
+```
+
+```csharp
+public CreateCategoryCommandValidator()
+{
+    RuleFor(command => command.Name).NotEmpty().MaximumLength(CategoryConstants.NameMaxLength);
+}
+```
+
+```csharp
+public class CreateCategoryCommandHandler(
+    ICategoryRepository categoryRepository,
+    CommandPipeline<CreateCategoryCommand> commandPipeline) : BaseCommandHandler<CreateCategoryCommand, CategoryDto>(commandPipeline)
+```
+
+```csharp
+protected override async Task<CommandResult<CategoryDto>> OnHandle(CreateCategoryCommand command)
+{
+    var category = new Category(command.Name, command.Context.User);
+
+    await categoryRepository.CreateAsync(category);
+
+    category.MarkCreated();
+
+    await categoryRepository.UpdateAsync(category);
+
+    return CommandResult.FromContent(CategoryDto.Map(category));
+}
+```
+
+```csharp
+public record GetCategoryCommand(int Id) : ICommand<CategoryDto>;
+```
+
+```csharp
+protected override async Task<CommandResult<CategoryDto>> OnHandle(GetCategoryCommand command)
+{
+    var category = await categoryRepository.FindByIdAsync(command.Id)
+        ?? throw new NotFoundException(nameof(Category));
+
+    return CommandResult.FromContent(CategoryDto.Map(category));
+}
+```
 
 ## Products
 
@@ -50,12 +180,16 @@ public int Stock { get; protected set; }
 ```
 
 ```csharp
+public int? CategoryId { get; protected set; }
+```
+
+```csharp
 [DebuggerStepThrough]
 protected Product() { }
 ```
 
 ```csharp
-public Product(Guid id, string sku, string name, int stock, AuditUser user = null) : base(user)
+public Product(Guid id, string sku, string name, int stock, AuditUser user = null, int? categoryId = null) : base(user)
 {
     if (stock < 0)
     {
@@ -66,6 +200,7 @@ public Product(Guid id, string sku, string name, int stock, AuditUser user = nul
     Sku = sku;
     Name = name;
     Stock = stock;
+    CategoryId = categoryId;
 
     RaiseEvent(new Created(Id.ToString(), Sku));
 }
@@ -148,18 +283,23 @@ public int Stock { get; set; }
 ```
 
 ```csharp
+public int? CategoryId { get; set; }
+```
+
+```csharp
 public static ProductDto Map(Product product) => new()
 {
     Id = product.Id,
     Sku = product.Sku,
     Name = product.Name,
-    Stock = product.Stock
+    Stock = product.Stock,
+    CategoryId = product.CategoryId
 };
 ```
 
 | Command | Properties | Validator | Handler loads | Calls | Saves |
 |---|---|---|---|---|---|
-| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock` | id not empty; sku, name required within their lengths; stock `>= 0` | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User)` | `CreateAsync` |
+| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock`, `int? CategoryId` | id not empty; sku, name required within their lengths; stock `>= 0`; category id `> 0` when given | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User, command.CategoryId)` | `CreateAsync` |
 | `GetProductCommand(Guid Id)` | | none | `FindByIdAsync` | | |
 | `IncreaseProductStockCommand` | `Sku`, `Quantity` | sku required within length; quantity `> 0` | `FindBySkuTrackingAsync(command.Sku)` | `IncreaseStock(command.Quantity)` | `UpdateAsync` |
 | `DecreaseProductStockCommand` | `Sku`, `Quantity` | as above | `FindBySkuTrackingAsync(command.Sku)` | `DecreaseStock(command.Quantity)` | `UpdateAsync` |
@@ -808,6 +948,10 @@ protected override async Task OnHandle(LineCancelled @event)
 ```csharp
 public static IServiceCollection AddApplicationModule(this IServiceCollection services)
 {
+    services.AddCommandHandler<CreateCategoryCommand, CategoryDto, CreateCategoryCommandHandler>();
+    services.AddScoped<IValidator<CreateCategoryCommand>, CreateCategoryCommandValidator>();
+    services.AddCommandHandler<GetCategoryCommand, CategoryDto, GetCategoryCommandHandler>();
+
     services.AddCommandHandler<CreateCustomerCommand, CustomerDto, CreateCustomerCommandHandler>();
     services.AddScoped<IValidator<CreateCustomerCommand>, CreateCustomerCommandValidator>();
     services.AddCommandHandler<BlockCustomerCommand, CustomerDto, BlockCustomerCommandHandler>();
@@ -843,6 +987,19 @@ public static IServiceCollection AddApplicationModule(this IServiceCollection se
 ## Infrastructure
 
 ```csharp
+public void Configure(EntityTypeBuilder<Category> builder)
+{
+    builder.IdentityAggregateConfiguration<Category, int>();
+
+    builder.Property(category => category.Name).HasMaxLength(CategoryConstants.NameMaxLength).IsRequired();
+
+    builder.HasIndex(category => category.Name).IsUnique();
+
+    builder.ToTable("categories");
+}
+```
+
+```csharp
 public void Configure(EntityTypeBuilder<Product> builder)
 {
     builder.AggregateConfiguration<Product, Guid>();
@@ -852,6 +1009,11 @@ public void Configure(EntityTypeBuilder<Product> builder)
     builder.Property(product => product.Stock).IsRequired();
 
     builder.HasAlternateKey(product => product.Sku);
+
+    builder.HasOne<Category>()
+        .WithMany()
+        .HasForeignKey(product => product.CategoryId)
+        .OnDelete(DeleteBehavior.Restrict);
 
     builder.Property<uint>(PersistenceConstants.RowVersionColumn).IsRowVersion();
 
@@ -875,11 +1037,12 @@ public void Configure(EntityTypeBuilder<Customer> builder)
 
 The order and order-line configurations are in `infrastructure-postgres.md`.
 
-`CustomerRepository` and `OrderRepository` add nothing to `EfRepository`. `ProductRepository` adds `FindBySkuTrackingAsync` (`infrastructure-postgres.md`).
+`CategoryRepository` (`EfRepository<Category, int>`), `CustomerRepository` and `OrderRepository` add nothing to `EfRepository`. `ProductRepository` adds `FindBySkuTrackingAsync` (`infrastructure-postgres.md`).
 
 ```csharp
 public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
 {
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
     services.AddScoped<ICustomerRepository, CustomerRepository>();
     services.AddScoped<IOrderRepository, OrderRepository>();
     services.AddScoped<IProductRepository, ProductRepository>();
@@ -889,6 +1052,32 @@ public static IServiceCollection AddPersistenceModule(this IServiceCollection se
 ```
 
 ## Controllers
+
+```csharp
+[ApiController]
+[Route("categories")]
+public class CategoriesController(ICommandDispatcher commandDispatcher) : ControllerBase
+```
+
+```csharp
+[HttpPost]
+public async Task<IActionResult> Create([FromBody] CreateCategoryCommand command)
+{
+    var commandResult = await commandDispatcher.Send(command);
+
+    return Created($"categories/{commandResult.Content.Id}", commandResult.Content);
+}
+```
+
+```csharp
+[HttpGet("{id:int}")]
+public async Task<IActionResult> Get([FromRoute] int id)
+{
+    var commandResult = await commandDispatcher.Send(new GetCategoryCommand(id));
+
+    return Ok(commandResult.Content);
+}
+```
 
 ```csharp
 [ApiController]
@@ -1203,6 +1392,9 @@ public static IServiceCollection AddScenariosModule(this IServiceCollection serv
     services.AddScoped<IScenario, StockFlowScenario>();
     services.AddScoped<IScenario, BlockedCustomerScenario>();
 
+    services.AddCommandScenario<CreateCategoryCommand, CategoryDto>();
+    services.AddCommandScenario<GetCategoryCommand, CategoryDto>();
+
     services.AddCommandScenario<CreateCustomerCommand, CustomerDto>();
     services.AddCommandScenario<BlockCustomerCommand, CustomerDto>();
     services.AddCommandScenario<GetCustomerCommand, CustomerDto>();
@@ -1233,6 +1425,9 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 
 | File | Namespace | Usings |
 |---|---|---|
+| `src/{Name}.Application/Categories/CategoryDto.cs` | `{Name}.Application.Categories` | {Name}.Domain.Aggregates.Categories |
+| `src/{Name}.Application/Categories/CreateCategoryCommand.cs` | `{Name}.Application.Categories` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Categories, {Name}.Shared.Application |
+| `src/{Name}.Application/Categories/GetCategoryCommand.cs` | `{Name}.Application.Categories` | {Name}.Domain.Aggregates.Categories, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Customers/BlockCustomerCommand.cs` | `{Name}.Application.Customers` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
 | `src/{Name}.Application/Customers/CreateCustomerCommand.cs` | `{Name}.Application.Customers` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
 | `src/{Name}.Application/Customers/CustomerDto.cs` | `{Name}.Application.Customers` | {Name}.Domain.Aggregates.Customers |
@@ -1254,6 +1449,10 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | `src/{Name}.Application/Products/IncreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
 | `src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Application/Products/ProductDto.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products |
+| `src/{Name}.Domain/Aggregates/Categories/Category.cs` | `{Name}.Domain.Aggregates.Categories` | System.Diagnostics, {Name}.Domain.Aggregates.Categories.Events, {Name}.Shared.Domain |
+| `src/{Name}.Domain/Aggregates/Categories/CategoryConstants.cs` | `{Name}.Domain.Aggregates.Categories` | none |
+| `src/{Name}.Domain/Aggregates/Categories/Events/Created.cs` | `{Name}.Domain.Aggregates.Categories.Events` | {Name}.Shared.Domain |
+| `src/{Name}.Domain/Aggregates/Categories/ICategoryRepository.cs` | `{Name}.Domain.Aggregates.Categories` | {Name}.Shared.Persistence |
 | `src/{Name}.Domain/Aggregates/Customers/Customer.cs` | `{Name}.Domain.Aggregates.Customers` | System.Diagnostics, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
 | `src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs` | `{Name}.Domain.Aggregates.Customers` | none |
 | `src/{Name}.Domain/Aggregates/Customers/Events/Blocked.cs` | `{Name}.Domain.Aggregates.Customers.Events` | {Name}.Shared.Domain |
