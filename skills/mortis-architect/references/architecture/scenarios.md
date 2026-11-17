@@ -66,7 +66,7 @@ Placing an order may not exceed the customer's credit limit, which lives on the 
 
 1. [Application] the `PlaceOrder` handler loads the new order's lines and the customer.
 2. [Domain] the order cannot decide alone; the handler asks a domain service, `CreditPolicy`, whether the order fits the customer's credit.
-3. [Domain] the domain service reads the customer's open orders through the repository and decides; it refuses with `credit.exceeded`.
+3. [Domain] the domain service asks a read port for the customer's open order total (the rule decides it needs that) and decides; it refuses with `credit.exceeded`. It saves nothing.
 4. [Application] the handler creates the order only when the policy allows it.
 5. [Shared] the pipeline commits.
 

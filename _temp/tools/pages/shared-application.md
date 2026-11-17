@@ -13,21 +13,34 @@ File `Application/ICommand.cs`, three marker interfaces, in this order: `IComman
 with `public interface ICommand<TContent> : ICommand;` between the two.
 
 - A command is a `record` that implements `ICommand<TContent>`, where `TContent` is its view. It has no base class.
-- A command that writes also implements `ITransactionalCommand` and `IUserCommand`.
+- A command that writes also implements `ITransactionalCommand` and `IContextCommand`.
 
-File `Application/IUserCommand.cs` holds the interface and its extension:
+File `Application/CommandContext.cs`: everything the host knows about the call. The host fills it; the request body never does.
 
-@@decl src/Boilerplate.Shared/Application/IUserCommand.cs::IUserCommand@@
+@@decl src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext@@
 
-@@member src/Boilerplate.Shared/Application/IUserCommand.cs::IUserCommand::UserId@@
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::User@@
 
-@@member src/Boilerplate.Shared/Application/IUserCommand.cs::IUserCommand::UserEmail@@
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::CorrelationId@@
 
-@@decl src/Boilerplate.Shared/Application/IUserCommand.cs::UserCommandExtensions@@
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::CausationId@@
 
-@@member src/Boilerplate.Shared/Application/IUserCommand.cs::UserCommandExtensions::ToAuditUser@@
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::TenantId@@
 
-- A command declares the two properties itself, each marked `[JsonIgnore]` so a client can neither send nor read them. The host fills them.
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::Language@@
+
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::Complete@@
+
+@@member src/Boilerplate.Shared/Application/CommandContext.cs::CommandContext::FromEvent@@
+
+File `Application/IContextCommand.cs`:
+
+@@decl src/Boilerplate.Shared/Application/IContextCommand.cs::IContextCommand@@
+
+@@member src/Boilerplate.Shared/Application/IContextCommand.cs::IContextCommand::Context@@
+
+- A command declares it once, `[JsonIgnore] public CommandContext Context { get; set; }`, so a client can neither send nor read it.
+- `TenantId` and `Language` exist for the tenancy and language options and stay empty without them.
 
 ## CommandResult
 
@@ -63,6 +76,9 @@ File `Application/CommandPipeline.cs`. Needs `using FluentValidation;` and the S
 
 @@member src/Boilerplate.Shared/Application/CommandPipeline.cs::CommandPipeline::ExecuteAsync@@
 
+@@member src/Boilerplate.Shared/Application/CommandPipeline.cs::CommandPipeline::HandleAsync@@
+
+- A context command first gets a complete context (a correlation id when it had none), and the event context is told which command is running, so every event raised until it ends carries its context. A command sent inside it gets its own, and the outer one is restored after.
 - Order: validate, middlewares before, begin (transactional only), handle, commit, middlewares after. Validation failure opens no transaction.
 - The transaction key is the command's type name: a nested command's commit is ignored by the unit of work, so the outer command owns the commit.
 - Any exception rolls back and is rethrown unchanged.
@@ -113,7 +129,7 @@ public sealed class CommandHandlerInvoker<TCommand, TContent> : CommandHandlerIn
 
 ## Tests
 
-`CommandPipelineTests`, `CommandDispatcherTests` and `UserCommandTests` in `testing-kernel.md`.
+`CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests` and `CommandContextTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 

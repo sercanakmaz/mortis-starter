@@ -6,7 +6,7 @@
 
 ## Decision
 
-A command handler is the use case. It loads the aggregates the action needs through their repositories, calls their operations, stamps the user, saves, and maps the result. It may change several aggregates when the action is about all of them; a change that is a consequence of the action is an event handler in the reacting aggregate's folder. A domain service exists only for logic that fits no single aggregate: it needs several entities, or another system behind an anti-corruption port. It reads and decides; the handler saves.
+A command handler is the use case. It loads the aggregates the action needs through their repositories, calls their operations, stamps the user, saves, and maps the result. It may change several aggregates when the action is about all of them; a change that is a consequence of the action is an event handler in the reacting aggregate's folder. A domain service exists only for logic that fits no single aggregate: it needs several entities, or another system behind an anti-corruption port. It is pure by default (the handler passes in what it loaded); it may read through a domain interface, preferably a narrow read port, when the rule decides what data it needs; it never writes: no create, update, upsert or delete, no save, no transaction. The handler persists everything, so one class shows the whole persistence story of a use case.
 
 ## What varies
 

@@ -87,3 +87,14 @@ Every command and event carries both:
 - **causation**: the id of the message that directly caused this one. A command's causation is the id of the event that triggered it; an event's causation is the id of the command that raised it.
 
 An event copies its command's correlation, and a command sent by a handler copies the event's correlation, so one search by correlation finds everything one request caused.
+
+How they get there, without a handler doing anything:
+
+```
+host fills command.context (actor, correlation)
+pipeline completes it (a new correlation when absent) and marks the command as running
+while it runs, every event its aggregates raise is stamped with its correlation, causation, tenant, language
+an event handler sends its command with context := from(event):
+    correlation := event.correlation, causation := event.id, actor := event.actor (sync) or system (async)
+a command sent inside a running one is marked running on top of it; its events get its own context; the outer one is restored after
+```

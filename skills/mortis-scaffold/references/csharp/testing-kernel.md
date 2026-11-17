@@ -148,6 +148,39 @@ public void Clear_Should_DropRaisedAndDispatchedEvents()
 ```
 
 ```csharp
+[Fact]
+public void AddRaised_InsideACommand_Should_StampTheCommandContextOnTheEvent()
+{
+    var commandContext = new CommandContext { CorrelationId = Guid.CreateVersion7(), CausationId = Guid.CreateVersion7(), TenantId = "tenant-1", Language = "tr" };
+    var eventContext = new EventContext();
+    eventContext.EnterCommand(commandContext);
+
+    eventContext.AddRaised(new FakeEvent("first"));
+
+    var raisedEvent = eventContext.TakeRaised();
+    Assert.Equal(commandContext.CorrelationId, raisedEvent.CorrelationId);
+    Assert.Equal(commandContext.CausationId, raisedEvent.CausationId);
+    Assert.Equal(["tenant-1", "tr"], [raisedEvent.TenantId, raisedEvent.Language]);
+}
+```
+
+```csharp
+[Fact]
+public void LeaveCommand_Should_RestoreTheContextOfTheOuterCommand()
+{
+    var outerContext = new CommandContext { CorrelationId = Guid.CreateVersion7() };
+    var eventContext = new EventContext();
+    eventContext.EnterCommand(outerContext);
+    eventContext.EnterCommand(new CommandContext { CorrelationId = Guid.CreateVersion7() });
+
+    eventContext.LeaveCommand();
+    eventContext.AddRaised(new FakeEvent("after-nested"));
+
+    Assert.Equal(outerContext.CorrelationId, eventContext.TakeRaised().CorrelationId);
+}
+```
+
+```csharp
 public class EventHandlerExecutorTests
 ```
 
@@ -318,6 +351,52 @@ public async Task ExecuteAsync_Should_RunMiddlewareBeforeTheTransactionAndAfterT
 ```
 
 ```csharp
+[Fact]
+public async Task ExecuteAsync_WithAContextCommandWithoutAContext_Should_GiveItACorrelationId()
+{
+    var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create().Build();
+    var fakeContextCommand = new FakeContextCommand();
+
+    await commandPipeline.ExecuteAsync(fakeContextCommand, command => Task.FromResult(CommandResult.FromContent(command.Name)));
+
+    Assert.NotEqual(Guid.Empty, fakeContextCommand.Context.CorrelationId);
+}
+```
+
+```csharp
+[Fact]
+public async Task ExecuteAsync_WithAContextCommand_Should_StampEventsRaisedWhileItRuns()
+{
+    var eventContext = new EventContext();
+    var commandContext = new CommandContext { CorrelationId = Guid.CreateVersion7() };
+    var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create().WithEventContext(eventContext).Build();
+
+    await commandPipeline.ExecuteAsync(new FakeContextCommand { Context = commandContext }, command =>
+    {
+        eventContext.AddRaised(new FakeEvent("raised"));
+
+        return Task.FromResult(CommandResult.FromContent(command.Name));
+    });
+
+    Assert.Equal(commandContext.CorrelationId, eventContext.TakeRaised().CorrelationId);
+}
+```
+
+```csharp
+[Fact]
+public async Task ExecuteAsync_AfterTheCommand_Should_StopStampingWithItsContext()
+{
+    var eventContext = new EventContext();
+    var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create().WithEventContext(eventContext).Build();
+
+    await commandPipeline.ExecuteAsync(new FakeContextCommand { Context = new CommandContext { CorrelationId = Guid.CreateVersion7() } }, command => Task.FromResult(CommandResult.FromContent(command.Name)));
+    eventContext.AddRaised(new FakeEvent("after"));
+
+    Assert.Equal(Guid.Empty, eventContext.TakeRaised().CorrelationId);
+}
+```
+
+```csharp
 public class CommandDispatcherTests
 ```
 
@@ -342,17 +421,17 @@ public async Task Send_Should_RunTheHandlerOfTheCommandAndReturnItsContent()
 public async Task Send_WithTwoKindsOfCommand_Should_ReachTheHandlerOfEachKind()
 {
     var handledFakes = new List<FakeCommand>();
-    var handledUsers = new List<FakeUserCommand>();
+    var handledContexts = new List<FakeContextCommand>();
     var commandDispatcher = CommandDispatcherBuilder.Create()
         .WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handledFakes))
-        .WithCommandHandler(new FakeUserCommandHandler(CommandPipelineBuilder<FakeUserCommand>.Create().Build(), handledUsers))
+        .WithCommandHandler(new FakeContextCommandHandler(CommandPipelineBuilder<FakeContextCommand>.Create().Build(), handledContexts))
         .Build();
 
-    await commandDispatcher.Send(new FakeUserCommand { Name = "user" });
+    await commandDispatcher.Send(new FakeContextCommand { Name = "user" });
     await commandDispatcher.Send(new FakeCommand { Name = "plain" });
 
     Assert.Equal(["plain"], handledFakes.Select(command => command.Name));
-    Assert.Equal(["user"], handledUsers.Select(command => command.Name));
+    Assert.Equal(["user"], handledContexts.Select(command => command.Name));
 }
 ```
 
@@ -409,38 +488,69 @@ public async Task Send_WithNull_Should_Throw()
 ```
 
 ```csharp
-public class UserCommandTests
+public class ContextCommandTests
 ```
 
 ```csharp
 [Fact]
-public void ToAuditUser_Should_CarryTheUserIdAndEmail()
+public void Deserialize_WithAContextInTheJson_Should_IgnoreIt()
 {
-    var fakeUserCommand = new FakeUserCommand { UserId = "user-1", UserEmail = "user-1@localhost" };
+    var fakeContextCommand = JsonSerializer.Deserialize<FakeContextCommand>("{\"name\":\"n\",\"context\":{\"user\":{\"id\":\"spoofed\"}},\"userId\":\"spoofed\"}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-    var auditUser = fakeUserCommand.ToAuditUser();
-
-    Assert.Equal(["user-1", "user-1@localhost"], [auditUser.Id, auditUser.Email]);
+    Assert.Equal("n", fakeContextCommand.Name);
+    Assert.Null(fakeContextCommand.Context);
 }
 ```
 
 ```csharp
 [Fact]
-public void Deserialize_WithUserFieldsInTheJson_Should_IgnoreThem()
+public void Serialize_Should_NotWriteTheContext()
 {
-    var fakeUserCommand = JsonSerializer.Deserialize<FakeUserCommand>("{\"name\":\"n\",\"userId\":\"spoofed\",\"userEmail\":\"spoofed@localhost\"}", new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-    Assert.Equal(["n", null, null], [fakeUserCommand.Name, fakeUserCommand.UserId, fakeUserCommand.UserEmail]);
-}
-```
-
-```csharp
-[Fact]
-public void Serialize_Should_NotWriteTheUserFields()
-{
-    var json = JsonSerializer.Serialize(new FakeUserCommand { UserId = "user-1", UserEmail = "user-1@localhost" });
+    var json = JsonSerializer.Serialize(new FakeContextCommand { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
 
     Assert.DoesNotContain("user-1", json);
+}
+```
+
+```csharp
+public class CommandContextTests
+```
+
+```csharp
+[Fact]
+public void Complete_WithoutAContext_Should_CreateOneWithACorrelationId()
+{
+    var commandContext = CommandContext.Complete(null);
+
+    Assert.NotEqual(Guid.Empty, commandContext.CorrelationId);
+    Assert.Null(commandContext.User);
+}
+```
+
+```csharp
+[Fact]
+public void Complete_WithACorrelationId_Should_KeepIt()
+{
+    var correlationId = Guid.CreateVersion7();
+
+    var commandContext = CommandContext.Complete(new CommandContext { CorrelationId = correlationId });
+
+    Assert.Equal(correlationId, commandContext.CorrelationId);
+}
+```
+
+```csharp
+[Fact]
+public void FromEvent_Should_KeepCorrelationTenantAndLanguageAndMakeTheEventTheCause()
+{
+    var fakeEvent = new FakeEvent("first") { CorrelationId = Guid.CreateVersion7(), TenantId = "tenant-1", Language = "tr" };
+
+    var commandContext = CommandContext.FromEvent(fakeEvent, FakeAuditUser.Create());
+
+    Assert.Equal(fakeEvent.CorrelationId, commandContext.CorrelationId);
+    Assert.Equal(fakeEvent.EventId, commandContext.CausationId);
+    Assert.Equal(["tenant-1", "tr"], [commandContext.TenantId, commandContext.Language]);
+    Assert.Equal(FakeAuditUser.Id, commandContext.User.Id);
 }
 ```
 
@@ -558,32 +668,46 @@ public async Task Publish_WithAnEventThatIsNotAQueueEvent_Should_DoNothing()
 ## Api/Filters
 
 ```csharp
-public class UserCommandFilterTests
+public class ContextCommandFilterTests
 ```
 
 ```csharp
 [Fact]
-public async Task OnActionExecutionAsync_WithAnAuthenticatedUser_Should_FillTheUserCommandFromTheClaims()
+public async Task OnActionExecutionAsync_WithAnAuthenticatedUser_Should_FillTheContextFromTheClaims()
 {
-    var fakeUserCommand = new FakeUserCommand();
-    var context = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithArgument("command", fakeUserCommand).Build();
+    var fakeContextCommand = new FakeContextCommand();
+    var context = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithArgument("command", fakeContextCommand).Build();
 
-    await new UserCommandFilter().OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
+    await new ContextCommandFilter().OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
 
-    Assert.Equal(["user-1", "user-1@localhost"], [fakeUserCommand.UserId, fakeUserCommand.UserEmail]);
+    Assert.Equal(["user-1", "user-1@localhost"], [fakeContextCommand.Context.User.Id, fakeContextCommand.Context.User.Email]);
 }
 ```
 
 ```csharp
 [Fact]
-public async Task OnActionExecutionAsync_WithoutAUser_Should_ClearWhatTheClientSent()
+public async Task OnActionExecutionAsync_Should_TakeTheCorrelationIdOfTheRequest()
 {
-    var fakeUserCommand = new FakeUserCommand { UserId = "spoofed", UserEmail = "spoofed@localhost" };
-    var context = ActionExecutingContextBuilder.Create().WithArgument("command", fakeUserCommand).Build();
+    var correlationId = Guid.CreateVersion7();
+    var fakeContextCommand = new FakeContextCommand();
+    var context = ActionExecutingContextBuilder.Create().WithCorrelationId(correlationId).WithArgument("command", fakeContextCommand).Build();
 
-    await new UserCommandFilter().OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
+    await new ContextCommandFilter().OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
 
-    Assert.Equal([null, null], [fakeUserCommand.UserId, fakeUserCommand.UserEmail]);
+    Assert.Equal(correlationId, fakeContextCommand.Context.CorrelationId);
+}
+```
+
+```csharp
+[Fact]
+public async Task OnActionExecutionAsync_WithoutAUser_Should_ReplaceWhatTheClientSent()
+{
+    var fakeContextCommand = new FakeContextCommand { Context = new CommandContext { User = new AuditUser("spoofed", "spoofed@localhost") } };
+    var context = ActionExecutingContextBuilder.Create().WithArgument("command", fakeContextCommand).Build();
+
+    await new ContextCommandFilter().OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
+
+    Assert.Equal([null, null], [fakeContextCommand.Context.User.Id, fakeContextCommand.Context.User.Email]);
 }
 ```
 
@@ -594,7 +718,7 @@ public async Task OnActionExecutionAsync_Should_LeaveOtherArgumentsUntouchedAndR
     var context = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithArgument("id", Guid.Empty).WithArgument("command", new FakeCommand()).Build();
     var ran = false;
 
-    await new UserCommandFilter().OnActionExecutionAsync(context, () =>
+    await new ContextCommandFilter().OnActionExecutionAsync(context, () =>
     {
         ran = true;
         return ActionExecutingContextBuilder.NextOf(context)();
@@ -692,15 +816,16 @@ public async Task RunAsync_WithJsonNull_Should_ThrowInvalidParameterForArguments
 
 ```csharp
 [Fact]
-public async Task RunAsync_WithAUserCommand_Should_RunItAsTheConsoleUser()
+public async Task RunAsync_WithAContextCommand_Should_RunItAsTheConsoleUserWithTheCorrelationIdOfTheRun()
 {
-    var handled = new List<FakeUserCommand>();
-    var commandScenario = new CommandScenario<FakeUserCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeUserCommandHandler(CommandPipelineBuilder<FakeUserCommand>.Create().Build(), handled)).Build());
+    var handled = new List<FakeContextCommand>();
+    var commandScenario = new CommandScenario<FakeContextCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeContextCommandHandler(CommandPipelineBuilder<FakeContextCommand>.Create().Build(), handled)).Build());
 
-    await commandScenario.RunAsync(["{\"userId\":\"spoofed\"}"]);
+    await commandScenario.RunAsync(["{\"context\":{\"user\":{\"id\":\"spoofed\"}}}"]);
 
-    var userCommand = Assert.Single(handled);
-    Assert.Equal([ScenarioConstants.UserId, ScenarioConstants.UserEmail], [userCommand.UserId, userCommand.UserEmail]);
+    var contextCommand = Assert.Single(handled);
+    Assert.Equal([ScenarioConstants.UserId, ScenarioConstants.UserEmail], [contextCommand.Context.User.Id, contextCommand.Context.User.Email]);
+    Assert.Equal(ScenarioConstants.RunCorrelationId, contextCommand.Context.CorrelationId);
 }
 ```
 
@@ -710,12 +835,13 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
-| `test/{Name}.Tests/Api/Filters/UserCommandFilterTests.cs` | `{Name}.Tests.Api.Filters` | {Name}.Api.Filters, {Name}.Tests.TestSupport.Api, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs` | `{Name}.Tests.Api.Filters` | {Name}.Api.Filters, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Api, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Console/CommandScenarioTests.cs` | `{Name}.Tests.Console` | {Name}.Console.Scenarios, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs` | `{Name}.Tests.Infrastructure.Messaging` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Infrastructure.Messaging, {Name}.Tests.TestSupport.Shared.Domain, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Shared/Application/CommandContextTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Shared/Application/CommandDispatcherTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
-| `test/{Name}.Tests/Shared/Application/CommandPipelineTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
-| `test/{Name}.Tests/Shared/Application/UserCommandTests.cs` | `{Name}.Tests.Shared.Application` | System.Text.Json, {Name}.Shared.Application, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Shared/Application/CommandPipelineTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Shared/Application/ContextCommandTests.cs` | `{Name}.Tests.Shared.Application` | System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Shared/Domain/AggregateRootTests.cs` | `{Name}.Tests.Shared.Domain` | {Name}.Tests.TestSupport.Shared.Domain |
-| `test/{Name}.Tests/Shared/Domain/EventContextTests.cs` | `{Name}.Tests.Shared.Domain` | {Name}.Shared.Domain, {Name}.Tests.TestSupport.Shared.Domain |
+| `test/{Name}.Tests/Shared/Domain/EventContextTests.cs` | `{Name}.Tests.Shared.Domain` | {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Shared/Domain/EventHandlerExecutorTests.cs` | `{Name}.Tests.Shared.Domain` | {Name}.Shared.Domain, {Name}.Tests.TestSupport.Shared.Domain |

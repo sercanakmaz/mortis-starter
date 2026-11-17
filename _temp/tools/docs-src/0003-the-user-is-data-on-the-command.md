@@ -1,7 +1,7 @@
 # 0003 — The user is data on the command, never an ambient service
 
-- Status: accepted
-- Date: 2026-11-16
+- Status: accepted; the user properties replaced by one context in 0007
+- Date: <the date the project was generated>
 - Context: An `IUserContext` service was read deep inside services to stamp audit columns. It was an invisible dependency, it had no value inside an async event handler or the Console, and a test had to fake it.
 
 ## Decision

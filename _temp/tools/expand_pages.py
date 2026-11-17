@@ -17,6 +17,25 @@ ROOT = Path(__file__).resolve().parents[2]
 TEMPLATE = ROOT / "_temp" / "template" / "assets" / "csharp"
 SOURCES = Path(__file__).resolve().parent / "pages"
 TARGET = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp"
+OVERLAY = Path(__file__).resolve().parent / "overlay"
+REPLACEMENTS = [
+    ("[JsonIgnore] public string UserId { get; set; }\n    [JsonIgnore] public string UserEmail { get; set; }", "[JsonIgnore] public CommandContext Context { get; set; }"),
+    ("[JsonIgnore] public string UserId { get; set; }\n[JsonIgnore] public string UserEmail { get; set; }", "[JsonIgnore] public CommandContext Context { get; set; }"),
+    ("IUserCommand", "IContextCommand"),
+    ("command.ToAuditUser()", "command.Context.User"),
+    ("{ UserId = @event.UserId, UserEmail = @event.UserEmail }", "{ Context = ContextOf(@event) }"),
+    (", UserId = SystemUser.Id, UserEmail = SystemUser.Email }", ", Context = ContextOf(@event) }"),
+]
+
+
+def read_source(file):
+    overlay = OVERLAY / file
+    if overlay.exists():
+        return overlay.read_text(encoding="utf-8")
+    text = (TEMPLATE / file).read_text(encoding="utf-8")
+    for old, new in REPLACEMENTS:
+        text = text.replace(old, new)
+    return text
 
 
 def dedent(block):
@@ -59,7 +78,7 @@ def body_end(masked, start):
 
 
 def member(file, type_name, name, occurrence=1):
-    text = (TEMPLATE / file).read_text(encoding="utf-8")
+    text = read_source(file)
     masked = mask(text)
     type_start, type_match = find_type(text, masked, type_name)
     type_name = type_name.partition("#")[0]
@@ -85,7 +104,7 @@ def member(file, type_name, name, occurrence=1):
 
 
 def decl(file, type_name):
-    text = (TEMPLATE / file).read_text(encoding="utf-8")
+    text = read_source(file)
     masked = mask(text)
     start, match = find_type(text, masked, type_name)
     lines_before = text[:start].split("\n")[:-1]
@@ -109,11 +128,11 @@ def decl(file, type_name):
 
 
 def data(file):
-    return (TEMPLATE / file).read_text(encoding="utf-8").rstrip("\n").replace("Boilerplate", "{Name}").replace("boilerplate", "{database}")
+    return read_source(file).rstrip("\n").replace("Boilerplate", "{Name}").replace("boilerplate", "{database}")
 
 
 def member_names(file, type_name):
-    text = (TEMPLATE / file).read_text(encoding="utf-8")
+    text = read_source(file)
     masked = mask(text)
     start, match = find_type(text, masked, type_name)
     end = body_end(masked, match.end())
@@ -181,11 +200,12 @@ def usings_for(page):
     for entry in manifest["files"]:
         if entry["page"] != page or not entry["path"].endswith(".cs") or entry.get("glob"):
             continue
-        path = TEMPLATE / entry["path"].replace("{Name}", "Boilerplate")
-        if not path.exists():
+        relative = entry["path"].replace("{Name}", "Boilerplate")
+        if not (OVERLAY / relative).exists() and not (TEMPLATE / relative).exists():
             continue
-        usings = [l.strip()[6:-1] for l in path.read_text(encoding="utf-8").splitlines() if l.startswith("using ")]
-        namespace = next((l.strip()[10:-1] for l in path.read_text(encoding="utf-8").splitlines() if l.startswith("namespace ")), "")
+        source = read_source(relative)
+        usings = [l.strip()[6:-1] for l in source.splitlines() if l.startswith("using ")]
+        namespace = next((l.strip()[10:-1] for l in source.splitlines() if l.startswith("namespace ")), "")
         rows.append((entry["path"], namespace.replace("Boilerplate", "{Name}"), ", ".join(sorted(u.replace("Boilerplate", "{Name}") for u in usings)) or "none"))
     out = ["| File | Namespace | Usings |", "|---|---|---|"]
     out += [f"| `{p}` | `{n}` | {u} |" for p, n, u in rows]

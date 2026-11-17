@@ -1,0 +1,5 @@
+src/Boilerplate.Shared/Application/IUserCommand.cs
+src/Boilerplate.Api/Filters/UserCommandFilter.cs
+test/Boilerplate.Tests/Shared/Application/UserCommandTests.cs
+test/Boilerplate.Tests/Api/Filters/UserCommandFilterTests.cs
+test/Boilerplate.Tests/TestSupport/Shared/Application/FakeUserCommandHandler.cs

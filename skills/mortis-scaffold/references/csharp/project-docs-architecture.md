@@ -22,7 +22,7 @@ How a request moves through this solution, and why each piece is where it is. Th
 
 | Project | Holds | May reference |
 |---|---|---|
-| `Shared` | Building blocks with no database library: `Entity`, `AggregateRoot`, `EventBase`, `EventContext`, `BaseSyncEventHandler`, `BaseAsyncEventHandler`, `ICommand<TContent>`, `IUserCommand`, `ITransactionalCommand`, `BaseCommandHandler`, `ICommandDispatcher`, `CommandPipeline`, `IRepository`, `IUnitOfWork`, exceptions | nothing of ours |
+| `Shared` | Building blocks with no database library: `Entity`, `AggregateRoot`, `EventBase`, `EventContext`, `BaseSyncEventHandler`, `BaseAsyncEventHandler`, `ICommand<TContent>`, `IContextCommand`, `CommandContext`, `ITransactionalCommand`, `BaseCommandHandler`, `ICommandDispatcher`, `CommandPipeline`, `IRepository`, `IUnitOfWork`, exceptions | nothing of ours |
 | `Domain` | `Aggregates/<Plural>/`: aggregate root, child entities, value objects, `Events/`, repository **interface**, constants; `Services/` and `Ports/` when needed | `Shared` |
 | `Application` | `<Plural>/`: commands and DTOs | `Domain`, `Shared` |
 | `Infrastructure` | Everything that implements a Domain or Shared interface: `AppDbContext`, `EfRepository`, `UnitOfWork`, repositories, EF configurations, migrations, logging, outbound event dispatcher | `Domain`, `Shared` |
@@ -48,14 +48,14 @@ A command that calls another command joins the outer transaction: the first one 
 
 A command without `ITransactionalCommand` gets no transaction. If it tries to write, the repository throws `TransactionRequiredException`. This is deliberate: a write that silently runs without a transaction also silently loses its events.
 
-### Who did it
+### Who did it, and as part of what
 
-There is no ambient "current user". The user is data on the command:
+There is no ambient "current user" or "current request". What the host knows about the call is data on the command, in one property:
 
-- A command that writes implements `IUserCommand` (`UserId`, `UserEmail`). A command is a plain record that implements interfaces, with no base class, so each writing command declares the two properties itself and marks them `[JsonIgnore]`, which keeps a client from sending them. `ToAuditUser()` is an extension method on `IUserCommand`.
-- **The presentation layer fills them.** The Api's `UserCommandFilter` copies the authenticated user's claims into every `IUserCommand` action argument, and clears whatever the client sent. The Console's `CommandScenario` (and `.AsConsoleUser()` inside a scenario) sets `console`.
-- The handler passes `command.ToAuditUser()` to the aggregate (`new Order(..., user)`, `order.SetUpdatedAudit(user)`). Queries do not implement `IUserCommand`: they write nothing.
-- **An event carries the user of the change that raised it** (`EventBase.UserId`, `UserEmail`). `AggregateRoot` stamps it when the event is raised and again when `SetUpdatedAudit` runs. A sync handler builds its command with `UserId = @event.UserId`, so the whole chain is audited as the original user. An async handler runs as `SystemUser`, because the request that caused it has already finished.
+- A command that writes implements `IContextCommand`: one line, `[JsonIgnore] public CommandContext Context { get; set; }`. The context holds the user, the correlation id of the whole request, the causation id (the event that led to this command, if any), and the tenant and language when those options are on. The client can neither send nor read it.
+- **The host fills it.** The Api's `ContextCommandFilter` builds one context per request from the claims and the request's correlation id. The Console's `.AsConsoleUser()` sets the console user and one correlation id per run. A command that arrives without a context gets one with a new correlation id from the pipeline.
+- The handler passes `command.Context.User` to the aggregate (`new Order(..., user)`, `order.SetUpdatedAudit(user)`). Queries have no context: they write nothing.
+- **An event carries the context of the command that raised it.** `AggregateRoot` stamps the user; while a command runs, `EventContext` stamps its correlation id, causation id, tenant and language on every event its aggregates raise. An event handler gives the command it sends `ContextOf(@event)`: the same correlation id, the event as its cause, and the event's user (sync) or `SystemUser` (async). One correlation id therefore follows a request through every command and event it causes, and each causation id says what caused each step.
 
 ## 3. Domain events
 
@@ -130,7 +130,7 @@ dotnet run --project src/{Name}.Console -- CreateProduct @product.json          
 | A service per aggregate | Command handlers that load and save; domain services only for logic that fits no aggregate | A per-aggregate service collects every operation and hides where the use case is |
 | Database-generated ids, views, functions | See §4 | |
 
-The decisions behind this layout are written down in [adr/](adr/): [0001](adr/0001-commands-are-sent-through-a-dispatcher.md) the dispatcher, [0002](adr/0002-commands-are-records-that-implement-interfaces.md) commands as records with interfaces, [0003](adr/0003-the-user-is-data-on-the-command.md) the user on the command, [0004](adr/0004-event-handlers-live-in-application-and-send-commands.md) event handlers, [0005](adr/0005-the-console-runs-commands-and-does-not-migrate.md) the Console, [0006](adr/0006-command-handlers-are-the-use-cases.md) command handlers as use cases.
+The decisions behind this layout are written down in [adr/](adr/): [0001](adr/0001-commands-are-sent-through-a-dispatcher.md) the dispatcher, [0002](adr/0002-commands-are-records-that-implement-interfaces.md) commands as records with interfaces, [0003](adr/0003-the-user-is-data-on-the-command.md) the user on the command, [0004](adr/0004-event-handlers-live-in-application-and-send-commands.md) event handlers, [0005](adr/0005-the-console-runs-commands-and-does-not-migrate.md) the Console, [0006](adr/0006-command-handlers-are-the-use-cases.md) command handlers as use cases, [0007](adr/0007-one-context-on-the-command.md) one context on the command.
 
 ## 7. When to split something out
 
@@ -143,6 +143,6 @@ The decisions behind this layout are written down in [adr/](adr/): [0001](adr/00
 - Queue events are only logged by `LoggingEventDispatcher`. There is no broker adapter and no outbox table yet, so a crash between the commit and the publish loses the message.
 - There is no guard against two event handlers that trigger each other forever.
 - Error messages are English only.
-- Authentication is not configured. `UserCommandFilter` reads the standard claims once it is; until then the audit user of an Api write is empty.
+- Authentication is not configured. `ContextCommandFilter` reads the standard claims once it is; until then the audit user of an Api write is empty.
 - `EfRepository` and the EF mappings are tested without a database (change-tracker state and model shape). Behaviour that only a real PostgreSQL shows is checked by running Console scenarios.
 ~~~~

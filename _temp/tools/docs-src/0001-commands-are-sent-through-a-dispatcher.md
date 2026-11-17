@@ -1,7 +1,7 @@
 # 0001 — A host sends a command through `ICommandDispatcher` and never names its handler
 
 - Status: accepted
-- Date: 2026-11-16
+- Date: <the date the project was generated>
 - Context: Controllers, Console scenarios and event handlers took the command handlers they needed as constructor arguments (`OrdersController(CreateOrderCommandHandler, GetOrderCommandHandler, ...)`, `CommandScenario<TCommand, TContent, TCommandHandler>`). Every new command meant editing the host's constructor, and a host knew every handler type of the Application layer.
 
 ## Decision

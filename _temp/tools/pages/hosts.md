@@ -16,13 +16,13 @@ Top-level statements, the whole file:
 
 @@data src/Boilerplate.Api/appsettings.json json@@
 
-### Filling the user
+### Filling the context
 
-File `Filters/UserCommandFilter.cs`. Copies the authenticated user's claims into every `IUserCommand` argument, and clears what the client sent when nobody is signed in.
+File `Filters/ContextCommandFilter.cs`. Builds one context for the request, from the authenticated user's claims and the request's correlation id, and sets it on every `IContextCommand` argument, replacing whatever the client sent.
 
-@@decl src/Boilerplate.Api/Filters/UserCommandFilter.cs::UserCommandFilter@@
+@@decl src/Boilerplate.Api/Filters/ContextCommandFilter.cs::ContextCommandFilter@@
 
-@@member src/Boilerplate.Api/Filters/UserCommandFilter.cs::UserCommandFilter::OnActionExecutionAsync@@
+@@member src/Boilerplate.Api/Filters/ContextCommandFilter.cs::ContextCommandFilter::OnActionExecutionAsync@@
 
 ### Errors
 
@@ -35,6 +35,8 @@ File `Middlewares/ApiConstants.cs`:
 @@decl src/Boilerplate.Api/Middlewares/ApiConstants.cs::ApiConstants@@
 
 @@member src/Boilerplate.Api/Middlewares/ApiConstants.cs::ApiConstants::CorrelationIdHeader@@
+
+@@member src/Boilerplate.Api/Middlewares/ApiConstants.cs::ApiConstants::CorrelationIdItem@@
 
 @@member src/Boilerplate.Api/Middlewares/ApiConstants.cs::ApiConstants::UnexpectedErrorCode@@
 
@@ -55,6 +57,8 @@ File `Middlewares/CorrelationIdMiddleware.cs`:
 @@decl src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs::CorrelationIdMiddleware@@
 
 @@member src/Boilerplate.Api/Middlewares/CorrelationIdMiddleware.cs::CorrelationIdMiddleware::InvokeAsync@@
+
+- The id is handed to the filter through `HttpContext.Items`, never through an ambient value.
 
 ### Controllers
 
@@ -117,6 +121,8 @@ Folder `Scenarios/`, namespace `{Name}.Console.Scenarios`.
 
 @@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::FilePrefix@@
 
+@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::RunCorrelationId@@
+
 @@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::OutputOptions@@
 
 @@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::InputOptions@@
@@ -171,7 +177,7 @@ Written first with an empty body (only `return services;`), and lines added with
 
 ## Tests
 
-`UserCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
+`ContextCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 

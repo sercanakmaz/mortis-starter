@@ -17,31 +17,69 @@ public interface ITransactionalCommand;
 with `public interface ICommand<TContent> : ICommand;` between the two.
 
 - A command is a `record` that implements `ICommand<TContent>`, where `TContent` is its view. It has no base class.
-- A command that writes also implements `ITransactionalCommand` and `IUserCommand`.
+- A command that writes also implements `ITransactionalCommand` and `IContextCommand`.
 
-File `Application/IUserCommand.cs` holds the interface and its extension:
+File `Application/CommandContext.cs`: everything the host knows about the call. The host fills it; the request body never does.
 
 ```csharp
-public interface IUserCommand
+public sealed record CommandContext
 ```
 
 ```csharp
-string UserId { get; set; }
+public AuditUser User { get; init; }
 ```
 
 ```csharp
-string UserEmail { get; set; }
+public Guid CorrelationId { get; init; }
 ```
 
 ```csharp
-public static class UserCommandExtensions
+public Guid? CausationId { get; init; }
 ```
 
 ```csharp
-public static AuditUser ToAuditUser(this IUserCommand userCommand) => new(userCommand.UserId, userCommand.UserEmail);
+public string TenantId { get; init; }
 ```
 
-- A command declares the two properties itself, each marked `[JsonIgnore]` so a client can neither send nor read them. The host fills them.
+```csharp
+public string Language { get; init; }
+```
+
+```csharp
+public static CommandContext Complete(CommandContext commandContext)
+{
+    var completed = commandContext ?? new CommandContext();
+
+    return completed.CorrelationId == Guid.Empty ? completed with { CorrelationId = Guid.CreateVersion7() } : completed;
+}
+```
+
+```csharp
+public static CommandContext FromEvent(EventBase @event, AuditUser user)
+{
+    return new CommandContext
+    {
+        User = user,
+        CorrelationId = @event.CorrelationId,
+        CausationId = @event.EventId,
+        TenantId = @event.TenantId,
+        Language = @event.Language
+    };
+}
+```
+
+File `Application/IContextCommand.cs`:
+
+```csharp
+public interface IContextCommand
+```
+
+```csharp
+CommandContext Context { get; set; }
+```
+
+- A command declares it once, `[JsonIgnore] public CommandContext Context { get; set; }`, so a client can neither send nor read it.
+- `TenantId` and `Language` exist for the tenancy and language options and stay empty without them.
 
 ## CommandResult
 
@@ -92,11 +130,34 @@ File `Application/CommandPipeline.cs`. Needs `using FluentValidation;` and the S
 public sealed class CommandPipeline<TCommand>(
     IEnumerable<IValidator<TCommand>> validators,
     IEnumerable<ICommandHandlerMiddleware> commandHandlerMiddlewares,
-    IUnitOfWork unitOfWork) where TCommand : ICommand
+    IUnitOfWork unitOfWork,
+    EventContext eventContext) where TCommand : ICommand
 ```
 
 ```csharp
 public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
+{
+    if (command is not IContextCommand contextCommand)
+    {
+        return await HandleAsync(command, onHandle);
+    }
+
+    contextCommand.Context = CommandContext.Complete(contextCommand.Context);
+    eventContext.EnterCommand(contextCommand.Context);
+
+    try
+    {
+        return await HandleAsync(command, onHandle);
+    }
+    finally
+    {
+        eventContext.LeaveCommand();
+    }
+}
+```
+
+```csharp
+private async Task<CommandResult<TContent>> HandleAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
 {
     var validationFailures = validators
         .SelectMany(validator => validator.Validate(command).Errors)
@@ -149,6 +210,7 @@ public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand comma
 }
 ```
 
+- A context command first gets a complete context (a correlation id when it had none), and the event context is told which command is running, so every event raised until it ends carries its context. A command sent inside it gets its own, and the outer one is restored after.
 - Order: validate, middlewares before, begin (transactional only), handle, commit, middlewares after. Validation failure opens no transaction.
 - The transaction key is the command's type name: a nested command's commit is ignored by the unit of work, so the outer command owns the commit.
 - Any exception rolls back and is rethrown unchanged.
@@ -247,7 +309,7 @@ public override Task<CommandResult<TContent>> Invoke(IServiceProvider servicePro
 
 ## Tests
 
-`CommandPipelineTests`, `CommandDispatcherTests` and `UserCommandTests` in `testing-kernel.md`.
+`CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests` and `CommandContextTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 
@@ -256,11 +318,12 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | File | Namespace | Usings |
 |---|---|---|
 | `src/{Name}.Shared/Application/BaseCommandHandler.cs` | `{Name}.Shared.Application` | none |
+| `src/{Name}.Shared/Application/CommandContext.cs` | `{Name}.Shared.Application` | {Name}.Shared.Domain |
 | `src/{Name}.Shared/Application/CommandDispatcher.cs` | `{Name}.Shared.Application` | Microsoft.Extensions.DependencyInjection, System.Collections.Concurrent |
 | `src/{Name}.Shared/Application/CommandHandlerExtensions.cs` | `{Name}.Shared.Application` | Microsoft.Extensions.DependencyInjection |
-| `src/{Name}.Shared/Application/CommandPipeline.cs` | `{Name}.Shared.Application` | FluentValidation, {Name}.Shared.Exceptions, {Name}.Shared.Persistence |
+| `src/{Name}.Shared/Application/CommandPipeline.cs` | `{Name}.Shared.Application` | FluentValidation, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence |
 | `src/{Name}.Shared/Application/CommandResult.cs` | `{Name}.Shared.Application` | none |
 | `src/{Name}.Shared/Application/ICommand.cs` | `{Name}.Shared.Application` | none |
 | `src/{Name}.Shared/Application/ICommandDispatcher.cs` | `{Name}.Shared.Application` | none |
 | `src/{Name}.Shared/Application/ICommandHandlerMiddleware.cs` | `{Name}.Shared.Application` | none |
-| `src/{Name}.Shared/Application/IUserCommand.cs` | `{Name}.Shared.Application` | {Name}.Shared.Domain |
+| `src/{Name}.Shared/Application/IContextCommand.cs` | `{Name}.Shared.Application` | none |

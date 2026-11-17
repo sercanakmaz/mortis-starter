@@ -1,6 +1,6 @@
 # Project documents, C#
 
-The markdown files a generated project gets. They are data: write each one exactly as shown, replacing `{Name}`. Remove a line only where this page says so. `MORTIS.md` is written by `mortis-architect` and copied into the project root unchanged.
+The markdown files a generated project gets. They are data: write each one exactly as shown, replacing `{Name}`. Remove a line only where this page says so. `MORTIS.md` is written by `mortis-architect` and stays as it is.
 
 | File | Content |
 |---|---|
@@ -10,7 +10,7 @@ The markdown files a generated project gets. They are data: write each one exact
 | `README.md` | below |
 | `plans/README.md` | below |
 | `docs/architecture.md` | `project-docs-architecture.md` |
-| `docs/adr/0000` to `0006` | `project-docs-adr.md` |
+| `docs/adr/0000` to `0007` | `project-docs-adr.md` |
 
 Without the example, remove from `README.md` and `AGENTS.md` §5 the lines that run `CreateProduct`; keep everything else.
 
@@ -50,7 +50,7 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | 5 | **Every command that writes implements `ITransactionalCommand`.** | A repository write outside a transaction throws `TransactionRequiredException` |
 | 6 | **Load with `FindByIdTrackingAsync` before you change an aggregate**, then call `UpdateAsync`. | `UpdateAsync` throws for an untracked aggregate |
 | 7 | **A repository write is sent to the database immediately.** Statement order inside a handler is behaviour, not style. | Review |
-| 8 | **A domain service file holds the interface and the class, nothing else.** Primary-constructor injection. No private methods and no local functions in a domain service, `*CommandHandler` or `*EventHandler`: a rule goes to the aggregate, value object or domain service, the steps stay inline. No instance field that remembers data between calls. There is no `<Aggregate>Service`. | Review |
+| 8 | **A domain service file holds the interface and the class, nothing else.** Primary-constructor injection. No private methods and no local functions in a domain service, `*CommandHandler` or `*EventHandler`: a rule goes to the aggregate, value object or domain service, the steps stay inline. No instance field that remembers data between calls. There is no `<Aggregate>Service`. A domain service is pure by default, may read through a domain interface (a narrow read port preferred) when the rule decides what it needs, and **never writes**: no `CreateAsync`, `UpdateAsync`, `DeleteAsync`, no `IUnitOfWork`. The command handler owns every write and the commit. | Review; `verify.sh` fails a write call or `IUnitOfWork` in Domain |
 | 9 | **A change to a second aggregate is an event handler, unless the action is about both.** Ask: without the second change, does the command still do what its name says? If yes, it is a consequence: an event handler in the Application layer, in the *reacting* aggregate's folder (`Application/<Plural>/`), named `<Action>When<Aggregate><Event>EventHandler`. If no (a transfer between two accounts), the command handler loads and saves both. | Review |
 | 10 | **A command handler is the use case**: it loads the aggregates the action needs, calls their operations or a domain service, stamps the user, saves, and maps the result with `XDto.Map(...)`. It holds no business rule. **A host sends a command and never names its handler**: a controller, a Console scenario or an event handler injects `ICommandDispatcher` and calls `Send(command)`. An event handler sends a command, never calls a repository or a domain service, so validation, logging and the transaction apply to a reaction as they do to a request. | Review |
 | 11 | **A validator checks the shape of the input and is synchronous.** It never reads the database. Uniqueness is a unique index; existence is a foreign key; rules about state belong in the aggregate. | Review |
@@ -62,7 +62,7 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | 17 | **A new abstraction needs two real implementations today**, or it is a boundary a test must replace. Choosing one of several implementations is keyed dependency injection, never a factory with a `switch`. Write the decision down in `docs/adr/`. | Review |
 | 18 | **A new NuGet package needs the owner's agreement.** No mediator, mapping or assertion library: the command pipeline, `Dto.Map` and xUnit `Assert` are the choices here. | Review |
 | 19 | **A handler is sync or async, and its base class says which.** `BaseSyncEventHandler<TEvent>` runs inside the transaction, awaited, ordered by `Sequence`; a throw rolls the whole command back, so it is the place for a rule that must hold together with the change. `BaseAsyncEventHandler<TEvent>` runs after COMMIT in its own scope and transaction as the `system` user; its failure is logged and never undoes the original change, so it is for eventual consistency (stock, read models, notifications). An event with an async handler implements `IQueueEvent` and carries every value the handler needs; the handler never reloads the publisher. Write async handlers for at-least-once delivery, because a broker will replace the in-process dispatcher. | Compiler (`BaseAsyncEventHandler` requires `IQueueEvent`), dispatcher and handler tests |
-| 20 | **The user is data on the command, never ambient.** A command that writes implements `IUserCommand` (`UserId`, `UserEmail`, both `[JsonIgnore]`, never read from JSON). The host fills it: `UserCommandFilter` in the Api, `CommandScenario` in the Console. The handler passes `command.ToAuditUser()` to the aggregate. An event carries the user who raised it; a sync handler passes `@event.UserId` on, an async handler uses `SystemUser`. There is no `IUserContext`. | Filter, command, event and handler tests |
+| 20 | **What the host knows is data on the command, never ambient.** A command that writes implements `IContextCommand` with one line, `[JsonIgnore] public CommandContext Context { get; set; }`: never a user, correlation or tenant property of its own. The host fills it: `ContextCommandFilter` in the Api, `.AsConsoleUser()` in the Console. The handler passes `command.Context.User` to the aggregate. An event handler sends its command with `Context = ContextOf(@event)`. There is no `IUserContext` and no ambient correlation id. | Filter, pipeline, event-context and handler tests; `verify.sh` |
 
 ## 3. Adding an aggregate: every place it touches
 
@@ -142,7 +142,7 @@ dotnet run --project src/{Name}.Api
 - [AGENTS.md](AGENTS.md): the rules, and every place an aggregate touches.
 - [docs/architecture.md](docs/architecture.md): what happens when a command runs, how events flow, how persistence behaves.
 - [MORTIS.md](MORTIS.md): the decisions this project was started with.
-- [docs/adr/](docs/adr/): why it is built this way (the dispatcher, commands as interfaces, the user on the command, event handlers, the Console, handlers as use cases).
+- [docs/adr/](docs/adr/): why it is built this way (the dispatcher, commands as interfaces, the user on the command, event handlers, the Console, handlers as use cases, one context on the command).
 ~~~~
 
 ## plans/README.md

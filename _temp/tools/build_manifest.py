@@ -1,7 +1,9 @@
 import json, os, re
 from pathlib import Path
 T = Path("/home/claude/zeyrek-skills/_temp/template/assets/csharp")
-files = sorted(str(p.relative_to(T)) for p in T.rglob("*") if p.is_file() and not ({"bin","obj"} & set(p.parts)))
+OV = Path("/home/claude/zeyrek-skills/_temp/tools/overlay")
+removed = set((OV/"REMOVED.txt").read_text().split())
+files = sorted((set(str(p.relative_to(T)) for p in T.rglob("*") if p.is_file() and not ({"bin","obj"} & set(p.parts))) | set(str(p.relative_to(OV)) for p in OV.rglob("*.cs"))) - removed)
 deletes = [l.split(" ",1)[1] for l in (T.parent/"csharp-example.txt").read_text().splitlines() if l.startswith("delete ")]
 def is_example(f):
     return any(f == d or f.startswith(d + "/") for d in deletes)
@@ -50,6 +52,7 @@ out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.c
 out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False,"glob":True})
 out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False})
 out.append({"path":"docs/adr/0006-command-handlers-are-the-use-cases.md","page":"project-docs-adr.md","source":"data","kernel":False})
+out.append({"path":"docs/adr/0007-one-context-on-the-command.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"MORTIS.md","page":"project-docs.md","source":"tool","kernel":False})
 out.sort(key=lambda e:e["path"])
 manifest={
@@ -71,5 +74,8 @@ manifest={
    }
  }
 }
+old = json.load(open("/home/claude/zeyrek-skills/skills/mortis-scaffold/references/csharp/manifest.json"))
+manifest["aggregate_files"] = old["aggregate_files"]
+manifest["always_allowed"] = old["always_allowed"]
 json.dump(manifest,open("/home/claude/zeyrek-skills/skills/mortis-scaffold/references/csharp/manifest.json","w"),indent=1)
 print(len(out),"entries; dropped by decision 28:",dropped)

@@ -61,7 +61,7 @@ File `Domain/SystemUser.cs`, the actor of async handlers:
 
 ## EventBase and IQueueEvent
 
-File `Domain/EventBase.cs`, both types. Needs `using System.Diagnostics;`.
+File `Domain/EventBase.cs`, both types. The user is stamped by the aggregate; correlation, causation, tenant and language by `EventContext` while a command runs.
 
 @@decl src/Boilerplate.Shared/Domain/EventBase.cs::EventBase@@
 
@@ -70,6 +70,12 @@ File `Domain/EventBase.cs`, both types. Needs `using System.Diagnostics;`.
 @@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::OccurredAt@@
 
 @@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::CorrelationId@@
+
+@@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::CausationId@@
+
+@@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::TenantId@@
+
+@@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::Language@@
 
 @@member src/Boilerplate.Shared/Domain/EventBase.cs::EventBase::UserId@@
 
@@ -81,15 +87,21 @@ File `Domain/EventBase.cs`, both types. Needs `using System.Diagnostics;`.
 
 ## EventContext
 
-File `Domain/EventContext.cs`. One per scope. Holds events taken off aggregates (raised) and events whose sync handlers have run (dispatched). Every member locks.
+File `Domain/EventContext.cs`. One per scope. Holds events taken off aggregates (raised), events whose sync handlers have run (dispatched), and the stack of contexts of the commands running in the scope. Every member locks.
 
 @@decl src/Boilerplate.Shared/Domain/EventContext.cs::EventContext@@
 
-Fields: `private readonly Lock _lock = new();`, `private readonly Queue<EventBase> _raisedEvents = new();`, `private readonly Queue<EventBase> _dispatchedEvents = new();`.
+Fields: `private readonly Lock _lock = new();`, `private readonly Queue<EventBase> _raisedEvents = new();`, `private readonly Queue<EventBase> _dispatchedEvents = new();`, `private readonly Stack<CommandContext> _commandContexts = new();`. Needs `using {Name}.Shared.Application;`.
 
 @@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::RaisedCount@@
 
+@@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::EnterCommand@@
+
+@@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::LeaveCommand@@
+
 @@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::AddRaised@@
+
+- The context is a stack because a sync handler sends a command inside the running one: its events carry its own context, with the triggering event as their cause.
 
 @@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::TakeRaised@@
 
@@ -115,9 +127,15 @@ File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEve
 
 @@member src/Boilerplate.Shared/Domain/BaseSyncEventHandler.cs::BaseSyncEventHandler::Handle@@
 
-File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, and one more constraint:
+@@member src/Boilerplate.Shared/Domain/BaseSyncEventHandler.cs::BaseSyncEventHandler::ContextOf@@
+
+File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, one more constraint, and the system user in `ContextOf`:
 
 @@decl src/Boilerplate.Shared/Domain/BaseAsyncEventHandler.cs::BaseAsyncEventHandler@@
+
+@@member src/Boilerplate.Shared/Domain/BaseAsyncEventHandler.cs::BaseAsyncEventHandler::ContextOf@@
+
+Both files need `using {Name}.Shared.Application;`.
 
 - Handlers run in ascending `Sequence`; equal values keep registration order.
 - A handler's body is one awaited `commandDispatcher.Send(...)` (see `application.md`).

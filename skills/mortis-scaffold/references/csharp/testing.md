@@ -41,15 +41,11 @@ public FakeTransactionalCommandValidator()
 ```
 
 ```csharp
-public record FakeUserCommand : ICommand<string>, IUserCommand
+public record FakeContextCommand : ICommand<string>, IContextCommand
 ```
 
 ```csharp
-[JsonIgnore] public string UserId { get; set; }
-```
-
-```csharp
-[JsonIgnore] public string UserEmail { get; set; }
+[JsonIgnore] public CommandContext Context { get; set; }
 ```
 
 ```csharp
@@ -73,7 +69,7 @@ protected override Task<CommandResult<string>> OnHandle(FakeCommand command)
 }
 ```
 
-`FakeTransactionalCommandHandler.cs` and `FakeUserCommandHandler.cs` are the same for `FakeTransactionalCommand` and `FakeUserCommand`.
+`FakeTransactionalCommandHandler.cs` and `FakeContextCommandHandler.cs` are the same for `FakeTransactionalCommand` and `FakeContextCommand`.
 
 ```csharp
 public class CommandPipelineBuilder<TCommand> where TCommand : ICommand
@@ -89,6 +85,10 @@ private readonly List<ICommandHandlerMiddleware> _commandHandlerMiddlewares = []
 
 ```csharp
 private IUnitOfWork _unitOfWork = UnitOfWorkBuilder.Create().Build();
+```
+
+```csharp
+private EventContext _eventContext = new();
 ```
 
 ```csharp
@@ -120,9 +120,18 @@ public CommandPipelineBuilder<TCommand> WithUnitOfWork(IUnitOfWork unitOfWork)
 ```
 
 ```csharp
+public CommandPipelineBuilder<TCommand> WithEventContext(EventContext eventContext)
+{
+    _eventContext = eventContext;
+
+    return this;
+}
+```
+
+```csharp
 public CommandPipeline<TCommand> Build()
 {
-    return new CommandPipeline<TCommand>(_validators, _commandHandlerMiddlewares, _unitOfWork);
+    return new CommandPipeline<TCommand>(_validators, _commandHandlerMiddlewares, _unitOfWork, _eventContext);
 }
 ```
 
@@ -543,6 +552,15 @@ public ActionExecutingContextBuilder WithUser(string id, string email)
 ```
 
 ```csharp
+public ActionExecutingContextBuilder WithCorrelationId(Guid correlationId)
+{
+    _httpContext.Items[ApiConstants.CorrelationIdItem] = correlationId;
+
+    return this;
+}
+```
+
+```csharp
 public ActionExecutingContextBuilder WithArgument(string name, object value)
 {
     _arguments[name] = value;
@@ -571,9 +589,9 @@ Every project has them; each is written out in `testing-kernel.md`.
 | Class | File |
 |---|---|
 | `AggregateRootTests`, `EventContextTests`, `EventHandlerExecutorTests` | `Shared/Domain/` |
-| `CommandPipelineTests`, `CommandDispatcherTests`, `UserCommandTests` | `Shared/Application/` |
+| `CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests`, `CommandContextTests` | `Shared/Application/` |
 | `AsyncEventHandlerDispatcherTests` | `Infrastructure/Messaging/` |
-| `UserCommandFilterTests` | `Api/Filters/` |
+| `ContextCommandFilterTests` | `Api/Filters/` |
 | `CommandScenarioTests` | `Console/` |
 
 ## Namespaces and usings
@@ -582,17 +600,17 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
-| `test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs` | `{Name}.Tests.TestSupport.Api` | Microsoft.AspNetCore.Http, Microsoft.AspNetCore.Mvc, Microsoft.AspNetCore.Mvc.Abstractions, Microsoft.AspNetCore.Mvc.Filters, Microsoft.AspNetCore.Routing, System.Security.Claims |
+| `test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs` | `{Name}.Tests.TestSupport.Api` | Microsoft.AspNetCore.Http, Microsoft.AspNetCore.Mvc, Microsoft.AspNetCore.Mvc.Abstractions, Microsoft.AspNetCore.Mvc.Filters, Microsoft.AspNetCore.Routing, System.Security.Claims, {Name}.Api.Middlewares |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Messaging/AsyncEventHandlerDispatcherBuilder.cs` | `{Name}.Tests.TestSupport.Infrastructure.Messaging` | Microsoft.Extensions.DependencyInjection, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs` | `{Name}.Tests.TestSupport.Infrastructure.Messaging` | Microsoft.Extensions.Logging |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Persistence/AppDbContextBuilder.cs` | `{Name}.Tests.TestSupport.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, {Name}.Infrastructure.Persistence |
 | `test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Application` | Microsoft.Extensions.DependencyInjection, {Name}.Shared.Application |
 | `test/{Name}.Tests/TestSupport/Shared/Application/CommandHandlerMiddlewareBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Application` | Moq, {Name}.Shared.Application |
-| `test/{Name}.Tests/TestSupport/Shared/Application/CommandPipelineBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Application` | FluentValidation, {Name}.Shared.Application, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/TestSupport/Shared/Application/CommandPipelineBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Application` | FluentValidation, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/TestSupport/Shared/Application/FakeCommand.cs` | `{Name}.Tests.TestSupport.Shared.Application` | FluentValidation, System.Text.Json.Serialization, {Name}.Shared.Application |
 | `test/{Name}.Tests/TestSupport/Shared/Application/FakeCommandHandler.cs` | `{Name}.Tests.TestSupport.Shared.Application` | {Name}.Shared.Application |
+| `test/{Name}.Tests/TestSupport/Shared/Application/FakeContextCommandHandler.cs` | `{Name}.Tests.TestSupport.Shared.Application` | {Name}.Shared.Application |
 | `test/{Name}.Tests/TestSupport/Shared/Application/FakeTransactionalCommandHandler.cs` | `{Name}.Tests.TestSupport.Shared.Application` | {Name}.Shared.Application |
-| `test/{Name}.Tests/TestSupport/Shared/Application/FakeUserCommandHandler.cs` | `{Name}.Tests.TestSupport.Shared.Application` | {Name}.Shared.Application |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/EventHandlerExecutorBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | Microsoft.Extensions.DependencyInjection, {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/FakeAggregate.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/FakeAuditUser.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |

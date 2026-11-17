@@ -110,10 +110,12 @@ service PricingService
 ```
 
 - Use one when a decision needs several entities (of one or several kinds) or an outside system reached through an anti-corruption layer.
-- It may load entities through repositories to decide. It returns a decision or changes the aggregates it was given through their operations; the command handler saves.
+- **Default: pure.** The command handler loads the aggregates and passes them in; the service decides from what it was given and is tested without mocks.
+- **Reads are allowed** when the rule itself decides what data it needs (a customer's previous orders for a loyalty rule, today's exchange rate, the promotions that apply). It reads through an interface declared in Domain, a narrow read port (`openOrderTotals.of(customerId)`) in preference to a whole repository, and only its read methods.
+- **Writes are never allowed.** No create, update, upsert or delete, no save, no commit, no transaction. It changes the aggregates it was given through their operations, or returns a new aggregate or a result that says what changed; the command handler persists all of it, so one handler shows the whole persistence story of the use case.
 - Stateless, named after the domain concept it serves (`PricingService`, `TransferPolicy`), never after an aggregate plus "Service" by reflex.
 - Contains no rule that fits inside one aggregate; that rule is an operation of the aggregate.
-- **Commonest mistake:** a service named after an aggregate that collects every operation of it; the operations belong on the aggregate and the coordination in the command handlers.
+- **Commonest mistakes:** a service named after an aggregate that collects every operation of it (the operations belong on the aggregate, the coordination in the command handlers); and a service that saves what it changed, so persistence is split between it and the handler.
 
 ## Command
 
@@ -124,7 +126,7 @@ command CompleteOrder(orderId) -> OrderView   [transactional, carries context]
 ```
 
 - A plain record; flags say whether it needs a transaction and whether it carries context.
-- Carries one `context` value (actor, correlation, causation, tenant, language), filled by the host, never by the client.
+- Carries one `context` value (actor, correlation, causation, tenant, language), filled by the host, never by the client. A command without a context (a read) is not stamped and writes nothing.
 - **Commonest mistake:** putting the acting user in the body the client sends.
 
 ## Validator

@@ -11,15 +11,11 @@ One file per command, `{Plural}/{Action}{Aggregate}Command.cs`, holding three ty
 A `record` with init-able public properties (`{ get; set; }`), so both JSON and `with` work.
 
 ```csharp
-public record CreateOrderCommand : ICommand<OrderDto>, IUserCommand, ITransactionalCommand
+public record CreateOrderCommand : ICommand<OrderDto>, IContextCommand, ITransactionalCommand
 ```
 
 ```csharp
-[JsonIgnore] public string UserId { get; set; }
-```
-
-```csharp
-[JsonIgnore] public string UserEmail { get; set; }
+[JsonIgnore] public CommandContext Context { get; set; }
 ```
 
 ```csharp
@@ -30,20 +26,16 @@ public Guid Id { get; set; } = Guid.CreateVersion7();
 public List<OrderLineModel> Lines { get; set; }
 ```
 
-- A command that writes implements `ICommand<TView>, IUserCommand, ITransactionalCommand` and declares `UserId` and `UserEmail` with `[JsonIgnore]` (`using System.Text.Json.Serialization;`).
+- A command that writes implements `ICommand<TView>, IContextCommand, ITransactionalCommand` and declares one line, `Context`, with `[JsonIgnore]`; never a user, correlation or tenant property of its own (`using System.Text.Json.Serialization;`).
 - A create command carries its new id with a default of `Guid.CreateVersion7()`, so the client may send one.
-- A command with only an id is positional, and still declares the user properties in its body:
+- A command with only an id is positional, and still declares its context in its body:
 
 ```csharp
-public record CompleteOrderCommand(Guid Id) : ICommand<OrderDto>, IUserCommand, ITransactionalCommand
+public record CompleteOrderCommand(Guid Id) : ICommand<OrderDto>, IContextCommand, ITransactionalCommand
 ```
 
 ```csharp
-[JsonIgnore] public string UserId { get; set; }
-```
-
-```csharp
-[JsonIgnore] public string UserEmail { get; set; }
+[JsonIgnore] public CommandContext Context { get; set; }
 ```
 
 - A read is `Get{Aggregate}Command(Guid Id) : ICommand<{Aggregate}Dto>`: no user, no transaction.
@@ -107,7 +99,7 @@ protected override async Task<CommandResult<OrderDto>> OnHandle(CompleteOrderCom
         ?? throw new NotFoundException(nameof(Order));
 
     order.Complete();
-    order.SetUpdatedAudit(command.ToAuditUser());
+    order.SetUpdatedAudit(command.Context.User);
 
     await orderRepository.UpdateAsync(order);
 
@@ -120,7 +112,7 @@ protected override async Task<CommandResult<OrderDto>> OnHandle(CompleteOrderCom
 ```csharp
 protected override async Task<CommandResult<OrderDto>> OnHandle(CreateOrderCommand command)
 {
-    var order = new Order(command.Id, command.OrderNumber, command.CustomerId, command.ToAuditUser());
+    var order = new Order(command.Id, command.OrderNumber, command.CustomerId, command.Context.User);
 
     foreach (var line in command.Lines)
     {
@@ -155,7 +147,7 @@ protected override async Task<CommandResult<OrderDto>> OnHandle(CancelOrderWhenA
 
     if (order.CancelWhenAllLinesCancelled())
     {
-        order.SetUpdatedAudit(command.ToAuditUser());
+        order.SetUpdatedAudit(command.Context.User);
 
         await orderRepository.UpdateAsync(order);
     }
@@ -176,8 +168,8 @@ protected override async Task<CommandResult<TransferDto>> OnHandle(TransferStock
 
     source.Release(command.Sku, command.Quantity);
     target.Receive(command.Sku, command.Quantity);
-    source.SetUpdatedAudit(command.ToAuditUser());
-    target.SetUpdatedAudit(command.ToAuditUser());
+    source.SetUpdatedAudit(command.Context.User);
+    target.SetUpdatedAudit(command.Context.User);
 
     await warehouseRepository.UpdateAsync(source);
     await warehouseRepository.UpdateAsync(target);
@@ -188,6 +180,7 @@ protected override async Task<CommandResult<TransferDto>> OnHandle(TransferStock
 
 The transfer is an illustration; the example domain has no command of this shape.
 
+- The user is `command.Context.User`; the rest of the context reaches the events without the handler doing anything.
 - `SetUpdatedAudit` comes after the operation, so the operation's events carry the user.
 - The handler never catches a business failure and never decides with an `if` of its own; the one `if` allowed is on an operation's own "did it change" answer.
 - A consequence in another aggregate is an event handler, never another line here.
@@ -227,7 +220,7 @@ public static OrderLineDto Map(OrderLine orderLine) => new()
 
 File `{ReactingPlural}/{Action}When{Aggregate}{Event}EventHandler.cs`, in the folder of the aggregate that reacts. Body: one awaited `Send`. The event's own namespace is imported with an alias when another aggregate has an event of the same name.
 
-A sync handler runs as the user of the event:
+The command it sends gets its context from `ContextOf(@event)`, which the base class gives: the same correlation id, the event as its cause, and the event's user for a sync handler or the system user for an async one. A sync handler:
 
 ```csharp
 public class CancelOrderWhenOrderLineCancelledEventHandler(ICommandDispatcher commandDispatcher) : BaseSyncEventHandler<LineCancelled>
@@ -236,16 +229,16 @@ public class CancelOrderWhenOrderLineCancelledEventHandler(ICommandDispatcher co
 ```csharp
 protected override async Task OnHandle(LineCancelled @event)
 {
-    await commandDispatcher.Send(new CancelOrderWhenAllLinesCancelledCommand(Guid.Parse(@event.Id)) { UserId = @event.UserId, UserEmail = @event.UserEmail });
+    await commandDispatcher.Send(new CancelOrderWhenAllLinesCancelledCommand(Guid.Parse(@event.Id)) { Context = ContextOf(@event) });
 }
 ```
 
-An async handler runs as the system user:
+An async handler (the same line; the base class makes it the system user):
 
 ```csharp
 protected override async Task OnHandle(LineAdded @event)
 {
-    await commandDispatcher.Send(new DecreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, UserId = SystemUser.Id, UserEmail = SystemUser.Email });
+    await commandDispatcher.Send(new DecreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, Context = ContextOf(@event) });
 }
 ```
 

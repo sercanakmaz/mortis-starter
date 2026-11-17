@@ -17,7 +17,7 @@ Holds the building blocks that have no storage knowledge, so Domain and Applicat
 ## Domain
 
 - An **aggregate** enforces its own rules. Its operations check what must hold, change its own state, and raise events. Nobody else changes its state.
-- A **domain service** holds business logic that does not fit inside one aggregate: a decision that needs several entities, or an answer from another system through an anti-corruption layer. It may load the entities it needs through repositories. It is optional: most use cases need none.
+- A **domain service** holds business logic that does not fit inside one aggregate: a decision that needs several entities, or an answer from another system through an anti-corruption layer. It is pure by default (the command handler passes in what it loaded); it may read through a domain interface, preferably a narrow read port, when the rule decides what data it needs; it never writes, saves or commits. It is optional: most use cases need none.
 - An **anti-corruption layer** is a port declared here, in the domain's own words, for another system (a tax service, a credit bureau, a legacy database). Infrastructure implements it and translates the other system's model, so that model never leaks into Domain.
 - A **repository interface** is declared here, named after what the domain asks ("find the open orders of a customer"), not after how the answer is stored.
 - A **domain event** is a fact in the past tense, raised by an aggregate, carrying the ids and the context of the change that raised it.

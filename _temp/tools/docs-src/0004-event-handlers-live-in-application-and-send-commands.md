@@ -1,7 +1,7 @@
 # 0004 — Event handlers live in the Application layer and send commands; sync and async are separate
 
 - Status: accepted
-- Date: 2026-11-16
+- Date: <the date the project was generated>
 - Context: A reaction to an event (the customer is updated when an order completes, stock moves when a line is added) must run a use case. A handler in the Domain layer would have called services directly and skipped validation, logging and the transaction.
 
 ## Decision

@@ -24,7 +24,7 @@ Ask these questions in order and stop at the first yes.
 1. **Can it be checked from the command alone** (required, format, range)? → validator.
 2. **Is it a business rule?**
    - It uses only the state of one aggregate → an operation on that aggregate.
-   - It needs several entities, or an answer from another system → a domain service (the other system behind an anti-corruption layer).
+   - It needs several entities, or an answer from another system → a domain service (the other system behind an anti-corruption layer). The handler passes in what it already loads; the service reads for itself only what the rule decides it needs, through a narrow read port; it never writes.
 3. **Is it the outside world** (who is calling, the tenant, the language, the response format, authentication)? → host.
 4. **Is it running one user action** (load, call the domain, save, map the result)? → command handler; the pipeline gives the transaction.
 5. **Does the action change a second aggregate?** Decide between the command handler and an event handler with the test below.
@@ -74,6 +74,7 @@ A sync event handler and a multi-aggregate command handler are both one transact
 - **Event handlers with business logic inline.** An event handler sends a command and nothing more. The rule is in the aggregate or the domain service the command reaches.
 - **One event, one reaction assumed.** Several handlers may react to the same event, in several aggregates' folders. None may depend on the order of the others unless an order is declared.
 - **"Service" as a dumping ground.** A `*Service` named after an aggregate with forty operations is a god-class. The operations belong on the aggregate, the coordination in command handlers, the cross-entity logic in small domain services named after their concept.
+- **A domain service that writes.** A service that calls create, update, upsert or delete splits the use case's persistence across two classes: nobody can see in one place what gets saved, and a write may run before a later rule throws. It mutates or returns; the handler saves.
 - **Outside models leaking in.** A domain service that takes the tax provider's response type has let another system's model into Domain. Put an anti-corruption layer in between.
 - **Raising an event after the write.** It stays on the aggregate and is never handled.
 - **Publishing before the commit.** A rollback then leaves a message about something that never happened.
@@ -93,6 +94,8 @@ Look up "I need to …" and read across: the layer, the block, and why. Roles ar
 | change another aggregate as a consequence of a change | Domain / Application | Domain event, then an event handler sending a command | the originator does not need to know |
 | change two aggregates that the action is about (a transfer) | Application | Command handler loading both | the change to both is the intent; one transaction |
 | decide something that needs several entities | Domain | Domain service | fits no single aggregate |
+| read data a rule decides it needs (previous orders, a rate) | Domain | Read port called by a domain service | the handler would otherwise have to know the rule's data needs |
+| save what a domain service changed or created | Application | Command handler | all writes and the commit live in the use case |
 | ask another system something the domain needs to decide | Domain / Infrastructure | Anti-corruption layer, called by a domain service | the outside model stays out of Domain |
 | make another aggregate change succeed or fail together with this one | Application | Sync event handler | runs inside the transaction and can veto |
 | update stock after a line is added | Application | Async event handler | may lag, must not undo the line |

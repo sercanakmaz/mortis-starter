@@ -8,6 +8,17 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(ROOT, "skills", "mortis-scaffold")
 TEMPLATE = os.path.join(ROOT, "_temp", "template", "assets", "csharp")
 CSHARP = os.path.join(SCAFFOLD, "references", "csharp")
+OVERLAY = os.path.join(ROOT, "_temp", "tools", "overlay")
+
+
+def removed_files():
+    path = os.path.join(OVERLAY, "REMOVED.txt")
+    return set(open(path, encoding="utf-8").read().split()) if os.path.exists(path) else set()
+
+
+def source_path(relative):
+    overlay = os.path.join(OVERLAY, relative)
+    return overlay if os.path.exists(overlay) else os.path.join(TEMPLATE, relative)
 SUPERSEDED = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSupport/Domain/\w+/\w+ServiceBuilder\.cs|Tests/Domain/\w+/\w+ServiceTests\.cs)$")
 ONE_WAY = re.compile(r"\b(alternatively|you may also|you can also|or use|optionally use)\b", re.I)
 
@@ -22,10 +33,14 @@ def fail(message):
 
 
 def template_files():
-    for base, dirs, files in os.walk(TEMPLATE):
-        dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
-        for name in files:
-            yield os.path.relpath(os.path.join(base, name), TEMPLATE).replace(os.sep, "/")
+    found = set()
+    for root in (TEMPLATE, OVERLAY):
+        for base, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
+            for name in files:
+                if name != "REMOVED.txt":
+                    found.add(os.path.relpath(os.path.join(base, name), root).replace(os.sep, "/"))
+    return sorted(found - removed_files())
 
 
 def manifest():
@@ -52,7 +67,7 @@ def check_kernel_shape():
     kernel = [e["path"].replace("{Name}", "Boilerplate") for e in manifest()["files"] if e["kernel"]]
     expected = []
     for f in kernel:
-        expected += shape_of_file(os.path.join(TEMPLATE, f), "Boilerplate")
+        expected += shape_of_file(source_path(f), "Boilerplate")
     written = [l for l in open(os.path.join(CSHARP, "kernel-shape.txt"), encoding="utf-8").read().splitlines() if l and not l.startswith("#")]
     if expected != written:
         missing = [l for l in expected if l not in written][:5]
@@ -93,7 +108,7 @@ def check_snippets_cover_members():
     for entry in manifest()["files"]:
         if not entry["kernel"]:
             continue
-        path = os.path.join(TEMPLATE, entry["path"].replace("{Name}", "Boilerplate"))
+        path = source_path(entry["path"].replace("{Name}", "Boilerplate"))
         if not path.endswith(".cs") or os.path.basename(path) == "Program.cs":
             continue
         for name, head in non_trivial_members(path):

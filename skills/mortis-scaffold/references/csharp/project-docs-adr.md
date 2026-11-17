@@ -79,7 +79,7 @@ Which handler serves a command. The host must not know.
 ~~~~markdown
 # 0002 — A command is a plain record that implements interfaces
 
-- Status: accepted
+- Status: accepted; the user properties replaced by one context in 0007
 - Date: <the date the project was generated>
 - Context: `BaseCommand<TContent>` and `UserCommand<TContent>` were abstract records. They carried no behaviour a marker could not carry, except two `[JsonIgnore]` properties and `ToAuditUser()`, and they used up the command's one base type.
 
@@ -115,7 +115,7 @@ Nothing: this is a placement decision.
 ~~~~markdown
 # 0003 — The user is data on the command, never an ambient service
 
-- Status: accepted
+- Status: accepted; the user properties replaced by one context in 0007
 - Date: <the date the project was generated>
 - Context: An `IUserContext` service was read deep inside services to stamp audit columns. It was an invisible dependency, it had no value inside an async event handler or the Console, and a test had to fake it.
 
@@ -228,7 +228,7 @@ Which commands a developer wants to try by hand.
 
 ## Decision
 
-A command handler is the use case. It loads the aggregates the action needs through their repositories, calls their operations, stamps the user, saves, and maps the result. It may change several aggregates when the action is about all of them; a change that is a consequence of the action is an event handler in the reacting aggregate's folder. A domain service exists only for logic that fits no single aggregate: it needs several entities, or another system behind an anti-corruption port. It reads and decides; the handler saves.
+A command handler is the use case. It loads the aggregates the action needs through their repositories, calls their operations, stamps the user, saves, and maps the result. It may change several aggregates when the action is about all of them; a change that is a consequence of the action is an event handler in the reacting aggregate's folder. A domain service exists only for logic that fits no single aggregate: it needs several entities, or another system behind an anti-corruption port. It is pure by default (the handler passes in what it loaded); it may read through a domain interface, preferably a narrow read port, when the rule decides what data it needs; it never writes: no create, update, upsert or delete, no save, no transaction. The handler persists everything, so one class shows the whole persistence story of a use case.
 
 ## What varies
 
@@ -250,4 +250,40 @@ Whether a second change is the intent of the action or a consequence of it. The 
 ## How it is enforced
 
 `AGENTS.md` rules 8 to 10, and the `mortis-review` skill.
+~~~~
+
+## 0007-one-context-on-the-command.md
+
+~~~~markdown
+# 0007 — One context on the command
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: The user was two `[JsonIgnore]` properties on every writing command (0002, 0003). Correlation, causation, tenant and language follow the same path from the host to the events; two more properties per concern on every command does not scale, and an ambient correlation id hid where it came from.
+
+## Decision
+
+A writing command implements `IContextCommand` and declares one property, `Context`, of type `CommandContext` (user, correlation id, causation id, tenant, language). The host fills it; the pipeline completes it (a correlation id when there was none) and tells `EventContext` which command is running, so every event raised until it ends carries its context; a nested command gets its own and the outer one is restored after. An event handler builds its command's context with `ContextOf(@event)`.
+
+## What varies
+
+Which facts about a call travel with it. A new one is a property of `CommandContext`, not of every command.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Two properties per concern on every command | A line per concern per command | Grows with every option |
+| An ambient context service | Nothing per command | A hidden dependency, wrong inside async handlers, the problem 0003 removed |
+| **One `Context` property, stamped on events by `EventContext`** | `CommandContext`, a stack in `EventContext` | n/a |
+
+## Consequences
+
+- Gained: one line per command; correlation and causation on every event without the handlers doing anything.
+- Lost or owed: `EventContext` knows the running command; a command sent outside the pipeline is not stamped.
+- Cost of going back: moderate.
+
+## How it is enforced
+
+`ContextCommandTests`, `CommandContextTests`, `EventContextTests`, `CommandPipelineTests`, `verify.sh` (one context line per command), and the conformance check that reads correlation and causation from the `stock-flow` log.
 ~~~~

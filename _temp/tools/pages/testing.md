@@ -29,7 +29,7 @@ File `TestSupport/Shared/Application/FakeCommand.cs` holds four types:
 
 @@member test/Boilerplate.Tests/TestSupport/Shared/Application/FakeCommand.cs::FakeTransactionalCommandValidator::FakeTransactionalCommandValidator@@
 
-@@members test/Boilerplate.Tests/TestSupport/Shared/Application/FakeCommand.cs::FakeUserCommand@@
+@@members test/Boilerplate.Tests/TestSupport/Shared/Application/FakeCommand.cs::FakeContextCommand@@
 
 `FakeTransactionalCommand` has the same `Name` property; `FakeTransactionalCommandValidator` is `AbstractValidator<FakeTransactionalCommand>`.
 
@@ -37,7 +37,7 @@ Three handlers record what they handled. `FakeCommandHandler.cs`:
 
 @@members test/Boilerplate.Tests/TestSupport/Shared/Application/FakeCommandHandler.cs::FakeCommandHandler@@
 
-`FakeTransactionalCommandHandler.cs` and `FakeUserCommandHandler.cs` are the same for `FakeTransactionalCommand` and `FakeUserCommand`.
+`FakeTransactionalCommandHandler.cs` and `FakeContextCommandHandler.cs` are the same for `FakeTransactionalCommand` and `FakeContextCommand`.
 
 @@members test/Boilerplate.Tests/TestSupport/Shared/Application/CommandPipelineBuilder.cs::CommandPipelineBuilder@@
 
@@ -92,9 +92,9 @@ Every project has them; each is written out in `testing-kernel.md`.
 | Class | File |
 |---|---|
 | `AggregateRootTests`, `EventContextTests`, `EventHandlerExecutorTests` | `Shared/Domain/` |
-| `CommandPipelineTests`, `CommandDispatcherTests`, `UserCommandTests` | `Shared/Application/` |
+| `CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests`, `CommandContextTests` | `Shared/Application/` |
 | `AsyncEventHandlerDispatcherTests` | `Infrastructure/Messaging/` |
-| `UserCommandFilterTests` | `Api/Filters/` |
+| `ContextCommandFilterTests` | `Api/Filters/` |
 | `CommandScenarioTests` | `Console/` |
 
 ## Namespaces and usings

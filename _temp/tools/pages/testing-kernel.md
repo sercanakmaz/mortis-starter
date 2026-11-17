@@ -16,7 +16,9 @@ Every project has these tests, written exactly so. Each class lives in the folde
 
 @@members test/Boilerplate.Tests/Shared/Application/CommandDispatcherTests.cs::CommandDispatcherTests@@
 
-@@members test/Boilerplate.Tests/Shared/Application/UserCommandTests.cs::UserCommandTests@@
+@@members test/Boilerplate.Tests/Shared/Application/ContextCommandTests.cs::ContextCommandTests@@
+
+@@members test/Boilerplate.Tests/Shared/Application/CommandContextTests.cs::CommandContextTests@@
 
 ## Infrastructure/Messaging
 
@@ -24,7 +26,7 @@ Every project has these tests, written exactly so. Each class lives in the folde
 
 ## Api/Filters
 
-@@members test/Boilerplate.Tests/Api/Filters/UserCommandFilterTests.cs::UserCommandFilterTests@@
+@@members test/Boilerplate.Tests/Api/Filters/ContextCommandFilterTests.cs::ContextCommandFilterTests@@
 
 ## Console
 

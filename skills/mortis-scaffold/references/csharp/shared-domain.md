@@ -119,7 +119,7 @@ public const string Email = "system@localhost";
 
 ## EventBase and IQueueEvent
 
-File `Domain/EventBase.cs`, both types. Needs `using System.Diagnostics;`.
+File `Domain/EventBase.cs`, both types. The user is stamped by the aggregate; correlation, causation, tenant and language by `EventContext` while a command runs.
 
 ```csharp
 public abstract record EventBase
@@ -134,7 +134,19 @@ public DateTime OccurredAt { get; init; } = DateTime.UtcNow;
 ```
 
 ```csharp
-public Guid CorrelationId { get; init; } = Trace.CorrelationManager.ActivityId;
+public Guid CorrelationId { get; init; }
+```
+
+```csharp
+public Guid? CausationId { get; init; }
+```
+
+```csharp
+public string TenantId { get; init; }
+```
+
+```csharp
+public string Language { get; init; }
 ```
 
 ```csharp
@@ -153,13 +165,13 @@ public interface IQueueEvent;
 
 ## EventContext
 
-File `Domain/EventContext.cs`. One per scope. Holds events taken off aggregates (raised) and events whose sync handlers have run (dispatched). Every member locks.
+File `Domain/EventContext.cs`. One per scope. Holds events taken off aggregates (raised), events whose sync handlers have run (dispatched), and the stack of contexts of the commands running in the scope. Every member locks.
 
 ```csharp
 public sealed class EventContext
 ```
 
-Fields: `private readonly Lock _lock = new();`, `private readonly Queue<EventBase> _raisedEvents = new();`, `private readonly Queue<EventBase> _dispatchedEvents = new();`.
+Fields: `private readonly Lock _lock = new();`, `private readonly Queue<EventBase> _raisedEvents = new();`, `private readonly Queue<EventBase> _dispatchedEvents = new();`, `private readonly Stack<CommandContext> _commandContexts = new();`. Needs `using {Name}.Shared.Application;`.
 
 ```csharp
 public int RaisedCount
@@ -175,14 +187,44 @@ public int RaisedCount
 ```
 
 ```csharp
+public void EnterCommand(CommandContext commandContext)
+{
+    lock (_lock)
+    {
+        _commandContexts.Push(commandContext);
+    }
+}
+```
+
+```csharp
+public void LeaveCommand()
+{
+    lock (_lock)
+    {
+        _commandContexts.TryPop(out _);
+    }
+}
+```
+
+```csharp
 public void AddRaised(EventBase @event)
 {
     lock (_lock)
     {
-        _raisedEvents.Enqueue(@event);
+        _raisedEvents.Enqueue(_commandContexts.TryPeek(out var commandContext)
+            ? @event with
+            {
+                CorrelationId = commandContext.CorrelationId,
+                CausationId = commandContext.CausationId,
+                TenantId = commandContext.TenantId,
+                Language = commandContext.Language
+            }
+            : @event);
     }
 }
 ```
+
+- The context is a stack because a sync handler sends a command inside the running one: its events carry its own context, with the triggering event as their cause.
 
 ```csharp
 public EventBase TakeRaised()
@@ -242,11 +284,27 @@ public Task Handle(EventBase @event)
 }
 ```
 
-File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, and one more constraint:
+```csharp
+protected static CommandContext ContextOf(EventBase @event)
+{
+    return CommandContext.FromEvent(@event, new AuditUser(@event.UserId, @event.UserEmail));
+}
+```
+
+File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, one more constraint, and the system user in `ContextOf`:
 
 ```csharp
 public abstract class BaseAsyncEventHandler<TEvent> : IAsyncEventHandler where TEvent : EventBase, IQueueEvent
 ```
+
+```csharp
+protected static CommandContext ContextOf(EventBase @event)
+{
+    return CommandContext.FromEvent(@event, new AuditUser(SystemUser.Id, SystemUser.Email));
+}
+```
+
+Both files need `using {Name}.Shared.Application;`.
 
 - Handlers run in ascending `Sequence`; equal values keep registration order.
 - A handler's body is one awaited `commandDispatcher.Send(...)` (see `application.md`).
@@ -306,11 +364,11 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 |---|---|---|
 | `src/{Name}.Shared/Domain/AggregateRoot.cs` | `{Name}.Shared.Domain` | System.ComponentModel.DataAnnotations.Schema |
 | `src/{Name}.Shared/Domain/AuditUser.cs` | `{Name}.Shared.Domain` | none |
-| `src/{Name}.Shared/Domain/BaseAsyncEventHandler.cs` | `{Name}.Shared.Domain` | none |
-| `src/{Name}.Shared/Domain/BaseSyncEventHandler.cs` | `{Name}.Shared.Domain` | none |
+| `src/{Name}.Shared/Domain/BaseAsyncEventHandler.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
+| `src/{Name}.Shared/Domain/BaseSyncEventHandler.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/Entity.cs` | `{Name}.Shared.Domain` | none |
-| `src/{Name}.Shared/Domain/EventBase.cs` | `{Name}.Shared.Domain` | System.Diagnostics |
-| `src/{Name}.Shared/Domain/EventContext.cs` | `{Name}.Shared.Domain` | none |
+| `src/{Name}.Shared/Domain/EventBase.cs` | `{Name}.Shared.Domain` | none |
+| `src/{Name}.Shared/Domain/EventContext.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/EventHandlerExecutor.cs` | `{Name}.Shared.Domain` | Microsoft.Extensions.DependencyInjection |
 | `src/{Name}.Shared/Domain/IEventDispatcher.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Domain/SystemUser.cs` | `{Name}.Shared.Domain` | none |

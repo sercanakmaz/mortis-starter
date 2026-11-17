@@ -1,7 +1,7 @@
 # 0005 — The Console runs commands by name and does not migrate
 
 - Status: accepted
-- Date: 2026-11-16
+- Date: <the date the project was generated>
 - Context: The Console migrated the database and ran a fixed set of scenarios. Trying a new command meant writing a scenario first, and applying a migration is a deployment concern, not a testing one.
 
 ## Decision

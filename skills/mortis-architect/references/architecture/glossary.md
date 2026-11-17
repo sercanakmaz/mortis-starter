@@ -23,7 +23,8 @@
 | Causation | the id of the message that directly caused this one |
 | Dispatcher | the only way to run a command |
 | Domain event | a past-tense fact raised by an aggregate |
-| Domain service | business logic that fits no single aggregate: needs several entities or an outside system |
+| Domain service | business logic that fits no single aggregate; pure by default, may read through a domain interface, never writes |
+| Read port | a narrow interface in the domain's words that answers one question from storage, e.g. the open order total of a customer |
 | DTO / view | a flat serialisable description of a result |
 | Entity | a thing with an identity |
 | Event dispatcher | carries committed events to handlers or the broker |

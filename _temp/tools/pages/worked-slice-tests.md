@@ -121,7 +121,7 @@ public async Task Handle_Should_CompleteTheTrackedOrderAndUpdateItInsideATransac
         .Build();
     var commandHandler = new CompleteOrderCommandHandler(orderRepository, commandPipeline);
 
-    var commandResult = await commandHandler.Handle(new CompleteOrderCommand(Guid.CreateVersion7()) { UserId = "user-1", UserEmail = "user-1@localhost" });
+    var commandResult = await commandHandler.Handle(new CompleteOrderCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
 
     Assert.Equal("Completed", commandResult.Content.Status);
     Assert.Equal("user-1", writtenOrder.UpdatedUserId);

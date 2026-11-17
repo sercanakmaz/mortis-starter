@@ -159,7 +159,7 @@ public static ProductDto Map(Product product) => new()
 
 | Command | Properties | Validator | Handler loads | Calls | Saves |
 |---|---|---|---|---|---|
-| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock` | id not empty; sku, name required within their lengths; stock `>= 0` | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.ToAuditUser())` | `CreateAsync` |
+| `CreateProductCommand` | `Id` (default `Guid.CreateVersion7()`), `Sku`, `Name`, `Stock` | id not empty; sku, name required within their lengths; stock `>= 0` | none | `new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User)` | `CreateAsync` |
 | `GetProductCommand(Guid Id)` | | none | `FindByIdAsync` | | |
 | `IncreaseProductStockCommand` | `Sku`, `Quantity` | sku required within length; quantity `> 0` | `FindBySkuTrackingAsync(command.Sku)` | `IncreaseStock(command.Quantity)` | `UpdateAsync` |
 | `DecreaseProductStockCommand` | `Sku`, `Quantity` | as above | `FindBySkuTrackingAsync(command.Sku)` | `DecreaseStock(command.Quantity)` | `UpdateAsync` |
@@ -173,7 +173,7 @@ protected override async Task<CommandResult<ProductDto>> OnHandle(DecreaseProduc
         ?? throw new NotFoundException(nameof(Product));
 
     product.DecreaseStock(command.Quantity);
-    product.SetUpdatedAudit(command.ToAuditUser());
+    product.SetUpdatedAudit(command.Context.User);
 
     await productRepository.UpdateAsync(product);
 
@@ -194,14 +194,14 @@ Event handlers (async, as the system user), in `Products/`:
 ```csharp
 protected override async Task OnHandle(LineAdded @event)
 {
-    await commandDispatcher.Send(new DecreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, UserId = SystemUser.Id, UserEmail = SystemUser.Email });
+    await commandDispatcher.Send(new DecreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, Context = ContextOf(@event) });
 }
 ```
 
 ```csharp
 protected override async Task OnHandle(LineCancelled @event)
 {
-    await commandDispatcher.Send(new IncreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, UserId = SystemUser.Id, UserEmail = SystemUser.Email });
+    await commandDispatcher.Send(new IncreaseProductStockCommand { Sku = @event.Sku, Quantity = @event.Quantity, Context = ContextOf(@event) });
 }
 ```
 
@@ -333,7 +333,7 @@ public static CustomerDto Map(Customer customer) => new()
 
 | Command | Properties | Validator | Handler loads | Calls | Saves |
 |---|---|---|---|---|---|
-| `CreateCustomerCommand` | `Id` (default `Guid.CreateVersion7()`), `Name`, `Email` | id not empty; name required within length; email required, well formed, within length | none | `new Customer(command.Id, command.Name, command.Email, command.ToAuditUser())` | `CreateAsync` |
+| `CreateCustomerCommand` | `Id` (default `Guid.CreateVersion7()`), `Name`, `Email` | id not empty; name required within length; email required, well formed, within length | none | `new Customer(command.Id, command.Name, command.Email, command.Context.User)` | `CreateAsync` |
 | `GetCustomerCommand(Guid Id)` | | none | `FindByIdAsync` | | |
 | `BlockCustomerCommand(Guid Id)` | | none | `FindByIdTrackingAsync` | `Block()` | `UpdateAsync` |
 | `RegisterCompletedOrderCommand(Guid Id)` | | none | `FindByIdTrackingAsync` | `RegisterCompletedOrder()` | `UpdateAsync` |
@@ -352,7 +352,7 @@ Event handler (sync, as the user of the event), in `Customers/`. The event is th
 ```csharp
 protected override async Task OnHandle(Completed @event)
 {
-    await commandDispatcher.Send(new RegisterCompletedOrderCommand(Guid.Parse(@event.CustomerId)) { UserId = @event.UserId, UserEmail = @event.UserEmail });
+    await commandDispatcher.Send(new RegisterCompletedOrderCommand(Guid.Parse(@event.CustomerId)) { Context = ContextOf(@event) });
 }
 ```
 
@@ -799,7 +799,7 @@ Event handler (sync, as the user of the event), in `Orders/`:
 ```csharp
 protected override async Task OnHandle(LineCancelled @event)
 {
-    await commandDispatcher.Send(new CancelOrderWhenAllLinesCancelledCommand(Guid.Parse(@event.Id)) { UserId = @event.UserId, UserEmail = @event.UserEmail });
+    await commandDispatcher.Send(new CancelOrderWhenAllLinesCancelledCommand(Guid.Parse(@event.Id)) { Context = ContextOf(@event) });
 }
 ```
 

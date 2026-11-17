@@ -128,6 +128,12 @@
    "kernel": false
   },
   {
+   "path": "docs/adr/0007-one-context-on-the-command.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -173,7 +179,7 @@
    "kernel": false
   },
   {
-   "path": "src/{Name}.Api/Filters/UserCommandFilter.cs",
+   "path": "src/{Name}.Api/Filters/ContextCommandFilter.cs",
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
@@ -895,6 +901,12 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Shared/Application/CommandContext.cs",
+   "page": "shared-application.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/CommandDispatcher.cs",
    "page": "shared-application.md",
    "source": "snippets",
@@ -937,7 +949,7 @@
    "kernel": true
   },
   {
-   "path": "src/{Name}.Shared/Application/IUserCommand.cs",
+   "path": "src/{Name}.Shared/Application/IContextCommand.cs",
    "page": "shared-application.md",
    "source": "snippets",
    "kernel": true
@@ -1081,7 +1093,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Api/Filters/UserCommandFilterTests.cs",
+   "path": "test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
@@ -1306,6 +1318,12 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Shared/Application/CommandContextTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Shared/Application/CommandDispatcherTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
@@ -1318,7 +1336,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Shared/Application/UserCommandTests.cs",
+   "path": "test/{Name}.Tests/Shared/Application/ContextCommandTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
@@ -1450,13 +1468,13 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeTransactionalCommandHandler.cs",
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeContextCommandHandler.cs",
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeUserCommandHandler.cs",
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FakeTransactionalCommandHandler.cs",
    "page": "testing.md",
    "source": "snippets",
    "kernel": false

@@ -1,7 +1,7 @@
 # 0002 — A command is a plain record that implements interfaces
 
-- Status: accepted
-- Date: 2026-11-16
+- Status: accepted; the user properties replaced by one context in 0007
+- Date: <the date the project was generated>
 - Context: `BaseCommand<TContent>` and `UserCommand<TContent>` were abstract records. They carried no behaviour a marker could not carry, except two `[JsonIgnore]` properties and `ToAuditUser()`, and they used up the command's one base type.
 
 ## Decision

@@ -265,11 +265,11 @@ public interface ICreditPolicy
     Task EnsureFitsAsync(Customer customer, decimal orderTotal);
 }
 
-public class CreditPolicy(IOrderRepository orderRepository) : ICreditPolicy
+public class CreditPolicy(IOpenOrderTotals openOrderTotals) : ICreditPolicy
 {
     public async Task EnsureFitsAsync(Customer customer, decimal orderTotal)
     {
-        var openTotal = await orderRepository.SumOpenTotalOfCustomerAsync(customer.Id);
+        var openTotal = await openOrderTotals.OfCustomerAsync(customer.Id);
 
         if (openTotal + orderTotal > customer.CreditLimit)
         {
@@ -279,12 +279,14 @@ public class CreditPolicy(IOrderRepository orderRepository) : ICreditPolicy
 }
 ```
 
-- It may read through repositories and call ports. It never saves; the command handler does.
+- **Pure by default:** the handler passes in the aggregates it loaded.
+- **It may read** through an interface declared in Domain when the rule decides what data it needs: a narrow read port in `Ports/` (`IOpenOrderTotals` above, implemented in `Infrastructure/Persistence/{Plural}/`) in preference to a repository, and only read methods.
+- **It never writes:** no `CreateAsync`, `UpdateAsync`, `DeleteAsync`, no `IUnitOfWork`, no transaction. It changes the aggregates it was given or returns a new one; the command handler saves. `verify.sh` fails a domain file that calls a write method or takes `IUnitOfWork`.
 - It has no private methods.
 
 ## Anti-corruption port
 
-An interface in `Ports/`, in the domain's words, implemented in Infrastructure (`Integrations/`).
+An interface in `Ports/`, in the domain's words. A port to another system is implemented in `Infrastructure/Integrations/`; a read port over our own storage in `Infrastructure/Persistence/{Plural}/`.
 
 ```csharp
 public interface ITaxRates

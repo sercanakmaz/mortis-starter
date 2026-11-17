@@ -20,7 +20,7 @@ using {Name}.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(options => options.Filters.Add<UserCommandFilter>());
+builder.Services.AddControllers(options => options.Filters.Add<ContextCommandFilter>());
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ExceptionHandler>();
@@ -60,24 +60,26 @@ app.Run();
 }
 ```
 
-### Filling the user
+### Filling the context
 
-File `Filters/UserCommandFilter.cs`. Copies the authenticated user's claims into every `IUserCommand` argument, and clears what the client sent when nobody is signed in.
+File `Filters/ContextCommandFilter.cs`. Builds one context for the request, from the authenticated user's claims and the request's correlation id, and sets it on every `IContextCommand` argument, replacing whatever the client sent.
 
 ```csharp
-public class UserCommandFilter : IAsyncActionFilter
+public class ContextCommandFilter : IAsyncActionFilter
 ```
 
 ```csharp
 public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 {
-    var userId = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    var userEmail = context.HttpContext.User.FindFirstValue(ClaimTypes.Email);
-
-    foreach (var userCommand in context.ActionArguments.Values.OfType<IUserCommand>())
+    var commandContext = new CommandContext
     {
-        userCommand.UserId = userId;
-        userCommand.UserEmail = userEmail;
+        User = new AuditUser(context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), context.HttpContext.User.FindFirstValue(ClaimTypes.Email)),
+        CorrelationId = context.HttpContext.Items[ApiConstants.CorrelationIdItem] is Guid correlationId ? correlationId : Guid.CreateVersion7()
+    };
+
+    foreach (var contextCommand in context.ActionArguments.Values.OfType<IContextCommand>())
+    {
+        contextCommand.Context = commandContext;
     }
 
     await next();
@@ -100,6 +102,10 @@ public static class ApiConstants
 
 ```csharp
 public const string CorrelationIdHeader = "X-Correlation-Id";
+```
+
+```csharp
+public const string CorrelationIdItem = "CorrelationId";
 ```
 
 ```csharp
@@ -155,13 +161,15 @@ public async Task InvokeAsync(HttpContext httpContext)
         ? requestCorrelationId
         : Guid.CreateVersion7();
 
-    Trace.CorrelationManager.ActivityId = correlationId;
+    httpContext.Items[ApiConstants.CorrelationIdItem] = correlationId;
 
     httpContext.Response.Headers[ApiConstants.CorrelationIdHeader] = correlationId.ToString();
 
     await next(httpContext);
 }
 ```
+
+- The id is handed to the filter through `HttpContext.Items`, never through an ambient value.
 
 ### Controllers
 
@@ -334,6 +342,10 @@ public const string FilePrefix = "@";
 ```
 
 ```csharp
+public static readonly Guid RunCorrelationId = Guid.CreateVersion7();
+```
+
+```csharp
 public static readonly JsonSerializerOptions OutputOptions = new() { WriteIndented = true };
 ```
 
@@ -350,10 +362,13 @@ public static class ConsoleUserExtensions
 ```csharp
 public static TCommand AsConsoleUser<TCommand>(this TCommand command)
 {
-    if (command is IUserCommand userCommand)
+    if (command is IContextCommand contextCommand)
     {
-        userCommand.UserId = ScenarioConstants.UserId;
-        userCommand.UserEmail = ScenarioConstants.UserEmail;
+        contextCommand.Context = new CommandContext
+        {
+            User = new AuditUser(ScenarioConstants.UserId, ScenarioConstants.UserEmail),
+            CorrelationId = ScenarioConstants.RunCorrelationId
+        };
     }
 
     return command;
@@ -536,7 +551,7 @@ Written first with an empty body (only `return services;`), and lines added with
 
 ## Tests
 
-`UserCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
+`ContextCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 
@@ -547,9 +562,9 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Api/Controllers/CustomersController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Customers, {Name}.Shared.Application |
 | `src/{Name}.Api/Controllers/OrdersController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Orders, {Name}.Shared.Application |
 | `src/{Name}.Api/Controllers/ProductsController.cs` | `{Name}.Api.Controllers` | Microsoft.AspNetCore.Mvc, {Name}.Application.Products, {Name}.Shared.Application |
-| `src/{Name}.Api/Filters/UserCommandFilter.cs` | `{Name}.Api.Filters` | Microsoft.AspNetCore.Mvc.Filters, System.Security.Claims, {Name}.Shared.Application |
+| `src/{Name}.Api/Filters/ContextCommandFilter.cs` | `{Name}.Api.Filters` | Microsoft.AspNetCore.Mvc.Filters, System.Security.Claims, {Name}.Api.Middlewares, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Api/Middlewares/ApiConstants.cs` | `{Name}.Api.Middlewares` | none |
-| `src/{Name}.Api/Middlewares/CorrelationIdMiddleware.cs` | `{Name}.Api.Middlewares` | System.Diagnostics |
+| `src/{Name}.Api/Middlewares/CorrelationIdMiddleware.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ErrorResponseModel.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ExceptionHandler.cs` | `{Name}.Api.Middlewares` | Microsoft.AspNetCore.Diagnostics, System.Net, {Name}.Shared.Exceptions |
 | `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Shared |
@@ -557,7 +572,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Console/Scenarios/BlockedCustomerScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Console/Scenarios/CommandScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Console/Scenarios/CommandScenarioExtensions.cs` | `{Name}.Console.Scenarios` | Microsoft.Extensions.DependencyInjection, {Name}.Shared.Application |
-| `src/{Name}.Console/Scenarios/ConsoleUserExtensions.cs` | `{Name}.Console.Scenarios` | {Name}.Shared.Application |
+| `src/{Name}.Console/Scenarios/ConsoleUserExtensions.cs` | `{Name}.Console.Scenarios` | {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Console/Scenarios/IScenario.cs` | `{Name}.Console.Scenarios` | none |
 | `src/{Name}.Console/Scenarios/OrderFlowScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
 | `src/{Name}.Console/Scenarios/ScenarioConstants.cs` | `{Name}.Console.Scenarios` | System.Text.Json |

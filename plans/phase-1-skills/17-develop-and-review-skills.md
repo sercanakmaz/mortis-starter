@@ -59,3 +59,4 @@ Automatic refactoring of an existing non-Mortis codebase (the "adopting in an ex
 ## Traps
 
 - Decision 28: `mortis-review` judges a command handler that changes several aggregates by the second-aggregate test in the placement guide (is the second change the intent of the action, or a consequence?), never by counting calls. `mortis-develop` adds a consequence as an event handler, never as a new line in an existing command handler.
+- Decision 31: `mortis-review` flags any repository write (`CreateAsync`, `UpdateAsync`, `DeleteAsync`, upserts), save, transaction call or `IUnitOfWork` in the Domain layer, and a domain service that takes a whole repository where a read port would do (a warning, not an error). `mortis-develop` adds a read port in `Ports/` when a domain service needs data the handler cannot know it needs.

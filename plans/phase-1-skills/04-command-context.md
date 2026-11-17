@@ -63,3 +63,13 @@ Reading a correlation header (step 06), tenants (step 11), language (step 12). T
 
 - Do not make the context an ambient service that services read. It travels as data; only the unit of work receives it implicitly, to stamp events.
 - A nested command (a sync handler sending a command) must not overwrite the outer command's context in the unit of work; keep a stack or stamp events at raise time per command.
+
+## Notes (done)
+
+- Kernel: `CommandContext` (user, correlation, causation, tenant, language; `Complete`, `FromEvent`), `IContextCommand` (replaces `IUserCommand` and `ToAuditUser`), `CommandPipeline` takes `EventContext` and runs a context command between `EnterCommand` and `LeaveCommand`; `EventContext` keeps a stack of command contexts and stamps every raised event with the top one (nested commands are handled by the stack, as the trap asked); `EventBase` gains `CausationId`, `TenantId`, `Language` and no longer reads `Trace.CorrelationManager`; the handler bases give `ContextOf(@event)` (event user for sync, system user for async); `ContextCommandFilter` replaces `UserCommandFilter`; the correlation middleware hands its id to the filter through `HttpContext.Items`; the Console uses one correlation id per run; `LoggingEventDispatcher` logs correlation and causation.
+- `TenantId` is a `string` for now; step 11 decides whether `tenancy.key` makes it typed.
+- The changed and new kernel files are written in full under `_temp/tools/overlay/` (temporary, deleted with `_temp/`); the page generator, the manifest builder, `kernel-shape.txt` and `tests/check_docs.py` read the overlay before the template. Example code is converted by fixed text replacements in the generator.
+- The decision record is `0007-one-context-on-the-command.md` (0006 was taken by decision 28). ADRs 0002 and 0003 say they were superseded by it.
+- `verify.sh` house rules now fail a command that declares more than one `[JsonIgnore]` line or a user, correlation or tenant property of its own; shown failing on the pilot project's old commands.
+- Conformance: three new checks in `example-console.sh`, read from the `stock-flow` log: one correlation id for the run, the order's `Cancelled` caused by a `LineCancelled` (sync), `StockIncreased` caused by a `LineCancelled` (async).
+- Found, not done: the conformance relies on the log line format "Published <wire> <id> correlation <id> causation <id>"; step 16 should state it as a contract for every language.

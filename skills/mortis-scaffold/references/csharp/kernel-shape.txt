@@ -1,10 +1,11 @@
 # Kernel shape, C#. One line per public type and member of every kernel file in manifest.json.
 # Produced by scripts/lang/csharp_shape.py; verify.sh extracts the same list from a generated project and compares.
 # {Name} is the project name from MORTIS.md; {database} is that name in lower case without dots.
-type {Name}.Api.Filters: public class UserCommandFilter : IAsyncActionFilter
-member {Name}.Api.Filters.UserCommandFilter: public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+type {Name}.Api.Filters: public class ContextCommandFilter : IAsyncActionFilter
+member {Name}.Api.Filters.ContextCommandFilter: public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 type {Name}.Api.Middlewares: public static class ApiConstants
 member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdHeader = "X-Correlation-Id"
+member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdItem = "CorrelationId"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorCode = "unexpected_error"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorMessage = "An unexpected error occurred."
 type {Name}.Api.Middlewares: public class CorrelationIdMiddleware(RequestDelegate next)
@@ -29,6 +30,7 @@ member {Name}.Console.Scenarios.ScenarioConstants: public const string UserId = 
 member {Name}.Console.Scenarios.ScenarioConstants: public const string UserEmail = "console@localhost"
 member {Name}.Console.Scenarios.ScenarioConstants: public const string CommandSuffix = "Command"
 member {Name}.Console.Scenarios.ScenarioConstants: public const string FilePrefix = "@"
+member {Name}.Console.Scenarios.ScenarioConstants: public static readonly Guid RunCorrelationId = Guid.CreateVersion7()
 member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions OutputOptions = new()
 member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions InputOptions = new()
 type {Name}.Console.Scenarios: public static class ScenarioModule
@@ -85,6 +87,14 @@ member {Name}.Infrastructure.Persistence.UnitOfWork: public void OnCommitted(Fun
 type {Name}.Shared.Application: public abstract class BaseCommandHandler<TCommand, TContent>(CommandPipeline<TCommand> commandPipeline) where TCommand : ICommand<TContent>
 member {Name}.Shared.Application.BaseCommandHandler: protected abstract Task<CommandResult<TContent>> OnHandle(TCommand command)
 member {Name}.Shared.Application.BaseCommandHandler: public Task<CommandResult<TContent>> Handle(TCommand command)
+type {Name}.Shared.Application: public sealed record CommandContext
+member {Name}.Shared.Application.CommandContext: public AuditUser User { get; init; }
+member {Name}.Shared.Application.CommandContext: public Guid CorrelationId { get; init; }
+member {Name}.Shared.Application.CommandContext: public Guid? CausationId { get; init; }
+member {Name}.Shared.Application.CommandContext: public string TenantId { get; init; }
+member {Name}.Shared.Application.CommandContext: public string Language { get; init; }
+member {Name}.Shared.Application.CommandContext: public static CommandContext Complete(CommandContext commandContext)
+member {Name}.Shared.Application.CommandContext: public static CommandContext FromEvent(EventBase @event, AuditUser user)
 type {Name}.Shared.Application: public sealed class CommandDispatcher(IServiceProvider serviceProvider) : ICommandDispatcher
 member {Name}.Shared.Application.CommandDispatcher: public Task<CommandResult<TContent>> Send<TContent>(ICommand<TContent> command)
 type {Name}.Shared.Application: public abstract class CommandHandlerInvoker<TContent>
@@ -93,7 +103,7 @@ type {Name}.Shared.Application: public sealed class CommandHandlerInvoker<TComma
 member {Name}.Shared.Application.CommandHandlerInvoker: public override Task<CommandResult<TContent>> Invoke(IServiceProvider serviceProvider, ICommand<TContent> command)
 type {Name}.Shared.Application: public static class CommandHandlerExtensions
 member {Name}.Shared.Application.CommandHandlerExtensions: public static IServiceCollection AddCommandHandler<TCommand, TContent, TCommandHandler>(this IServiceCollection services) where TCommand : ICommand<TContent> where TCommandHandler : BaseCommandHandler<TCommand, TContent>
-type {Name}.Shared.Application: public sealed class CommandPipeline<TCommand>(IEnumerable<IValidator<TCommand>> validators, IEnumerable<ICommandHandlerMiddleware> commandHandlerMiddlewares, IUnitOfWork unitOfWork) where TCommand : ICommand
+type {Name}.Shared.Application: public sealed class CommandPipeline<TCommand>(IEnumerable<IValidator<TCommand>> validators, IEnumerable<ICommandHandlerMiddleware> commandHandlerMiddlewares, IUnitOfWork unitOfWork, EventContext eventContext) where TCommand : ICommand
 member {Name}.Shared.Application.CommandPipeline: public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
 type {Name}.Shared.Application: public class CommandResult
 member {Name}.Shared.Application.CommandResult: public Dictionary<string, object> Meta { get; set; }
@@ -108,11 +118,8 @@ member {Name}.Shared.Application.ICommandDispatcher: Task<CommandResult<TContent
 type {Name}.Shared.Application: public interface ICommandHandlerMiddleware
 member {Name}.Shared.Application.ICommandHandlerMiddleware: void Before(ICommand command)
 member {Name}.Shared.Application.ICommandHandlerMiddleware: void After(ICommand command, CommandResult commandResult)
-type {Name}.Shared.Application: public interface IUserCommand
-member {Name}.Shared.Application.IUserCommand: string UserId { get; set; }
-member {Name}.Shared.Application.IUserCommand: string UserEmail { get; set; }
-type {Name}.Shared.Application: public static class UserCommandExtensions
-member {Name}.Shared.Application.UserCommandExtensions: public static AuditUser ToAuditUser(this IUserCommand userCommand)
+type {Name}.Shared.Application: public interface IContextCommand
+member {Name}.Shared.Application.IContextCommand: CommandContext Context { get; set; }
 type {Name}.Shared.Domain: public abstract class AggregateRoot<TKey> : Entity<TKey>
 member {Name}.Shared.Domain.AggregateRoot: public DateTime CreatedAt { get; protected set; }
 member {Name}.Shared.Domain.AggregateRoot: public string CreatedUserId { get; protected set; }
@@ -135,6 +142,7 @@ type {Name}.Shared.Domain: public abstract class BaseAsyncEventHandler<TEvent> :
 member {Name}.Shared.Domain.BaseAsyncEventHandler: public virtual int Sequence
 member {Name}.Shared.Domain.BaseAsyncEventHandler: protected abstract Task OnHandle(TEvent @event)
 member {Name}.Shared.Domain.BaseAsyncEventHandler: public Task Handle(EventBase @event)
+member {Name}.Shared.Domain.BaseAsyncEventHandler: protected static CommandContext ContextOf(EventBase @event)
 type {Name}.Shared.Domain: public interface ISyncEventHandler
 member {Name}.Shared.Domain.ISyncEventHandler: int Sequence { get; }
 member {Name}.Shared.Domain.ISyncEventHandler: Task Handle(EventBase @event)
@@ -142,17 +150,23 @@ type {Name}.Shared.Domain: public abstract class BaseSyncEventHandler<TEvent> : 
 member {Name}.Shared.Domain.BaseSyncEventHandler: public virtual int Sequence
 member {Name}.Shared.Domain.BaseSyncEventHandler: protected abstract Task OnHandle(TEvent @event)
 member {Name}.Shared.Domain.BaseSyncEventHandler: public Task Handle(EventBase @event)
+member {Name}.Shared.Domain.BaseSyncEventHandler: protected static CommandContext ContextOf(EventBase @event)
 type {Name}.Shared.Domain: public abstract class Entity<TKey>
 member {Name}.Shared.Domain.Entity: public TKey Id { get; protected set; }
 type {Name}.Shared.Domain: public abstract record EventBase
 member {Name}.Shared.Domain.EventBase: public Guid EventId { get; init; }
 member {Name}.Shared.Domain.EventBase: public DateTime OccurredAt { get; init; }
 member {Name}.Shared.Domain.EventBase: public Guid CorrelationId { get; init; }
+member {Name}.Shared.Domain.EventBase: public Guid? CausationId { get; init; }
+member {Name}.Shared.Domain.EventBase: public string TenantId { get; init; }
+member {Name}.Shared.Domain.EventBase: public string Language { get; init; }
 member {Name}.Shared.Domain.EventBase: public string UserId { get; init; }
 member {Name}.Shared.Domain.EventBase: public string UserEmail { get; init; }
 type {Name}.Shared.Domain: public interface IQueueEvent
 type {Name}.Shared.Domain: public sealed class EventContext
 member {Name}.Shared.Domain.EventContext: public int RaisedCount { get; }
+member {Name}.Shared.Domain.EventContext: public void EnterCommand(CommandContext commandContext)
+member {Name}.Shared.Domain.EventContext: public void LeaveCommand()
 member {Name}.Shared.Domain.EventContext: public void AddRaised(EventBase @event)
 member {Name}.Shared.Domain.EventContext: public EventBase TakeRaised()
 member {Name}.Shared.Domain.EventContext: public void AddDispatched(EventBase @event)

@@ -27,6 +27,22 @@ expect_equal "stock-flow: the database agrees: order cancelled, stock back to th
 expect_equal "stock-flow: an oversold order stands, because an async handler cannot veto" "Open|10" "$(json_field "$STOCK_JSON" "['Oversell']['OrderStatus']")|$(json_field "$STOCK_JSON" "['Oversell']['Bolt']")"
 case "$STOCK_LOG" in *"Async handler"*"failed"*) pass "stock-flow: the failed async handler was logged, not thrown" ;; *) fail "stock-flow: the failed async handler was logged, not thrown" ;; esac
 expect_equal "stock-flow: the cancelled event of the order was published once the transaction committed" "1" "$(printf '%s' "$STOCK_LOG" | grep -c "Published $(wire_name Orders Cancelled)")"
+CHAIN="$(printf '%s' "$STOCK_LOG" | python3 -I -c '
+import re, sys
+lines = re.findall(r"Published (\S+) (\S+) correlation (\S+) causation (\S+)", sys.stdin.read())
+events = [(wire.rsplit(":", 1)[1], event_id, correlation, causation) for wire, event_id, correlation, causation in lines]
+correlations = {correlation for _, _, correlation, _ in events}
+cancelled_lines = {event_id for name, event_id, _, _ in events if name == "LineCancelled"}
+order_cancelled = [causation for name, _, _, causation in events if name == "Cancelled"]
+stock_increased = [causation for name, _, _, causation in events if name == "StockIncreased"]
+print("|".join([
+    "one" if len(correlations) == 1 and events else "many",
+    "yes" if order_cancelled and all(c in cancelled_lines for c in order_cancelled) else "no",
+    "yes" if stock_increased and all(c in cancelled_lines for c in stock_increased) else "no"]))
+')"
+expect_equal "stock-flow: every published event of the run carries one correlation id" "one" "$(printf '%s' "$CHAIN" | cut -d'|' -f1)"
+expect_equal "stock-flow: the order's Cancelled event (sync handler) is caused by a LineCancelled event" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f2)"
+expect_equal "stock-flow: StockIncreased (async handler) is caused by a LineCancelled event" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f3)"
 
 # Any command from arguments (what F5 in VS Code runs)
 CLI_OUT="$(console_run CreateProduct '{"sku":"CLI-1","name":"Cli","stock":5}' 2>/dev/null | json_tail)"

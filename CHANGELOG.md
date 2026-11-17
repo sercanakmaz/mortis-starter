@@ -19,6 +19,10 @@ All notable changes to the skills and the template. Newest first.
 
 - Pilot generation of the lean preset (mid-size model): 11 of 12 checks, the failure a skill defect (fixed). Procedure reordered, usings tables on every page, worked-slice order fixed (`docs/pilot.md`).
 
+- Phase 1 step 04: one `Context` on the command (`CommandContext`, `IContextCommand`); events stamped with correlation, causation, tenant and language by `EventContext`; ADR 0007; a house rule and three conformance checks.
+
+- Decision 31: domain services are pure by default, may read through domain interfaces (narrow read ports preferred), never write; `verify.sh` enforces the no-write rule in the Domain project.
+
 ### Planned
 - The repository becomes a project starter with choosable options. Added `docs/options-catalog.md`, `docs/roadmap.md`, three design specs under `docs/specs/` and a brief for each of 21 steps under `plans/`.
 - The skills will hold knowledge and checks only. The C# solution will move out of the skill to `examples/` as a reference used to verify the skills (step 03).

@@ -81,6 +81,14 @@ def check(root):
         if orchestration and not is_test:
             for name in private_methods(text):
                 problems.append(f"{relative}: private method {name} in a handler or domain service")
+        if re.search(r"^src/[^/]+\.Application/.+Command\.cs$", relative):
+            masked_text = mask(text)
+            if len(re.findall(r"\[JsonIgnore\]", masked_text)) > 1 or re.search(r"\b(UserId|UserEmail|CorrelationId|TenantId)\s*\{\s*get", masked_text):
+                problems.append(f"{relative}: a command declares its context in one line, Context, and nothing else")
+        if re.search(r"^src/[^/]+\.Domain/", relative):
+            masked_text = mask(text)
+            if re.search(r"\.(CreateAsync|UpdateAsync|DeleteAsync|UpsertAsync|SaveChangesAsync|CommitTransactionAsync|BeginTransactionAsync)\(|\bIUnitOfWork\b", masked_text):
+                problems.append(f"{relative}: the domain never writes: no repository write, save, transaction or IUnitOfWork; the command handler persists")
         if re.search(r"^src/[^/]+\.Domain/Aggregates/\w+/\w+Service\.cs$", relative):
             problems.append(f"{relative}: no service per aggregate; the command handlers are the use cases")
     return problems

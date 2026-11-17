@@ -57,7 +57,7 @@ TOOLS=1
 if [ "$DRY_RUN" = 0 ] && ! "$LANG_SH" tools "$PROJECT" "$NAME"; then TOOLS=0; fi
 
 step "structure: every file the manifest expects exists, and no other" python3 -I "$HERE/structure.py" "$PROJECT"
-step "house rules: no comments, names match files, no private helpers in handlers, test classes hold only tests" "$LANG_SH" rules "$PROJECT" "$NAME"
+step "house rules: no comments, names match files, one context line per command, no writes in Domain, no private helpers in handlers, test classes hold only tests" "$LANG_SH" rules "$PROJECT" "$NAME"
 shape_matches() {
   local database
   database="$(printf '%s' "$NAME" | tr 'A-Z' 'a-z' | tr -d '.')"

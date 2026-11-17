@@ -15,6 +15,11 @@ Everything written in phase 1 that has never been compiled or generated. Phase 2
 | 03 | Uniqueness by unique index only (no handler pre-check) | Conformance expects 409 `duplicate`; proven only when the example runs |
 | 03 | `project-docs*.md` | The generated `AGENTS.md`, `docs/architecture.md` and ADR 0006 were edited for decision 28 and never read back by a model in a project |
 | 03 | Handler and event-handler test bodies (names only in `worked-slice-tests.md`) | Invented by the pilot model; may vary between runs and fail on a small model |
+| 04 | `CommandContext`, `IContextCommand`, the pipeline's context stack, `EventContext` stamping, `ContextOf` in the handler bases, `ContextCommandFilter`, the console context, the log line with correlation and causation (overlay sources in `_temp/tools/overlay/`, pages regenerated) | Written by hand, never compiled; the pilot project predates them |
+| 04 | Kernel tests `ContextCommandTests`, `CommandContextTests`, the new `EventContextTests`, `CommandPipelineTests`, `ContextCommandFilterTests`, `CommandScenarioTests` | Never compiled or run |
+| 04 | `csharp_rules.py`: one context line per command | Shown to flag the old shape in the pilot project; never run on a project with the new shape |
+| 04 | Conformance: correlation and causation read from the `stock-flow` log | The log parser was run on a sample log only |
+| 04 | Generated `AGENTS.md` rule 20, `docs/architecture.md` "Who did it", ADR 0007 | Never read back in a generated project |
 
 ## Reader test (step 01)
 
