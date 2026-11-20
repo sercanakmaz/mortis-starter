@@ -4,7 +4,8 @@ Markers, each on a line of its own:
   @@member <file>::<Type>::<name>[#n]@@   the member (with its attributes and body) as a csharp snippet
   @@decl <file>::<Type>@@                 the type's declaration line(s) up to its opening brace or semicolon
   @@data <file> [lang]@@                  the whole file (only for data files)
-<file> is relative to the template solution; "Boilerplate" becomes {Name} in the output.
+<file> is relative to a variant solution in _temp/variants/; the first of lean, advanced, standard that has it is read, or
+"variant:<preset>/<file>" reads one variant. "Boilerplate" becomes {Name} in the output.
 """
 import re
 import sys
@@ -14,31 +15,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "skills" / "mortis-
 from csharp_shape import mask  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-TEMPLATE = ROOT / "_temp" / "template" / "assets" / "csharp"
+VARIANTS = ROOT / "_temp" / "variants"
+ORDER = ("lean", "advanced", "standard")
 SOURCES = Path(__file__).resolve().parent / "pages"
 TARGET = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp"
-OVERLAY = Path(__file__).resolve().parent / "overlay"
-REPLACEMENTS = [
-    ("[JsonIgnore] public string UserId { get; set; }\n    [JsonIgnore] public string UserEmail { get; set; }", "[JsonIgnore] public CommandContext Context { get; set; }"),
-    ("[JsonIgnore] public string UserId { get; set; }\n[JsonIgnore] public string UserEmail { get; set; }", "[JsonIgnore] public CommandContext Context { get; set; }"),
-    ("IUserCommand", "IContextCommand"),
-    ("command.ToAuditUser()", "command.Context.User"),
-    ("{ UserId = @event.UserId, UserEmail = @event.UserEmail }", "{ Context = ContextOf(@event) }"),
-    (", UserId = SystemUser.Id, UserEmail = SystemUser.Email }", ", Context = ContextOf(@event) }"),
-]
+
+
+def source_file(file):
+    if file.startswith("variant:"):
+        preset, _, relative = file[len("variant:"):].partition("/")
+        return VARIANTS / preset / relative
+    return next((VARIANTS / preset / file for preset in ORDER if (VARIANTS / preset / file).exists()), VARIANTS / ORDER[0] / file)
 
 
 def read_source(file):
-    if file.startswith("variant:"):
-        mode, _, relative = file[len("variant:"):].partition("/")
-        return (OVERLAY.parent / "overlay-variants" / mode / relative).read_text(encoding="utf-8")
-    overlay = OVERLAY / file
-    if overlay.exists():
-        return overlay.read_text(encoding="utf-8")
-    text = (TEMPLATE / file).read_text(encoding="utf-8")
-    for old, new in REPLACEMENTS:
-        text = text.replace(old, new)
-    return text
+    return source_file(file).read_text(encoding="utf-8")
 
 
 def dedent(block):
@@ -204,7 +195,7 @@ def usings_for(page):
         if entry["page"] != page or not entry["path"].endswith(".cs") or entry.get("glob"):
             continue
         relative = entry["path"].replace("{Name}", "Boilerplate")
-        if not (OVERLAY / relative).exists() and not (TEMPLATE / relative).exists():
+        if not source_file(relative).exists():
             continue
         source = read_source(relative)
         usings = [l.strip()[6:-1] for l in source.splitlines() if l.startswith("using ") and not l.startswith("using var ")]

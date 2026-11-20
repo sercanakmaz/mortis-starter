@@ -48,7 +48,7 @@ test/<Name>.Tests          fakes, builders, tests
 - [docs/options-catalog.md](docs/options-catalog.md) and [docs/roadmap.md](docs/roadmap.md): where this is going, a project starter with choosable methods and technologies.
 - [plans/](plans/README.md): the brief for each step of that work.
 - [CHANGELOG.md](CHANGELOG.md): what changed.
-- The template's `docs/adr/` explains the backend's own design: the command dispatcher, commands as interfaces, the user on the command, event handlers and the Console.
+- `_temp/variants/<preset>/docs/adr/` explains the backend's own design, as each preset's project gets it.
 
 ## Checking the skills themselves
 
@@ -57,6 +57,8 @@ bash tests/check_installable.sh                 # no project source in skills/, 
 python3 -I tests/check_docs.py                  # pages, manifest, kernel shape and schema agree
 python3 -I tests/check_architecture.py          # the language-neutral layer
 python3 -I tests/test_validate_decisions.py     # the MORTIS.md validator
+python3 -I tests/check_variants.py              # the three reference solutions agree with each other and the manifest
+for p in lean standard advanced; do bash skills/mortis-scaffold/scripts/verify.sh _temp/variants/$p; done   # each passes verify.sh
 PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres bash tests/smoke.sh
 ```
 

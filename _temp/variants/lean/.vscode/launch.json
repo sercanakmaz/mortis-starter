@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Console: run a command (asks for the name and the JSON)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-console",
+      "program": "${workspaceFolder}/src/Boilerplate.Console/bin/Debug/net10.0/Boilerplate.Console.dll",
+      "args": [
+        "${input:name}",
+        "${input:json}"
+      ],
+      "cwd": "${workspaceFolder}/src/Boilerplate.Console",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Console: CreateProduct (edit the JSON in args)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-console",
+      "program": "${workspaceFolder}/src/Boilerplate.Console/bin/Debug/net10.0/Boilerplate.Console.dll",
+      "args": [
+        "CreateProduct",
+        "{\"sku\":\"BOLT\",\"name\":\"Bolt\",\"stock\":10}"
+      ],
+      "cwd": "${workspaceFolder}/src/Boilerplate.Console",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "name",
+      "type": "promptString",
+      "description": "A command name without its Command suffix"
+    },
+    {
+      "id": "json",
+      "type": "promptString",
+      "description": "The command as JSON, or @path/to/file.json. Leave empty for a command without fields",
+      "default": ""
+    }
+  ]
+}

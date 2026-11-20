@@ -71,10 +71,11 @@ member {Name}.Infrastructure.Persistence.PersistenceConstants: public const stri
 type {Name}.Infrastructure.Persistence: public static class PersistenceModule
 member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
 [events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
-[events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
 [events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
 member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
-member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
+[exceptions=minimal] member {Name}.Infrastructure.Persistence.UnitOfWork: public Task<int> SaveChangesAsync()
+[exceptions=coded|catalogued] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task RollbackTransactionAsync()

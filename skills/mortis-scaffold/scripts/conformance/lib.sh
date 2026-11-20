@@ -31,10 +31,11 @@ print(next((str(l.get(sys.argv[3])) for l in lines if eval(sys.argv[2], {}, {"l"
 PY
 }
 error_code() { log_field "$1" "'code' in l" code; }
-# eventually SQL EXPECTED: the SQL's result once it equals EXPECTED, or its last result after five seconds (async work in background mode).
+# eventually SQL EXPECTED [SECONDS]: the SQL's result once it equals EXPECTED, or its last result after SECONDS (default 5);
+# for async work in the outbox models, where a retry waits for its backoff.
 eventually() {
   local result
-  for _ in $(seq 1 50); do result="$(sql "$1")"; [ "$result" = "$2" ] && break; sleep 0.1; done
+  for _ in $(seq 1 $(( ${3:-5} * 10 ))); do result="$(sql "$1")"; [ "$result" = "$2" ] && break; sleep 0.1; done
   printf '%s' "$result"
 }
 

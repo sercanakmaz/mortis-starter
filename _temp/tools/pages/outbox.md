@@ -68,7 +68,7 @@ File `Messaging/Outbox/OutboxRepository.cs`, scoped, on the request's `AppDbCont
 
 **after-command** adds one member, to claim a row by its id:
 
-@@member variant:after-command/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository::ClaimAsync@@
+@@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository::ClaimAsync@@
 
 ## OutboxWorker
 
@@ -83,7 +83,7 @@ File `Messaging/Outbox/OutboxWorker.cs`:
 
 **after-command** adds one member, which the unit of work calls right after `COMMIT`:
 
-@@member variant:after-command/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker::PublishAsync@@
+@@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker::PublishAsync@@
 
 ## OutboxSettings
 
@@ -103,21 +103,21 @@ File `Messaging/Outbox/OutboxModule.cs`:
 
 **after-command** registers the worker once, so the unit of work and the host share it:
 
-@@members variant:after-command/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxModule.cs::OutboxModule@@
+@@members variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxModule.cs::OutboxModule@@
 
 ## The kernel files that change
 
 `InfrastructureModule` registers the outbox instead of `EventPublisher`:
 
-@@member variant:outbox/src/Boilerplate.Infrastructure/InfrastructureModule.cs::InfrastructureModule::AddInfrastructureModule@@
+@@member variant:standard/src/Boilerplate.Infrastructure/InfrastructureModule.cs::InfrastructureModule::AddInfrastructureModule@@
 
 `UnitOfWork` takes `OutboxRepository` instead of `EventPublisher` and `ILogger`, and writes the rows before `COMMIT`. **background**:
 
-@@member variant:background/src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::CommitTransactionAsync@@
+@@member variant:advanced/src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::CommitTransactionAsync@@
 
 **after-command** also takes `OutboxWorker` and publishes its own rows after `COMMIT`:
 
-@@member variant:after-command/src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::CommitTransactionAsync@@
+@@member variant:standard/src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::CommitTransactionAsync@@
 
 ## Hosts
 

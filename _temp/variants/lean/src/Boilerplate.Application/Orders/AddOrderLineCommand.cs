@@ -1,0 +1,50 @@
+using System.Text.Json.Serialization;
+using Boilerplate.Domain.Aggregates.Orders;
+using Boilerplate.Shared.Application;
+using Boilerplate.Shared.Exceptions;
+using FluentValidation;
+
+namespace Boilerplate.Application.Orders;
+
+public record AddOrderLineCommand : ICommand<OrderDto>, IContextCommand, ITransactionalCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public Guid Id { get; set; }
+    public OrderLineModel Line { get; set; }
+}
+
+public class AddOrderLineCommandValidator : AbstractValidator<AddOrderLineCommand>
+{
+    public AddOrderLineCommandValidator()
+    {
+        RuleFor(command => command.Id).NotEmpty();
+        RuleFor(command => command.Line).NotNull();
+
+        When(command => command.Line is not null, () =>
+        {
+            RuleFor(command => command.Line.Sku).NotEmpty().MaximumLength(OrderConstants.SkuMaxLength);
+            RuleFor(command => command.Line.Price).GreaterThanOrEqualTo(0);
+            RuleFor(command => command.Line.Currency).NotEmpty().Length(OrderConstants.CurrencyLength);
+            RuleFor(command => command.Line.Quantity).GreaterThan(0);
+        });
+    }
+}
+
+public class AddOrderLineCommandHandler(
+    IOrderRepository orderRepository,
+    CommandPipeline<AddOrderLineCommand> commandPipeline) : BaseCommandHandler<AddOrderLineCommand, OrderDto>(commandPipeline)
+{
+    protected override async Task<CommandResult<OrderDto>> OnHandle(AddOrderLineCommand command)
+    {
+        var order = await orderRepository.FindByIdTrackingAsync(command.Id)
+            ?? throw new NotFoundException(nameof(Order));
+
+        order.AddLine(command.Line.Sku, new Money(command.Line.Price, command.Line.Currency), command.Line.Quantity);
+        order.SetUpdatedAudit(command.Context.User);
+
+        await orderRepository.UpdateAsync(order);
+
+        return CommandResult.FromContent(OrderDto.Map(order));
+    }
+}

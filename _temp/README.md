@@ -1,14 +1,16 @@
 # _temp (temporary)
 
-Holds the C# solution that used to ship inside the `mortis-scaffold` skill, with the script that copied it. It is here so the skill itself contains no project source.
+Source material for phase 1. Nothing here is installed with the skills; it is deleted when phase 2 has replaced it with projects the skills generated.
 
 | Path | What it is |
 |---|---|
-| `template/assets/csharp/` | the complete C# solution (named `Boilerplate`), with the example |
-| `template/assets/csharp-example.txt` | the list of files that make up the example |
+| `template/assets/csharp/` | the original hand-written C# solution (named `Boilerplate`), with the example. Historical: never changed, no longer read by any tool |
+| `template/assets/csharp-example.txt` | the list of files that make up the example; `build_manifest.py` still reads it to tell example files from kernel files |
 | `template/scripts/scaffold.sh` | the old copy-and-rename script |
-| `pilot-acme/` | the project the pilot generated from the skills (lean, with the example), build output removed; the model's notes are in `.mortis/pilot-notes.md`. See `docs/pilot.md`. Generated before the pilot's fixes to the pages |
-| `tools/expand_pages.py`, `tools/pages/`, `tools/docs-src/`, `tools/build_manifest.py` | the page sources and the script that writes the C# pages with member snippets extracted from the template; rerun after changing a page source: `python3 _temp/tools/expand_pages.py` |
-| `tools/overlay/`, `tools/overlay-variants/<value>/`, `tools/assemble.py` | changed or new sources over the template (`overlay/REMOVED.txt` lists deletions); a file whose content depends on `events.outbox` has one version per value under `overlay-variants/` (`outbox/` for both outbox values); `python3 _temp/tools/assemble.py <none\|background\|after-command> <dir>` builds a full solution for one value, to compile and run |
+| `variants/lean/`, `variants/standard/`, `variants/advanced/` | **the source of truth**: one complete solution per preset (named `Boilerplate`, with the example), each with its own `MORTIS.md`. Each builds, tests and passes `skills/mortis-scaffold/scripts/verify.sh`. A change is made in every variant it concerns, by hand; `tests/check_variants.py` fails on a difference no option explains |
+| `tools/pages/`, `tools/docs-src/` | the page sources and the project-document sources |
+| `tools/expand_pages.py`, `tools/build_manifest.py`, `tools/build_shape.py`, `tools/build_project_docs.py` | write the C# pages, the manifest, the kernel shape and the project-document pages from the variants; rerun all four after a change: `python3 _temp/tools/build_manifest.py && python3 _temp/tools/expand_pages.py && python3 _temp/tools/build_shape.py && python3 _temp/tools/build_project_docs.py` |
 
-It is **source material** for phase 1: the kernel pages are written from this working code. It is not changed, not installed, and it is deleted when phase 2 has replaced it with projects the skills generated. `tests/smoke.sh` still builds and tests it from here.
+A page marker reads the first variant of lean, advanced, standard that has the file; `variant:<preset>/<file>` reads one variant (for code that differs by option).
+
+The variants hold only options built so far; the options of later steps join them as each step lands.

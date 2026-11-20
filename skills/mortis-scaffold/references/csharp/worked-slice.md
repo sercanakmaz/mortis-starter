@@ -1220,25 +1220,25 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | `src/{Name}.Application/Categories/CategoryDto.cs` | `{Name}.Application.Categories` | {Name}.Domain.Aggregates.Categories |
 | `src/{Name}.Application/Categories/CreateCategoryCommand.cs` | `{Name}.Application.Categories` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Categories, {Name}.Shared.Application |
 | `src/{Name}.Application/Categories/GetCategoryCommand.cs` | `{Name}.Application.Categories` | {Name}.Domain.Aggregates.Categories, {Name}.Shared.Application, {Name}.Shared.Exceptions |
-| `src/{Name}.Application/Customers/BlockCustomerCommand.cs` | `{Name}.Application.Customers` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
+| `src/{Name}.Application/Customers/BlockCustomerCommand.cs` | `{Name}.Application.Customers` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Customers/CreateCustomerCommand.cs` | `{Name}.Application.Customers` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
 | `src/{Name}.Application/Customers/CustomerDto.cs` | `{Name}.Application.Customers` | {Name}.Domain.Aggregates.Customers |
-| `src/{Name}.Application/Customers/GetCustomerCommand.cs` | `{Name}.Application.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
-| `src/{Name}.Application/Customers/RegisterCompletedOrderCommand.cs` | `{Name}.Application.Customers` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application |
+| `src/{Name}.Application/Customers/GetCustomerCommand.cs` | `{Name}.Application.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Application/Customers/RegisterCompletedOrderCommand.cs` | `{Name}.Application.Customers` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandler.cs` | `{Name}.Application.Customers` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
-| `src/{Name}.Application/Orders/AddOrderLineCommand.cs` | `{Name}.Application.Orders` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
-| `src/{Name}.Application/Orders/CancelOrderLineCommand.cs` | `{Name}.Application.Orders` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
-| `src/{Name}.Application/Orders/CancelOrderWhenAllLinesCancelledCommand.cs` | `{Name}.Application.Orders` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
+| `src/{Name}.Application/Orders/AddOrderLineCommand.cs` | `{Name}.Application.Orders` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Application/Orders/CancelOrderLineCommand.cs` | `{Name}.Application.Orders` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Application/Orders/CancelOrderWhenAllLinesCancelledCommand.cs` | `{Name}.Application.Orders` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Orders/CancelOrderWhenOrderLineCancelledEventHandler.cs` | `{Name}.Application.Orders` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
-| `src/{Name}.Application/Orders/CompleteOrderCommand.cs` | `{Name}.Application.Orders` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
+| `src/{Name}.Application/Orders/CompleteOrderCommand.cs` | `{Name}.Application.Orders` | System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Orders/CreateOrderCommand.cs` | `{Name}.Application.Orders` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
-| `src/{Name}.Application/Orders/GetOrderCommand.cs` | `{Name}.Application.Orders` | {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
+| `src/{Name}.Application/Orders/GetOrderCommand.cs` | `{Name}.Application.Orders` | {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Orders/OrderDto.cs` | `{Name}.Application.Orders` | {Name}.Domain.Aggregates.Orders |
 | `src/{Name}.Application/Products/CreateProductCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
-| `src/{Name}.Application/Products/DecreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
+| `src/{Name}.Application/Products/DecreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
-| `src/{Name}.Application/Products/GetProductCommand.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
-| `src/{Name}.Application/Products/IncreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
+| `src/{Name}.Application/Products/GetProductCommand.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Application/Products/IncreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Application/Products/ProductDto.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products |
 | `src/{Name}.Domain/Aggregates/Categories/Category.cs` | `{Name}.Domain.Aggregates.Categories` | System.Diagnostics, {Name}.Domain.Aggregates.Categories.Events, {Name}.Shared.Domain |

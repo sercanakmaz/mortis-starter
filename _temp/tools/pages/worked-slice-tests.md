@@ -60,142 +60,69 @@ One class per command handler that writes, in `test/{Name}.Tests/Application/{Pl
 
 @@members test/Boilerplate.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs::CreateCategoryCommandHandlerTests@@
 
+`CreateProductCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Products/CreateProductCommandHandlerTests.cs::CreateProductCommandHandlerTests@@
+
+`IncreaseProductStockCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs::IncreaseProductStockCommandHandlerTests@@
+
+`DecreaseProductStockCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs::DecreaseProductStockCommandHandlerTests@@
+
+`CreateCustomerCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Customers/CreateCustomerCommandHandlerTests.cs::CreateCustomerCommandHandlerTests@@
+
+`BlockCustomerCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Customers/BlockCustomerCommandHandlerTests.cs::BlockCustomerCommandHandlerTests@@
+
+`RegisterCompletedOrderCommandHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Customers/RegisterCompletedOrderCommandHandlerTests.cs::RegisterCompletedOrderCommandHandlerTests@@
+
 `CreateOrderCommandHandlerTests`:
 
-```csharp
-[Fact]
-public async Task Handle_Should_ReturnTheCreatedOrderInsideATransaction()
-{
-    var calls = new List<string>();
-    var customerId = Guid.CreateVersion7();
-    var orderRepository = OrderRepositoryBuilder.Create().WithCreateAsync(_ => calls.Add(nameof(IOrderRepository.CreateAsync))).Build();
-    var commandPipeline = CommandPipelineBuilder<CreateOrderCommand>.Create()
-        .WithValidator(new CreateOrderCommandValidator())
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .Build();
-    var commandHandler = new CreateOrderCommandHandler(orderRepository, commandPipeline);
+@@members test/Boilerplate.Tests/Application/Orders/CreateOrderCommandHandlerTests.cs::CreateOrderCommandHandlerTests@@
 
-    var commandResult = await commandHandler.Handle(new CreateOrderCommand
-    {
-        OrderNumber = "ORD-1",
-        CustomerId = customerId,
-        Lines = [new OrderLineModel("SKU-1", 10.5m, "EUR", 2)]
-    });
+`AddOrderLineCommandHandlerTests`:
 
-    Assert.Equal("ORD-1", commandResult.Content.OrderNumber);
-    Assert.Equal(customerId, commandResult.Content.CustomerId);
-    Assert.Equal("Open", commandResult.Content.Status);
-    Assert.Equal(21m, commandResult.Content.TotalAmount);
-    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.CreateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
-}
-```
+@@members test/Boilerplate.Tests/Application/Orders/AddOrderLineCommandHandlerTests.cs::AddOrderLineCommandHandlerTests@@
 
-```csharp
-[Fact]
-public async Task Handle_WithoutLines_Should_ThrowValidationFailedForLinesAndNotWrite()
-{
-    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithCreateAsync();
-    var commandPipeline = CommandPipelineBuilder<CreateOrderCommand>.Create().WithValidator(new CreateOrderCommandValidator()).Build();
-    var commandHandler = new CreateOrderCommandHandler(orderRepositoryBuilder.Build(), commandPipeline);
+`CancelOrderLineCommandHandlerTests`:
 
-    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new CreateOrderCommand
-    {
-        OrderNumber = "ORD-1",
-        CustomerId = Guid.CreateVersion7(),
-        Lines = []
-    }));
+@@members test/Boilerplate.Tests/Application/Orders/CancelOrderLineCommandHandlerTests.cs::CancelOrderLineCommandHandlerTests@@
 
-    Assert.Equal([nameof(CreateOrderCommand.Lines)], exception.Errors.Keys);
-    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.CreateAsync(It.IsAny<Order>()), Times.Never);
-}
-```
+`CompleteOrderCommandHandlerTests`:
 
-`CompleteOrderCommandHandlerTests`, the shape of every operate-by-id handler test:
+@@members test/Boilerplate.Tests/Application/Orders/CompleteOrderCommandHandlerTests.cs::CompleteOrderCommandHandlerTests@@
 
-```csharp
-[Fact]
-public async Task Handle_Should_CompleteTheTrackedOrderAndUpdateItInsideATransaction()
-{
-    var calls = new List<string>();
-    Order writtenOrder = null;
-    var orderRepository = OrderRepositoryBuilder.Create()
-        .WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1").WithoutEvents())
-        .WithUpdateAsync(updatedOrder =>
-        {
-            writtenOrder = updatedOrder;
-            calls.Add(nameof(IOrderRepository.UpdateAsync));
-        })
-        .Build();
-    var commandPipeline = CommandPipelineBuilder<CompleteOrderCommand>.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .Build();
-    var commandHandler = new CompleteOrderCommandHandler(orderRepository, commandPipeline);
+`CancelOrderWhenAllLinesCancelledCommandHandlerTests`:
 
-    var commandResult = await commandHandler.Handle(new CompleteOrderCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
-
-    Assert.Equal("Completed", commandResult.Content.Status);
-    Assert.Equal("user-1", writtenOrder.UpdatedUserId);
-    Assert.IsType<Completed>(Assert.Single(writtenOrder.DomainEvents));
-    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
-}
-```
-
-```csharp
-[Fact]
-public async Task Handle_WithAnUnknownOrder_Should_ThrowNotFoundAndNotWrite()
-{
-    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(null).WithUpdateAsync();
-    var commandHandler = new CompleteOrderCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CompleteOrderCommand>.Create().Build());
-
-    await Assert.ThrowsAsync<NotFoundException>(() => commandHandler.Handle(new CompleteOrderCommand(Guid.CreateVersion7())));
-
-    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
-}
-```
-
-The other handler test classes and their tests, each written in one of the two shapes above:
-
-| Class | Tests |
-|---|---|
-| `CreateProductCommandHandlerTests` | `Handle_Should_ReturnTheCreatedProductInsideATransaction`, `Handle_WithNegativeStock_Should_ThrowValidationFailedForStockAndNotWrite` |
-| `IncreaseProductStockCommandHandlerTests` | `Handle_Should_ReturnTheProductWithTheNewStockInsideATransaction`, `Handle_WithZeroQuantity_Should_ThrowValidationFailedForQuantityAndNotWrite` |
-| `DecreaseProductStockCommandHandlerTests` | the same two names |
-| `CreateCustomerCommandHandlerTests` | `Handle_Should_ReturnTheCreatedCustomerWithANormalizedEmailInsideATransaction`, `Handle_WithAnInvalidEmail_Should_ThrowValidationFailedForEmailAndNotWrite` |
-| `BlockCustomerCommandHandlerTests` | `Handle_Should_BlockTheTrackedCustomerAndUpdateIt`, `Handle_WithAnUnknownCustomer_Should_ThrowNotFoundAndNotWrite` |
-| `RegisterCompletedOrderCommandHandlerTests` | `Handle_Should_IncrementTheCountAndUpdateTheCustomer`, `Handle_WhenTheCustomerIsBlocked_Should_ThrowBlockedAndNotWrite` |
-| `AddOrderLineCommandHandlerTests` | `Handle_Should_AddTheLineAndUpdateTheOrder`, `Handle_WhenTheOrderIsCompleted_Should_ThrowNotOpenAndNotWrite` |
-| `CancelOrderLineCommandHandlerTests` | `Handle_Should_CancelTheLineAndUpdateTheOrder`, `Handle_WithAnUnknownLine_Should_ThrowNotFoundAndNotWrite` |
-| `CancelOrderWhenAllLinesCancelledCommandHandlerTests` | `Handle_WithEveryLineCancelled_Should_CancelAndUpdateTheOrder`, `Handle_WithAnActiveLine_Should_ReturnTheOrderWithoutWriting` |
+@@members test/Boilerplate.Tests/Application/Orders/CancelOrderWhenAllLinesCancelledCommandHandlerTests.cs::CancelOrderWhenAllLinesCancelledCommandHandlerTests@@
 
 ## Event handler tests
 
-One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders:
+One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders.
 
-```csharp
-[Fact]
-public async Task Handle_Should_DecreaseTheStockOfTheProductWithTheSkuAndQuantityOfTheEvent()
-{
-    Product writtenProduct = null;
-    var productRepositoryBuilder = ProductRepositoryBuilder.Create()
-        .WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 10))
-        .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
-    var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
-    var commandHandler = new DecreaseProductStockCommandHandler(productRepositoryBuilder.Build(), commandPipeline);
-    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+`DecreaseStockWhenOrderLineAddedEventHandlerTests`:
 
-    await eventHandler.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3));
+@@members test/Boilerplate.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs::DecreaseStockWhenOrderLineAddedEventHandlerTests@@
 
-    productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.FindBySkuTrackingAsync("SKU-1"), Times.Once);
-    Assert.Equal(7, writtenProduct.Stock);
-}
-```
+`IncreaseStockWhenOrderLineCancelledEventHandlerTests`:
 
-| Class | Tests |
-|---|---|
-| `DecreaseStockWhenOrderLineAddedEventHandlerTests` | the test above, `Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent` |
-| `IncreaseStockWhenOrderLineCancelledEventHandlerTests` | `Handle_Should_IncreaseTheStockOfTheProductWithTheSkuAndQuantityOfTheEvent`, `Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent` |
-| `RegisterCompletedOrderWhenOrderCompletedEventHandlerTests` | `Handle_Should_RegisterTheCompletedOrderOnTheCustomerOfTheEvent`, `Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent` |
-| `CancelOrderWhenOrderLineCancelledEventHandlerTests` | `Handle_WhenEveryLineIsCancelled_Should_CancelTheOrderOfTheEvent`, `Handle_WhenAnotherLineIsStillActive_Should_LeaveTheOrderOpenAndNotWrite`, `Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent` |
+@@members test/Boilerplate.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs::IncreaseStockWhenOrderLineCancelledEventHandlerTests@@
+
+`RegisterCompletedOrderWhenOrderCompletedEventHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandlerTests.cs::RegisterCompletedOrderWhenOrderCompletedEventHandlerTests@@
+
+`CancelOrderWhenOrderLineCancelledEventHandlerTests`:
+
+@@members test/Boilerplate.Tests/Application/Orders/CancelOrderWhenOrderLineCancelledEventHandlerTests.cs::CancelOrderWhenOrderLineCancelledEventHandlerTests@@
 
 ## Persistence tests
 

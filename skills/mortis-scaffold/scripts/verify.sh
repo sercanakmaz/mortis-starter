@@ -63,7 +63,7 @@ step "house rules: no comments, names match files, one context line per command,
 shape_matches() {
   local database
   database="$(printf '%s' "$NAME" | tr 'A-Z' 'a-z' | tr -d '.')"
-  diff <(grep -v '^#' "$SHAPE_FILE" | sed -e "s/^\[events.outbox=$OUTBOX\] //" -e '/^\[/d' -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g") <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g")
+  diff <(python3 -I "$HERE/shape_for.py" "$SHAPE_FILE" "$PROJECT/MORTIS.md" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g") <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g")
 }
 step "kernel shape: every public kernel type and member is exactly as in kernel-shape.txt" shape_matches
 step "editor files: the launch configurations ask for the arguments and point at this project" "$LANG_SH" editor-checks "$PROJECT" "$NAME"
@@ -99,6 +99,10 @@ else
     else
       run_conformance example-database.sh
       run_conformance example-console.sh
+      if [ "$DRY_RUN" = 0 ] && [ "$WORKER" = "separate" ] && [ "$OUTBOX" != "none" ]; then
+        WORKER_PID="$("$LANG_SH" worker-start "$PROJECT" "$NAME")"
+        sleep 4
+      fi
       run_conformance example-http.sh
     fi
   fi
@@ -106,6 +110,7 @@ else
   ADDONS=",$(get addons),"
   export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
   case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac
+  if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
     run_conformance outbox.sh
   elif [ "$EXAMPLE" = "true" ]; then

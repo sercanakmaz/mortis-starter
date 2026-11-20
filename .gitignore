@@ -7,3 +7,4 @@ obj/
 TestResults/
 _sources/
 __pycache__/
+.mortis/

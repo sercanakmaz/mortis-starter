@@ -953,7 +953,270 @@ public async Task Handle_WithoutAName_Should_ThrowValidationFailedForName()
 }
 ```
 
+`CreateProductCommandHandlerTests`:
+
+```csharp
+public class CreateProductCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_ReturnTheCreatedProductInsideATransaction()
+{
+    var calls = new List<string>();
+    var productRepository = ProductRepositoryBuilder.Create().WithCreateAsync(_ => calls.Add(nameof(IProductRepository.CreateAsync))).Build();
+    var commandPipeline = CommandPipelineBuilder<CreateProductCommand>.Create()
+        .WithValidator(new CreateProductCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new CreateProductCommandHandler(productRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new CreateProductCommand { Sku = "SKU-1", Name = "Bolt", Stock = 10 });
+
+    Assert.Equal("SKU-1", commandResult.Content.Sku);
+    Assert.Equal(10, commandResult.Content.Stock);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IProductRepository.CreateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithNegativeStock_Should_ThrowValidationFailedForStockAndNotWrite()
+{
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create().WithCreateAsync();
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<CreateProductCommand>.Create().WithValidator(new CreateProductCommandValidator()).Build();
+    var commandHandler = new CreateProductCommandHandler(productRepository, commandPipeline);
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new CreateProductCommand { Sku = "SKU-1", Name = "Bolt", Stock = -1 }));
+
+    Assert.Equal([nameof(CreateProductCommand.Stock)], exception.Errors.Keys);
+    productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.CreateAsync(It.IsAny<Product>()), Times.Never);
+}
+```
+
+`IncreaseProductStockCommandHandlerTests`:
+
+```csharp
+public class IncreaseProductStockCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_ReturnTheProductWithTheNewStockInsideATransaction()
+{
+    var calls = new List<string>();
+    var product = FakeProduct.Create("SKU-1", 10);
+    var productRepository = ProductRepositoryBuilder.Create().WithFindBySkuTrackingAsync(product).WithUpdateAsync(_ => calls.Add(nameof(IProductRepository.UpdateAsync))).Build();
+    var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create()
+        .WithValidator(new IncreaseProductStockCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new IncreaseProductStockCommandHandler(productRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new IncreaseProductStockCommand { Sku = "SKU-1", Quantity = 4 });
+
+    Assert.Equal(14, commandResult.Content.Stock);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IProductRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithZeroQuantity_Should_ThrowValidationFailedForQuantityAndNotWrite()
+{
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create().WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 10)).WithUpdateAsync();
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create().WithValidator(new IncreaseProductStockCommandValidator()).Build();
+    var commandHandler = new IncreaseProductStockCommandHandler(productRepository, commandPipeline);
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new IncreaseProductStockCommand { Sku = "SKU-1", Quantity = 0 }));
+
+    Assert.Equal([nameof(IncreaseProductStockCommand.Quantity)], exception.Errors.Keys);
+    productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.UpdateAsync(It.IsAny<Product>()), Times.Never);
+}
+```
+
+`DecreaseProductStockCommandHandlerTests`:
+
+```csharp
+public class DecreaseProductStockCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_ReturnTheProductWithTheNewStockInsideATransaction()
+{
+    var calls = new List<string>();
+    var product = FakeProduct.Create("SKU-1", 10);
+    var productRepository = ProductRepositoryBuilder.Create().WithFindBySkuTrackingAsync(product).WithUpdateAsync(_ => calls.Add(nameof(IProductRepository.UpdateAsync))).Build();
+    var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create()
+        .WithValidator(new DecreaseProductStockCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new DecreaseProductStockCommandHandler(productRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new DecreaseProductStockCommand { Sku = "SKU-1", Quantity = 4 });
+
+    Assert.Equal(6, commandResult.Content.Stock);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IProductRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithZeroQuantity_Should_ThrowValidationFailedForQuantityAndNotWrite()
+{
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create().WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 10)).WithUpdateAsync();
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
+    var commandHandler = new DecreaseProductStockCommandHandler(productRepository, commandPipeline);
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new DecreaseProductStockCommand { Sku = "SKU-1", Quantity = 0 }));
+
+    Assert.Equal([nameof(DecreaseProductStockCommand.Quantity)], exception.Errors.Keys);
+    productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.UpdateAsync(It.IsAny<Product>()), Times.Never);
+}
+```
+
+`CreateCustomerCommandHandlerTests`:
+
+```csharp
+public class CreateCustomerCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_ReturnTheCreatedCustomerWithANormalizedEmailInsideATransaction()
+{
+    var calls = new List<string>();
+    var customerRepository = CustomerRepositoryBuilder.Create().WithCreateAsync(_ => calls.Add(nameof(ICustomerRepository.CreateAsync))).Build();
+    var commandPipeline = CommandPipelineBuilder<CreateCustomerCommand>.Create()
+        .WithValidator(new CreateCustomerCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new CreateCustomerCommandHandler(customerRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new CreateCustomerCommand { Name = "Ada", Email = "  Ada@Example.com " });
+
+    Assert.Equal("ada@example.com", commandResult.Content.Email);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(ICustomerRepository.CreateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithAnInvalidEmail_Should_ThrowValidationFailedForEmailAndNotWrite()
+{
+    var customerRepositoryBuilder = CustomerRepositoryBuilder.Create().WithCreateAsync();
+    var commandPipeline = CommandPipelineBuilder<CreateCustomerCommand>.Create().WithValidator(new CreateCustomerCommandValidator()).Build();
+    var commandHandler = new CreateCustomerCommandHandler(customerRepositoryBuilder.Build(), commandPipeline);
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new CreateCustomerCommand { Name = "Ada", Email = "not-an-email" }));
+
+    Assert.Equal([nameof(CreateCustomerCommand.Email)], exception.Errors.Keys);
+    customerRepositoryBuilder.BuildMock().Verify(customerRepository => customerRepository.CreateAsync(It.IsAny<Customer>()), Times.Never);
+}
+```
+
+`BlockCustomerCommandHandlerTests`:
+
+```csharp
+public class BlockCustomerCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_BlockTheTrackedCustomerAndUpdateIt()
+{
+    var calls = new List<string>();
+    Customer writtenCustomer = null;
+    var customerRepository = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(FakeCustomer.Create().WithoutEvents())
+        .WithUpdateAsync(updatedCustomer =>
+        {
+            writtenCustomer = updatedCustomer;
+            calls.Add(nameof(ICustomerRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<BlockCustomerCommand>.Create()
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new BlockCustomerCommandHandler(customerRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new BlockCustomerCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.True(commandResult.Content.IsBlocked);
+    Assert.Equal("user-1", writtenCustomer.UpdatedUserId);
+    Assert.IsType<Blocked>(Assert.Single(writtenCustomer.DomainEvents));
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(ICustomerRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithAnUnknownCustomer_Should_ThrowNotFoundAndNotWrite()
+{
+    var customerRepositoryBuilder = CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(null).WithUpdateAsync();
+    var commandHandler = new BlockCustomerCommandHandler(customerRepositoryBuilder.Build(), CommandPipelineBuilder<BlockCustomerCommand>.Create().Build());
+
+    await Assert.ThrowsAsync<NotFoundException>(() => commandHandler.Handle(new BlockCustomerCommand(Guid.CreateVersion7())));
+
+    customerRepositoryBuilder.BuildMock().Verify(customerRepository => customerRepository.UpdateAsync(It.IsAny<Customer>()), Times.Never);
+}
+```
+
+`RegisterCompletedOrderCommandHandlerTests`:
+
+```csharp
+public class RegisterCompletedOrderCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_IncrementTheCountAndUpdateTheCustomer()
+{
+    var calls = new List<string>();
+    Customer writtenCustomer = null;
+    var customerRepository = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(FakeCustomer.Create().WithCompletedOrderCount(2).WithoutEvents())
+        .WithUpdateAsync(updatedCustomer =>
+        {
+            writtenCustomer = updatedCustomer;
+            calls.Add(nameof(ICustomerRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<RegisterCompletedOrderCommand>.Create()
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new RegisterCompletedOrderCommandHandler(customerRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new RegisterCompletedOrderCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.Equal(3, commandResult.Content.CompletedOrderCount);
+    Assert.Equal("user-1", writtenCustomer.UpdatedUserId);
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(ICustomerRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WhenTheCustomerIsBlocked_Should_ThrowBlockedAndNotWrite()
+{
+    var customerRepositoryBuilder = CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(FakeCustomer.Create().WithIsBlocked(true)).WithUpdateAsync();
+    var commandHandler = new RegisterCompletedOrderCommandHandler(customerRepositoryBuilder.Build(), CommandPipelineBuilder<RegisterCompletedOrderCommand>.Create().Build());
+
+    await Assert.ThrowsAsync<BusinessRuleException>(() => commandHandler.Handle(new RegisterCompletedOrderCommand(Guid.CreateVersion7())));
+
+    customerRepositoryBuilder.BuildMock().Verify(customerRepository => customerRepository.UpdateAsync(It.IsAny<Customer>()), Times.Never);
+}
+```
+
 `CreateOrderCommandHandlerTests`:
+
+```csharp
+public class CreateOrderCommandHandlerTests
+```
 
 ```csharp
 [Fact]
@@ -979,6 +1242,7 @@ public async Task Handle_Should_ReturnTheCreatedOrderInsideATransaction()
     Assert.Equal(customerId, commandResult.Content.CustomerId);
     Assert.Equal("Open", commandResult.Content.Status);
     Assert.Equal(21m, commandResult.Content.TotalAmount);
+    Assert.Equal("SKU-1", Assert.Single(commandResult.Content.Lines).Sku);
     Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.CreateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
 }
 ```
@@ -988,8 +1252,9 @@ public async Task Handle_Should_ReturnTheCreatedOrderInsideATransaction()
 public async Task Handle_WithoutLines_Should_ThrowValidationFailedForLinesAndNotWrite()
 {
     var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithCreateAsync();
+    var orderRepository = orderRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<CreateOrderCommand>.Create().WithValidator(new CreateOrderCommandValidator()).Build();
-    var commandHandler = new CreateOrderCommandHandler(orderRepositoryBuilder.Build(), commandPipeline);
+    var commandHandler = new CreateOrderCommandHandler(orderRepository, commandPipeline);
 
     var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new CreateOrderCommand
     {
@@ -1003,7 +1268,107 @@ public async Task Handle_WithoutLines_Should_ThrowValidationFailedForLinesAndNot
 }
 ```
 
-`CompleteOrderCommandHandlerTests`, the shape of every operate-by-id handler test:
+`AddOrderLineCommandHandlerTests`:
+
+```csharp
+public class AddOrderLineCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_AddTheLineAndUpdateTheOrder()
+{
+    var calls = new List<string>();
+    Order writtenOrder = null;
+    var orderRepository = OrderRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1").WithoutEvents())
+        .WithUpdateAsync(updatedOrder =>
+        {
+            writtenOrder = updatedOrder;
+            calls.Add(nameof(IOrderRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<AddOrderLineCommand>.Create()
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new AddOrderLineCommandHandler(orderRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new AddOrderLineCommand { Id = Guid.CreateVersion7(), Line = new OrderLineModel("SKU-2", 4m, "EUR", 3), Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.Equal(["SKU-1", "SKU-2"], commandResult.Content.Lines.Select(line => line.Sku));
+    Assert.Equal("user-1", writtenOrder.UpdatedUserId);
+    Assert.IsType<LineAdded>(Assert.Single(writtenOrder.DomainEvents));
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WhenTheOrderIsCompleted_Should_ThrowNotOpenAndNotWrite()
+{
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1").WithCompleted()).WithUpdateAsync();
+    var commandHandler = new AddOrderLineCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<AddOrderLineCommand>.Create().Build());
+
+    await Assert.ThrowsAsync<BusinessRuleException>(() => commandHandler.Handle(new AddOrderLineCommand { Id = Guid.CreateVersion7(), Line = new OrderLineModel("SKU-2", 4m, "EUR", 3) }));
+
+    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
+}
+```
+
+`CancelOrderLineCommandHandlerTests`:
+
+```csharp
+public class CancelOrderLineCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_CancelTheLineAndUpdateTheOrder()
+{
+    var calls = new List<string>();
+    Order writtenOrder = null;
+    var fakeOrder = FakeOrder.Create().WithLine("SKU-1").WithLine("SKU-2").WithoutEvents();
+    var orderRepository = OrderRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(fakeOrder)
+        .WithUpdateAsync(updatedOrder =>
+        {
+            writtenOrder = updatedOrder;
+            calls.Add(nameof(IOrderRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<CancelOrderLineCommand>.Create()
+        .WithValidator(new CancelOrderLineCommandValidator())
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new CancelOrderLineCommandHandler(orderRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new CancelOrderLineCommand { Id = fakeOrder.Id, LineId = fakeOrder.Lines.First().Id, Reason = "out of stock", Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.True(commandResult.Content.Lines.First().IsCancelled);
+    Assert.Equal("user-1", writtenOrder.UpdatedUserId);
+    Assert.IsType<LineCancelled>(Assert.Single(writtenOrder.DomainEvents));
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithAnUnknownLine_Should_ThrowNotFoundAndNotWrite()
+{
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1")).WithUpdateAsync();
+    var commandHandler = new CancelOrderLineCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CancelOrderLineCommand>.Create().Build());
+
+    await Assert.ThrowsAsync<NotFoundException>(() => commandHandler.Handle(new CancelOrderLineCommand { Id = Guid.CreateVersion7(), LineId = Guid.CreateVersion7(), Reason = "out of stock" }));
+
+    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
+}
+```
+
+`CompleteOrderCommandHandlerTests`:
+
+```csharp
+public class CompleteOrderCommandHandlerTests
+```
 
 ```csharp
 [Fact]
@@ -1046,35 +1411,76 @@ public async Task Handle_WithAnUnknownOrder_Should_ThrowNotFoundAndNotWrite()
 }
 ```
 
-The other handler test classes and their tests, each written in one of the two shapes above:
+`CancelOrderWhenAllLinesCancelledCommandHandlerTests`:
 
-| Class | Tests |
-|---|---|
-| `CreateProductCommandHandlerTests` | `Handle_Should_ReturnTheCreatedProductInsideATransaction`, `Handle_WithNegativeStock_Should_ThrowValidationFailedForStockAndNotWrite` |
-| `IncreaseProductStockCommandHandlerTests` | `Handle_Should_ReturnTheProductWithTheNewStockInsideATransaction`, `Handle_WithZeroQuantity_Should_ThrowValidationFailedForQuantityAndNotWrite` |
-| `DecreaseProductStockCommandHandlerTests` | the same two names |
-| `CreateCustomerCommandHandlerTests` | `Handle_Should_ReturnTheCreatedCustomerWithANormalizedEmailInsideATransaction`, `Handle_WithAnInvalidEmail_Should_ThrowValidationFailedForEmailAndNotWrite` |
-| `BlockCustomerCommandHandlerTests` | `Handle_Should_BlockTheTrackedCustomerAndUpdateIt`, `Handle_WithAnUnknownCustomer_Should_ThrowNotFoundAndNotWrite` |
-| `RegisterCompletedOrderCommandHandlerTests` | `Handle_Should_IncrementTheCountAndUpdateTheCustomer`, `Handle_WhenTheCustomerIsBlocked_Should_ThrowBlockedAndNotWrite` |
-| `AddOrderLineCommandHandlerTests` | `Handle_Should_AddTheLineAndUpdateTheOrder`, `Handle_WhenTheOrderIsCompleted_Should_ThrowNotOpenAndNotWrite` |
-| `CancelOrderLineCommandHandlerTests` | `Handle_Should_CancelTheLineAndUpdateTheOrder`, `Handle_WithAnUnknownLine_Should_ThrowNotFoundAndNotWrite` |
-| `CancelOrderWhenAllLinesCancelledCommandHandlerTests` | `Handle_WithEveryLineCancelled_Should_CancelAndUpdateTheOrder`, `Handle_WithAnActiveLine_Should_ReturnTheOrderWithoutWriting` |
+```csharp
+public class CancelOrderWhenAllLinesCancelledCommandHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithEveryLineCancelled_Should_CancelAndUpdateTheOrder()
+{
+    var calls = new List<string>();
+    Order writtenOrder = null;
+    var orderRepository = OrderRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1").WithCancelledLine("SKU-1").WithoutEvents())
+        .WithUpdateAsync(updatedOrder =>
+        {
+            writtenOrder = updatedOrder;
+            calls.Add(nameof(IOrderRepository.UpdateAsync));
+        })
+        .Build();
+    var commandPipeline = CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create()
+        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+        .Build();
+    var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepository, commandPipeline);
+
+    var commandResult = await commandHandler.Handle(new CancelOrderWhenAllLinesCancelledCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.Equal("Cancelled", commandResult.Content.Status);
+    Assert.Equal("user-1", writtenOrder.UpdatedUserId);
+    Assert.IsType<Cancelled>(Assert.Single(writtenOrder.DomainEvents));
+    Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(IOrderRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithAnActiveLine_Should_ReturnTheOrderWithoutWriting()
+{
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(FakeOrder.Create().WithLine("SKU-1").WithoutEvents()).WithUpdateAsync();
+    var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepositoryBuilder.Build(), CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+
+    var commandResult = await commandHandler.Handle(new CancelOrderWhenAllLinesCancelledCommand(Guid.CreateVersion7()));
+
+    Assert.Equal("Open", commandResult.Content.Status);
+    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
+}
+```
 
 ## Event handler tests
 
-One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders:
+One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders.
+
+`DecreaseStockWhenOrderLineAddedEventHandlerTests`:
+
+```csharp
+public class DecreaseStockWhenOrderLineAddedEventHandlerTests
+```
 
 ```csharp
 [Fact]
 public async Task Handle_Should_DecreaseTheStockOfTheProductWithTheSkuAndQuantityOfTheEvent()
 {
     Product writtenProduct = null;
+    var product = FakeProduct.Create("SKU-1", 10);
     var productRepositoryBuilder = ProductRepositoryBuilder.Create()
-        .WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 10))
+        .WithFindBySkuTrackingAsync(product)
         .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
+    var productRepository = productRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
-    var commandHandler = new DecreaseProductStockCommandHandler(productRepositoryBuilder.Build(), commandPipeline);
-    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
 
     await eventHandler.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3));
 
@@ -1083,12 +1489,174 @@ public async Task Handle_Should_DecreaseTheStockOfTheProductWithTheSkuAndQuantit
 }
 ```
 
-| Class | Tests |
-|---|---|
-| `DecreaseStockWhenOrderLineAddedEventHandlerTests` | the test above, `Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent` |
-| `IncreaseStockWhenOrderLineCancelledEventHandlerTests` | `Handle_Should_IncreaseTheStockOfTheProductWithTheSkuAndQuantityOfTheEvent`, `Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent` |
-| `RegisterCompletedOrderWhenOrderCompletedEventHandlerTests` | `Handle_Should_RegisterTheCompletedOrderOnTheCustomerOfTheEvent`, `Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent` |
-| `CancelOrderWhenOrderLineCancelledEventHandlerTests` | `Handle_WhenEveryLineIsCancelled_Should_CancelTheOrderOfTheEvent`, `Handle_WhenAnotherLineIsStillActive_Should_LeaveTheOrderOpenAndNotWrite`, `Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent` |
+```csharp
+[Fact]
+public async Task Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent()
+{
+    Product writtenProduct = null;
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create()
+        .WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 10))
+        .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
+    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+
+    await eventHandler.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3) { UserId = "user-7", UserEmail = "user-7@localhost" });
+
+    Assert.Equal([SystemUser.Id, SystemUser.Email], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
+}
+```
+
+`IncreaseStockWhenOrderLineCancelledEventHandlerTests`:
+
+```csharp
+public class IncreaseStockWhenOrderLineCancelledEventHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_IncreaseTheStockOfTheProductWithTheSkuAndQuantityOfTheEvent()
+{
+    Product writtenProduct = null;
+    var product = FakeProduct.Create("SKU-1", 7);
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create()
+        .WithFindBySkuTrackingAsync(product)
+        .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create().WithValidator(new IncreaseProductStockCommandValidator()).Build();
+    var eventHandler = new IncreaseStockWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+
+    await eventHandler.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind"));
+
+    productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.FindBySkuTrackingAsync("SKU-1"), Times.Once);
+    Assert.Equal(10, writtenProduct.Stock);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent()
+{
+    Product writtenProduct = null;
+    var productRepositoryBuilder = ProductRepositoryBuilder.Create()
+        .WithFindBySkuTrackingAsync(FakeProduct.Create("SKU-1", 7))
+        .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
+    var productRepository = productRepositoryBuilder.Build();
+    var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create().WithValidator(new IncreaseProductStockCommandValidator()).Build();
+    var eventHandler = new IncreaseStockWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+
+    await eventHandler.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind") { UserId = "user-7", UserEmail = "user-7@localhost" });
+
+    Assert.Equal([SystemUser.Id, SystemUser.Email], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
+}
+```
+
+`RegisterCompletedOrderWhenOrderCompletedEventHandlerTests`:
+
+```csharp
+public class RegisterCompletedOrderWhenOrderCompletedEventHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_RegisterTheCompletedOrderOnTheCustomerOfTheEvent()
+{
+    Customer writtenCustomer = null;
+    var customer = FakeCustomer.Create();
+    var customerRepositoryBuilder = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(customer)
+        .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer);
+    var customerRepository = customerRepositoryBuilder.Build();
+    var commandHandler = new RegisterCompletedOrderCommandHandler(customerRepository, CommandPipelineBuilder<RegisterCompletedOrderCommand>.Create().Build());
+    var eventHandler = new RegisterCompletedOrderWhenOrderCompletedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+    await eventHandler.Handle(new Completed(Guid.CreateVersion7().ToString(), "ORD-1", customer.Id.ToString()));
+
+    customerRepositoryBuilder.BuildMock().Verify(customerRepository => customerRepository.FindByIdTrackingAsync(customer.Id), Times.Once);
+    Assert.Equal(1, writtenCustomer.CompletedOrderCount);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent()
+{
+    Customer writtenCustomer = null;
+    var customer = FakeCustomer.Create();
+    var customerRepositoryBuilder = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(customer)
+        .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer);
+    var customerRepository = customerRepositoryBuilder.Build();
+    var commandHandler = new RegisterCompletedOrderCommandHandler(customerRepository, CommandPipelineBuilder<RegisterCompletedOrderCommand>.Create().Build());
+    var eventHandler = new RegisterCompletedOrderWhenOrderCompletedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+    await eventHandler.Handle(new Completed(Guid.CreateVersion7().ToString(), "ORD-1", customer.Id.ToString()) { UserId = "user-7", UserEmail = "user-7@localhost" });
+
+    Assert.Equal(["user-7", "user-7@localhost"], [writtenCustomer.UpdatedUserId, writtenCustomer.UpdatedUserName]);
+}
+```
+
+`CancelOrderWhenOrderLineCancelledEventHandlerTests`:
+
+```csharp
+public class CancelOrderWhenOrderLineCancelledEventHandlerTests
+```
+
+```csharp
+[Fact]
+public async Task Handle_WhenEveryLineIsCancelled_Should_CancelTheOrderOfTheEvent()
+{
+    Order writtenOrder = null;
+    var order = FakeOrder.Create().WithLine("SKU-1").WithLine("SKU-2").WithCancelledLine("SKU-1").WithCancelledLine("SKU-2").WithoutEvents();
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(order)
+        .WithUpdateAsync(updatedOrder => writtenOrder = updatedOrder);
+    var orderRepository = orderRepositoryBuilder.Build();
+    var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepository, CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+    var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+    await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-2", 1, "out of stock"));
+
+    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.FindByIdTrackingAsync(order.Id), Times.Once);
+    Assert.Equal(OrderStatus.Cancelled, writtenOrder.Status);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WhenAnotherLineIsStillActive_Should_LeaveTheOrderOpenAndNotWrite()
+{
+    var order = FakeOrder.Create().WithLine("SKU-1").WithLine("SKU-2").WithCancelledLine("SKU-1").WithoutEvents();
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create().WithFindByIdTrackingAsync(order).WithUpdateAsync();
+    var orderRepository = orderRepositoryBuilder.Build();
+    var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepository, CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+    var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+    await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 1, "out of stock"));
+
+    Assert.Equal(OrderStatus.Open, order.Status);
+    orderRepositoryBuilder.BuildMock().Verify(orderRepository => orderRepository.UpdateAsync(It.IsAny<Order>()), Times.Never);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_Should_RunTheCommandAsTheUserWhoRaisedTheEvent()
+{
+    Order writtenOrder = null;
+    var order = FakeOrder.Create().WithLine("SKU-1").WithCancelledLine("SKU-1").WithoutEvents();
+    var orderRepositoryBuilder = OrderRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(order)
+        .WithUpdateAsync(updatedOrder => writtenOrder = updatedOrder);
+    var orderRepository = orderRepositoryBuilder.Build();
+    var commandHandler = new CancelOrderWhenAllLinesCancelledCommandHandler(orderRepository, CommandPipelineBuilder<CancelOrderWhenAllLinesCancelledCommand>.Create().Build());
+    var eventHandler = new CancelOrderWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(commandHandler).Build());
+
+    await eventHandler.Handle(new LineCancelled(order.Id.ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 1, "out of stock") { UserId = "user-7", UserEmail = "user-7@localhost" });
+
+    Assert.Equal(["user-7", "user-7@localhost"], [writtenOrder.UpdatedUserId, writtenOrder.UpdatedUserName]);
+}
+```
 
 ## Persistence tests
 
@@ -1361,8 +1929,15 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | File | Namespace | Usings |
 |---|---|---|
 | `test/{Name}.Tests/Application/Categories/CreateCategoryCommandHandlerTests.cs` | `{Name}.Tests.Application.Categories` | {Name}.Application.Categories, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Categories.Events, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Categories, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Application/Customers/BlockCustomerCommandHandlerTests.cs` | `{Name}.Tests.Application.Customers` | Moq, {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Application/Customers/CreateCustomerCommandHandlerTests.cs` | `{Name}.Tests.Application.Customers` | Moq, {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Application/Customers/RegisterCompletedOrderCommandHandlerTests.cs` | `{Name}.Tests.Application.Customers` | Moq, {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandlerTests.cs` | `{Name}.Tests.Application.Customers` | Moq, {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders.Events, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Application/Orders/AddOrderLineCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Application/Orders/CancelOrderLineCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Application/Orders/CancelOrderWhenAllLinesCancelledCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Orders/CancelOrderWhenOrderLineCancelledEventHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Application/Orders/CompleteOrderCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Orders/CreateOrderCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Products/CreateProductCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |

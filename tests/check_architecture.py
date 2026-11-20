@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ARCH = ROOT / "skills" / "mortis-architect" / "references" / "architecture"
-TEMPLATE_SHARED = ROOT / "_temp" / "template" / "assets" / "csharp" / "src" / "Boilerplate.Shared"
+TEMPLATE_SHARED = ROOT / "_temp" / "variants" / "lean" / "src" / "Boilerplate.Shared"
 TYPE_MAP = ROOT / "tests" / "fixtures" / "shared-type-map.json"
 QUESTIONS = ROOT / "tests" / "fixtures" / "placement-questions.json"
 
@@ -54,13 +54,9 @@ type_map = json.loads(TYPE_MAP.read_text(encoding="utf-8"))
 for target in set(type_map.values()):
     if target not in headings:
         errors.append(f"shared-type-map.json: {target!r} is not a section of building-blocks.md")
-REMOVED = ROOT / "_temp" / "tools" / "overlay" / "REMOVED.txt"
-removed = set(REMOVED.read_text().split()) if REMOVED.exists() else set()
 if TEMPLATE_SHARED.exists():
     for path in sorted(TEMPLATE_SHARED.rglob("*.cs")):
         if {"obj", "bin"} & set(path.relative_to(TEMPLATE_SHARED).parts):
-            continue
-        if "src/Boilerplate.Shared/" + path.relative_to(TEMPLATE_SHARED).as_posix() in removed:
             continue
         key = path.relative_to(TEMPLATE_SHARED).as_posix()
         if key not in type_map:

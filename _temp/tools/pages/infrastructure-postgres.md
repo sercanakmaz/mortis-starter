@@ -77,7 +77,7 @@ Fields: `private readonly List<Func<Task>> _committedActions = [];`, `private ID
 
 @@member src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::HasTransaction@@
 
-@@member src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::SaveChangesAsync@@
+@@member variant:advanced/src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::SaveChangesAsync@@
 
 @@member src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::BeginTransactionAsync@@
 

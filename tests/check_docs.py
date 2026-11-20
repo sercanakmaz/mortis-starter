@@ -6,19 +6,16 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(ROOT, "skills", "mortis-scaffold")
-TEMPLATE = os.path.join(ROOT, "_temp", "template", "assets", "csharp")
+VARIANTS = os.path.join(ROOT, "_temp", "variants")
+PRESETS = ("lean", "advanced", "standard")
+TEMPLATE = VARIANTS
 CSHARP = os.path.join(SCAFFOLD, "references", "csharp")
-OVERLAY = os.path.join(ROOT, "_temp", "tools", "overlay")
-
-
-def removed_files():
-    path = os.path.join(OVERLAY, "REMOVED.txt")
-    return set(open(path, encoding="utf-8").read().split()) if os.path.exists(path) else set()
 
 
 def source_path(relative):
-    overlay = os.path.join(OVERLAY, relative)
-    return overlay if os.path.exists(overlay) else os.path.join(TEMPLATE, relative)
+    return next((os.path.join(VARIANTS, p, relative) for p in PRESETS if os.path.exists(os.path.join(VARIANTS, p, relative))), os.path.join(VARIANTS, PRESETS[0], relative))
+
+
 SUPERSEDED = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSupport/Domain/\w+/\w+ServiceBuilder\.cs|Tests/Domain/\w+/\w+ServiceTests\.cs)$")
 ONE_WAY = re.compile(r"\b(alternatively|you may also|you can also|or use|optionally use)\b", re.I)
 
@@ -34,13 +31,15 @@ def fail(message):
 
 def template_files():
     found = set()
-    for root in (TEMPLATE, OVERLAY):
+    for preset in PRESETS:
+        root = os.path.join(VARIANTS, preset)
         for base, dirs, files in os.walk(root):
-            dirs[:] = [d for d in dirs if d not in ("bin", "obj")]
+            dirs[:] = [d for d in dirs if d not in ("bin", "obj", ".mortis")]
             for name in files:
-                if name != "REMOVED.txt":
-                    found.add(os.path.relpath(os.path.join(base, name), root).replace(os.sep, "/"))
-    return sorted(found - removed_files())
+                relative = os.path.relpath(os.path.join(base, name), root).replace(os.sep, "/")
+                if relative != "MORTIS.md":
+                    found.add(relative)
+    return sorted(found)
 
 
 def manifest():
@@ -55,7 +54,7 @@ def check_manifest_covers_template():
         if "/Migrations/" in f or SUPERSEDED.search(f):
             continue
         if f.replace("Boilerplate", "{Name}") not in paths:
-            fail(f"manifest.json has no entry for the template file {f}")
+            fail(f"manifest.json has no entry for the variant file {f}")
     for entry in manifest()["files"]:
         if not os.path.exists(os.path.join(CSHARP, entry["page"])):
             fail(f"manifest.json names a page that does not exist: {entry['page']}")
@@ -65,15 +64,20 @@ def check_kernel_shape():
     if not os.path.isdir(TEMPLATE):
         return
     kernel = [e["path"].replace("{Name}", "Boilerplate") for e in manifest()["files"] if e["kernel"]]
-    expected = []
-    for f in kernel:
-        expected += shape_of_file(source_path(f), "Boilerplate")
-    written = [l for l in open(os.path.join(CSHARP, "kernel-shape.txt"), encoding="utf-8").read().splitlines() if l and not l.startswith("#")]
-    written = [l.removeprefix("[events.outbox=none] ") for l in written if not l.startswith("[") or l.startswith("[events.outbox=none] ")]
-    if expected != written:
+    for preset in ("lean", "standard", "advanced"):
+        expected = []
+        for f in kernel:
+            expected += shape_of_file(os.path.join(VARIANTS, preset, f), "Boilerplate")
+        written = subprocess.run([sys.executable, "-I", os.path.join(SCAFFOLD, "scripts", "shape_for.py"), os.path.join(CSHARP, "kernel-shape.txt"), os.path.join(VARIANTS, preset, "MORTIS.md")],
+                                 capture_output=True, text=True, check=True).stdout.splitlines()
+        if expected != written:
+            missing = [l for l in expected if l not in written][:5]
+            extra = [l for l in written if l not in expected][:5]
+            fail(f"kernel-shape.txt differs from the {preset} variant's kernel; missing {missing}, extra {extra}")
+    if False:
         missing = [l for l in expected if l not in written][:5]
         extra = [l for l in written if l not in expected][:5]
-        fail(f"kernel-shape.txt differs from the template kernel; missing {missing}, extra {extra}")
+        fail(f"kernel-shape.txt differs from the lean variant's kernel; missing {missing}, extra {extra}")
 
 
 def code_blocks():
@@ -212,7 +216,7 @@ def main():
             print("DOC-MISMATCH", message)
         print(f"{len(failures)} mismatch(es)")
         return 1
-    print("docs match the template and the example")
+    print("docs match the variants and the example")
     return 0
 
 

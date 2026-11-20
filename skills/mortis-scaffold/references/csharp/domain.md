@@ -323,4 +323,4 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
-| `src/{Name}.Domain/DomainModule.cs` | `{Name}.Domain` | Microsoft.Extensions.DependencyInjection, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products |
+| `src/{Name}.Domain/DomainModule.cs` | `{Name}.Domain` | Microsoft.Extensions.DependencyInjection |

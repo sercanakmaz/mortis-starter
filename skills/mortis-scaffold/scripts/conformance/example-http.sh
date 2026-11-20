@@ -51,7 +51,7 @@ CANCEL_LINE_ID="$(body_field "['lines'][0]['id']")"
 expect_equal "api: cancelling the only line answers 200" "200" "$(request PUT "/orders/$CANCEL_ORDER_ID/lines/$CANCEL_LINE_ID/cancel" '{"reason":"changed mind"}')"
 request GET "/orders/$CANCEL_ORDER_ID" >/dev/null
 expect_equal "api: reading it back, the sync handler has cancelled the order" "Cancelled" "$(body_field "['status']")"
-expect_equal "api: and the async handler gave the unit back (100 - 2 - 1 + 1)" "98" "$(sql "select stock from products where sku = 'S'")"
+expect_equal "api: and the async handler gave the unit back (100 - 2 - 1 + 1)" "98" "$(eventually "select stock from products where sku = 'S'" "98" 10)"
 
 request POST /products '{"sku":"HOT","name":"Hot item","stock":8}' >/dev/null
 CONCURRENT_PIDS=()
@@ -62,7 +62,7 @@ for index in $(seq 1 8); do
 done
 wait "${CONCURRENT_PIDS[@]}"
 expect_equal "api: 8 concurrent orders of one product were all accepted" "8" "$(sql "select count(*) from orders where order_number like 'CON-%'")"
-expect_equal "api: no stock decrement was lost to a race (8 - 8)" "0" "$(sql "select stock from products where sku = 'HOT'")"
+expect_equal "api: no stock decrement was lost to a race (8 - 8; with an outbox, retried until done)" "0" "$(eventually "select stock from products where sku = 'HOT'" "0" 40)"
 
 kill "$API_PID" 2>/dev/null
 wait "$API_PID" 2>/dev/null

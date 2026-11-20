@@ -29,4 +29,6 @@ All notable changes to the skills and the template. Newest first.
 
 - Phase 1 step 07: three error levels with one body and fixed statuses (decision 32); `ErrorReference` for unexpected failures; `ErrorCatalogue` at `catalogued`; a `Failure` block in layer 1; ADR 0010.
 
+- Decision 37: three complete reference solutions in `_temp/variants/` (lean, standard, advanced), each verified by `verify.sh`, replace the overlay tooling as the source of the C# pages; decision 28 now applied in real code (no `*Service` classes, handler tests written out); `tests/check_variants.py` keeps them in step; the pilot project is removed.
+
 - Phase 1 step 08 (decisions 33 to 36): a project holds only its options' code. Three publishing models: `none` (`EventPublisher`), `background` and `after-command` (one outbox table, a repository and a worker; one transaction per row). The Console is a host that runs one command. Every log line is one flat JSON object with `CorrelationId` first (`logging.md`, ADR 0012). Fixed on the way: the rule-code house rule now skips tests, `ErrorCatalogueTests` no longer warns.

@@ -1,34 +1,17 @@
 # Unverified
 
-Everything written in phase 1 that has never been compiled or generated. Phase 2 proves each line or fixes it. One row per page or check, added by the step that wrote it.
+What phase 1 has not proven. Since decision 37 every page's code is compiled, tested and verified (`verify.sh`, conformance on PostgreSQL) in the three reference solutions in `_temp/variants/`; rows that were only about compiling and running that code were closed then. What remains: anything no variant exercises, and whether a model generates the variants' code from the skills alone (phase 2). One row per open item.
 
 | Step | Item | What awaits proof |
 |---|---|---|
 | 01 | `skills/mortis-architect/references/architecture/` (8 files) | A fresh model places things correctly (reader test, below); the pseudo-code agrees with the C# pages once they exist |
-| 01 | `tests/check_architecture.py`, `tests/fixtures/` | Runs against the template's Shared types only while `_temp/template` exists |
+| 01 | `tests/check_architecture.py`, `tests/fixtures/` | Runs against the lean variant's Shared types while `_temp/variants` exists |
 | 02 | `references/options/*.md`, `presets.md`, `interview.md`, `SKILL.md` | The interactive interview (questions asked in rounds) has never run; only the unattended path was exercised |
 | 02 | `scripts/*.py`, `references/schema.json` | Unit-tested and run on four prompts; the rules say what combinations are refused, but whether the *scaffold* can build every accepted combination is proven only in phase 2 |
-| 03 | `skills/mortis-scaffold/references/csharp/*.md` (17 pages) | Kernel snippets are extracted from the compiled template, so they are known to compile in that context; never yet assembled into files by a model. Example handlers, handler tests and event handler tests under decision 28 were written by hand and never compiled |
-| 03 | `manifest.json`, `kernel-shape.txt` | Generated from the template and decision 28; checked against the template's source text only |
-| 03 | `scripts/verify.sh`, `structure.py`, `lang/csharp.sh`, `lang/csharp_shape.py`, `lang/csharp_rules.py` | Ran in full once, in the pilot (`docs/pilot.md`); not yet on a small model or another preset |
-| 03 | `scripts/conformance/*.sh` | Passed once against the pilot's generated project; no deliberate break has been shown to turn a check red yet |
-| 03 | Uniqueness by unique index only (no handler pre-check) | Conformance expects 409 `duplicate`; proven only when the example runs |
-| 03 | `project-docs*.md` | The generated `AGENTS.md`, `docs/architecture.md` and ADR 0006 were edited for decision 28 and never read back by a model in a project |
-| 03 | Handler and event-handler test bodies (names only in `worked-slice-tests.md`) | Invented by the pilot model; may vary between runs and fail on a small model |
-| 04 | `CommandContext`, `IContextCommand`, the pipeline's context stack, `EventContext` stamping, `ContextOf` in the handler bases, `ContextCommandFilter`, the console context, the log line with correlation and causation (overlay sources in `_temp/tools/overlay/`, pages regenerated) | Written by hand, never compiled; the pilot project predates them |
-| 04 | Kernel tests `ContextCommandTests`, `CommandContextTests`, the new `EventContextTests`, `CommandPipelineTests`, `ContextCommandFilterTests`, `CommandScenarioTests` | Never compiled or run |
-| 04 | `csharp_rules.py`: one context line per command | Shown to flag the old shape in the pilot project; never run on a project with the new shape |
-| 04 | Conformance: correlation and causation read from the `stock-flow` log | The log parser was run on a sample log only |
-| 04 | Generated `AGENTS.md` rule 20, `docs/architecture.md` "Who did it", ADR 0007 | Never read back in a generated project |
-| 05 | `IdentityAggregateConfiguration`, the example's `Category` (domain, application, infrastructure, controller, tests), `Product.CategoryId`, ADR 0008 | Written by hand, never compiled; whether EF translates `aggregate.Id.Equals(id)` in `FindByIdAsync` for an `int` key is unproven |
-| 05 | Conformance: categories table identity column, the product foreign key, `POST /categories`, `GET /categories/{id}`, a product with an unknown category | Never run |
-| 06 | The `correlation` add-on: `CorrelationIdMiddleware` with a logging scope, its tests, ADR 0009, `correlation.md`; core: correlation and causation on the command log lines, the async failure log line, the Console printing its run's id | Written by hand, never compiled |
-| 06 | `conformance/addon-correlation.sh` (header returned, malformed header, three log checks with the example) | Never run |
-| 06 | `structure.py` treats a `when` on a list key (`addons`) as "contains" | Never run on a project with an add-on |
-| 07 | `failures.md`, `ErrorReference`, the new `ExceptionHandler`, `ErrorCatalogue` and its test, `ExceptionHandlerTests`, the minimal `SaveChangesAsync`, ADR 0010, the `Failure` block in layer 1 | Compiled in step 08's assembled build (catalogued variant); behaviour never run on a generated project |
-| 07 | Conformance: `example-http.sh` expects 500 `unexpected_error` for database failures at `minimal`, 409/400 from `coded` up | Never run; the pilot (lean, minimal) predates it and answered 409 |
-| 08 | The three publishing models, the plain Console, the JSON log lines (pages, overlay, variants) | Built and tested on the template with the overlay applied (`_temp/tools/assemble.py`), not on a generated project; the example there still has the old `{Aggregate}Service` code |
-| 08 | `example-console.sh`, `outbox.sh`, `kernel.sh` and the JSON log checks | Run once per model on that assembled solution; `addon-correlation.sh`'s new JSON checks never run |
+| 03 | `project-docs*.md`, generated `AGENTS.md`, `docs/architecture.md`, the ADRs | Present in the variants; never read back by a model working in a generated project |
+| 03 | `verify.sh` on a small model's output | Ran in full on the three variants (hand-kept); on a model's generated project only once, in the old pilot |
+| 03 | `scripts/conformance/*.sh` | Pass on the three variants; no deliberate break has been shown to turn each check red |
 | 08 | Two workers on one table; a crash mid-transaction | No check; safe by construction (`skip locked`, one transaction per row), unproven |
-| 08 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only |
-| 08 | `kernel-shape.txt` variant lines and their filter in `verify.sh` | Compared by hand against the three assembled solutions; never through a full `verify.sh` run |
+| 08 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only; no variant uses `as-code` |
+| 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
+| 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

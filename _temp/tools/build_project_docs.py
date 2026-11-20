@@ -1,6 +1,6 @@
 from pathlib import Path
 S = Path(__file__).resolve().parent / "docs-src"
-T = Path(__file__).resolve().parents[1] / "template" / "assets" / "csharp"
+T = Path(__file__).resolve().parents[1] / "variants" / "lean"
 O = Path(__file__).resolve().parents[2] / "skills" / "mortis-scaffold" / "references" / "csharp"
 
 

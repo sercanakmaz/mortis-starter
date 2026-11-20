@@ -37,11 +37,11 @@ Layer 1 is the contract. An option exists in a language only when layer 1 descri
 
 | Phase | What happens | Generated code? |
 |---|---|---|
-| **1. Build the skills** | The architecture layer, the interview and `MORTIS.md`, the scaffold skill's foundations, the knowledge of every option (context, keys, correlation, exceptions, outbox, bus, testing, tenancy, language, MongoDB, queries, authentication, API and observability), the develop and review skills | None. Nothing is compiled or run |
+| **1. Build the skills** | The architecture layer, the interview and `MORTIS.md`, the scaffold skill's foundations, the knowledge of every option (context, keys, correlation, exceptions, outbox, bus, testing, tenancy, language, MongoDB, queries, authentication, API and observability), the develop and review skills | No generation by a model. Three hand-kept reference solutions, one per preset (`_temp/variants/`), are built, tested and verified at every step (decision 37) |
 | **2. Generate C# with the maintainer** | The lean, standard and advanced presets and two combined variants are generated, judged by `verify.sh`, and the skills are fixed until they pass. Then sameness and small models are measured, the develop and review skills are exercised, and the plugin is packaged | A few deliberate runs |
 | **3. Go** | The Go pages are written from the architecture layer, then Go projects are generated the same way; C# and Go services are shown working together | A few deliberate runs |
 
-Generation waits until the skills are complete because each run costs model time and tokens; a few runs that each exercise many options replace dozens of runs per option. The price is that nothing in phase 1 is proven until phase 2: everything written is listed in `docs/unverified.md`, phase 2 starts with the smallest project, and the maintainer may ask for one pilot run early in phase 1.
+Generation waits until the skills are complete because each run costs model time and tokens; a few runs that each exercise many options replace dozens of runs per option. Since decision 37 the code the pages show is proven in phase 1 by the three reference solutions; what phase 2 still proves is that a model, reading only the skills, generates the same code. `docs/unverified.md` lists what neither has proven yet.
 
 ## Open questions
 
