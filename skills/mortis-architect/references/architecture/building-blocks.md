@@ -248,7 +248,7 @@ unitOfWork
     save changes
     run sync handlers (they may write and raise more events)
     COMMIT
-    hand the events to the event dispatchers
+    hand the events to the event publisher
     run after-commit actions
   afterCommit(action)
 ```
@@ -257,16 +257,16 @@ unitOfWork
 - Implemented in Infrastructure, declared in Shared.
 - **Commonest mistake:** committing inside a handler.
 
-## Event dispatcher
+## Event publisher
 
 **Purpose:** carries committed events to where they are handled or published.
 
 ```
-eventDispatcher.dispatch(events)       implementations: in-process async handlers, log, outbox, broker
+publisher.publish(event)               one per project, by events.outbox: in-process, or an outbox row and its worker
 ```
 
-- Several may be registered; each receives every committed event.
-- Failure of one never blocks the others.
+- A project has exactly one, the one its `events.outbox` chose.
+- A failing handler never undoes the commit and never blocks the other handlers.
 - **Commonest mistake:** publishing before the commit; a rollback then leaves a message about something that never happened.
 
 ## Failure

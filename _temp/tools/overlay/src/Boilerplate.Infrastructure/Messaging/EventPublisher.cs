@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Boilerplate.Infrastructure.Logging;
 using Boilerplate.Shared.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -6,13 +7,14 @@ using Boilerplate.Shared.Domain;
 
 namespace Boilerplate.Infrastructure.Messaging;
 
-public class AsyncEventHandlerDispatcher(IServiceScopeFactory serviceScopeFactory, ILogger<AsyncEventHandlerDispatcher> logger) : IEventDispatcher
+public class EventPublisher(IServiceScopeFactory serviceScopeFactory, ILogger<EventPublisher> logger)
 {
-    public async Task Publish(EventBase @event)
+    public async Task PublishAsync(EventBase @event)
     {
-        if (@event is not IQueueEvent) return;
-
+        using var logScope = logger.BeginScope(LogFields.Of(@event));
         using var scope = serviceScopeFactory.CreateScope();
+
+        logger.LogInformation("Published {Event} {EventId}", @event.GetType().Name, @event.EventId);
 
         var eventHandlers = scope.ServiceProvider
             .GetServices(typeof(BaseAsyncEventHandler<>).MakeGenericType(@event.GetType()))
@@ -47,7 +49,7 @@ public class AsyncEventHandlerDispatcher(IServiceScopeFactory serviceScopeFactor
                 {
                     await unitOfWork.RollbackTransactionAsync();
 
-                    logger.LogError(exception, "Async handler {EventHandler} failed for {EventType} {EventId} correlation {CorrelationId}; the transaction that raised the event stays committed", eventHandler.GetType().Name, @event.GetType().FullName, @event.EventId, @event.CorrelationId);
+                    logger.LogError(exception, "Async handler {EventHandler} failed; the transaction that raised the event stays committed", eventHandler.GetType().Name);
 
                     break;
                 }

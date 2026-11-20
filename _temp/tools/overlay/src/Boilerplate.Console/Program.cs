@@ -1,49 +1,51 @@
 using Microsoft.Extensions.DependencyInjection;
-using Boilerplate.Console.Scenarios;
+using Boilerplate.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
+using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Exceptions;
-using System.Text.Json;
 using Boilerplate.Infrastructure;
 using Boilerplate.Application;
+using Boilerplate.Console;
 using Boilerplate.Domain;
 using Boilerplate.Shared;
+using System.Text.Json;
 
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
+
+builder.Logging.AddJsonLogging(toStandardError: true);
 
 builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration)
-    .AddScenariosModule();
+    .AddInfrastructureModule(builder.Configuration);
 
 using var host = builder.Build();
-using var scope = host.Services.CreateScope();
 
-var scenarios = scope.ServiceProvider.GetServices<IScenario>().ToList();
-var scenario = scenarios.FirstOrDefault(candidate => string.Equals(candidate.Name, args.FirstOrDefault(), StringComparison.OrdinalIgnoreCase));
-
-if (scenario is null)
+if (args.Length == 0)
 {
-    System.Console.WriteLine("Usage: dotnet run -- <scenario | command> [json | @file.json]");
-    System.Console.WriteLine($"Names: {string.Join(", ", scenarios.Select(candidate => candidate.Name).Order())}");
+    System.Console.Error.WriteLine("Usage: dotnet run -- <Command> [json | @file.json]");
 
     return 1;
 }
 
-System.Console.WriteLine($"correlation {ScenarioConstants.RunCorrelationId}");
+using var scope = host.Services.CreateScope();
+
+var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
 
 try
 {
-    await scenario.RunAsync(args.Skip(1).ToArray());
+    var content = await consoleCommandRunner.RunAsync(args[0], args.ElementAtOrDefault(1));
+
+    System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
+
+    return 0;
 }
 catch (ExceptionBase exception)
 {
     var errors = (exception as ValidationFailedException)?.Errors;
 
-    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }, ScenarioConstants.OutputOptions));
+    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }));
 
     return 2;
 }
-
-return 0;

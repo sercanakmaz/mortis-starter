@@ -18,7 +18,7 @@ Whether the reaction must succeed together with the change (sync) or may follow 
 |---|---|---|
 | Handlers in Domain calling repositories | None | Skips the command pipeline |
 | Sync handlers only | One mechanism | A slow or failing side effect would block or roll back the main change |
-| **Sync and async, both in Application, both sending commands** | Two base classes and an in-process dispatcher | n/a |
+| **Sync and async, both in Application, both sending commands** | Two base classes and an event publisher | n/a |
 
 ## Consequences
 
@@ -28,4 +28,4 @@ Whether the reaction must succeed together with the change (sync) or may follow 
 
 ## How it is enforced
 
-The Console scenarios `stock-flow` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests`.
+The conformance checks `stock` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests`.

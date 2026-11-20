@@ -142,12 +142,14 @@ Every command handler changes one aggregate: in this domain every second change 
 | `PUT /orders/{id}/lines/{lineId}/cancel` | `CancelOrderLine` | 200 |
 | `PUT /orders/{id}/complete` | `CompleteOrder` | 200 |
 
-## Console scenarios
+## Flows to try
 
-| Name | Steps | What it proves |
+There are no Console scenarios: each flow is a sequence of single commands, run from the Console or a script, and the conformance suite runs exactly these.
+
+| Flow | Steps | What it proves |
 |---|---|---|
-| `order-flow` | three products (stock 100), a customer, an order with two lines, add a third, cancel the second ("out of stock"), complete; print order, customer and products | children inserted and updated in place, a value object in two columns, a sync handler in the same transaction, async stock moves, audit columns |
-| `stock-flow` | bolt (10) and nut (5), an order of bolt x3 and nut x2, cancel the bolt line, cancel the nut line, then an order of bolt x20; print stock and status after each step | sync and async handlers on one event; an async handler cannot veto |
-| `blocked-customer` | a product, a customer, an order, block the customer, try to complete; print the rejection code, the order and the customer | a sync handler vetoes and the whole command rolls back |
+| order | three products (stock 100), a customer, an order with two lines, add a third, cancel the second ("out of stock"), complete | children inserted and updated in place, a value object in two columns, a sync handler in the same transaction, async stock moves, audit columns |
+| stock | bolt (10) and nut (5), an order of bolt x3 and nut x2, cancel the bolt line, cancel the nut line, then an order of bolt x20 | sync and async handlers on one event; an async handler cannot veto |
+| blocked-customer | a product, a customer, an order, block the customer, try to complete | a sync handler vetoes and the whole command rolls back |
 
-Every write in a scenario runs as the console actor; the unique values get a random suffix so a scenario can run twice.
+Every write runs as the console actor; unique values get a random suffix so a flow can run twice.

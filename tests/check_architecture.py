@@ -15,7 +15,7 @@ FILES = ["layers.md", "building-blocks.md", "request-lifecycle.md", "events.md",
 BLOCKS = ["Entity", "AggregateRoot", "Child entity", "Value object", "Domain event",
           "Repository interface", "Domain service", "Command", "Validator", "Command handler",
           "Command pipeline", "Dispatcher", "DTO", "Sync event handler", "Async event handler",
-          "Unit of work", "Event dispatcher", "Host adapter", "Anti-corruption layer", "Failure"]
+          "Unit of work", "Event publisher", "Host adapter", "Anti-corruption layer", "Failure"]
 
 LANGUAGE_TERMS = [
     r"\bTask\b", r"\basync\s+(def|function|func|fn)\b", r"\bawait\s+\S+\(", r"\bIServiceCollection\b",
@@ -54,9 +54,13 @@ type_map = json.loads(TYPE_MAP.read_text(encoding="utf-8"))
 for target in set(type_map.values()):
     if target not in headings:
         errors.append(f"shared-type-map.json: {target!r} is not a section of building-blocks.md")
+REMOVED = ROOT / "_temp" / "tools" / "overlay" / "REMOVED.txt"
+removed = set(REMOVED.read_text().split()) if REMOVED.exists() else set()
 if TEMPLATE_SHARED.exists():
     for path in sorted(TEMPLATE_SHARED.rglob("*.cs")):
         if {"obj", "bin"} & set(path.relative_to(TEMPLATE_SHARED).parts):
+            continue
+        if "src/Boilerplate.Shared/" + path.relative_to(TEMPLATE_SHARED).as_posix() in removed:
             continue
         key = path.relative_to(TEMPLATE_SHARED).as_posix()
         if key not in type_map:

@@ -170,7 +170,7 @@ public class UnitOfWork(
     AppDbContext context,
     EventContext eventContext,
     EventHandlerExecutor eventHandlerExecutor,
-    IEnumerable<IEventDispatcher> eventDispatchers,
+    EventPublisher eventPublisher,
     ILogger<UnitOfWork> logger) : IUnitOfWork
 ```
 
@@ -215,26 +215,28 @@ public async Task CommitTransactionAsync(string transactionKey)
 
     await eventHandlerExecutor.ExecuteRaisedAsync();
 
+    var queueEvents = new List<EventBase>();
+
+    while (eventContext.TakeDispatched() is { } @event)
+    {
+        if (@event is IQueueEvent) queueEvents.Add(@event);
+    }
+
     await _transaction.CommitAsync();
     await _transaction.DisposeAsync();
 
     _transaction = null;
     _transactionKey = null;
 
-    while (eventContext.TakeDispatched() is { } @event)
+    foreach (var queueEvent in queueEvents)
     {
-        if (@event is not IQueueEvent) continue;
-
-        foreach (var eventDispatcher in eventDispatchers)
+        try
         {
-            try
-            {
-                await eventDispatcher.Publish(@event);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Publishing {EventType} {EventId} failed after the transaction was committed", @event.GetType().FullName, @event.EventId);
-            }
+            await eventPublisher.PublishAsync(queueEvent);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Publishing {Event} {EventId} failed after the transaction was committed", queueEvent.GetType().Name, queueEvent.EventId);
         }
     }
 
@@ -275,7 +277,9 @@ public void OnCommitted(Func<Task> action)
 }
 ```
 
-- Commit order: save, sync handlers (`EventHandlerExecutor`), `COMMIT`, queue events to every `IEventDispatcher`, after-commit actions. A dispatcher's failure is logged and never undoes the commit.
+- Commit order: save, sync handlers (`EventHandlerExecutor`), collect the queue events, `COMMIT`, publish each queue event with `EventPublisher`, after-commit actions. A failure after `COMMIT` is logged and never undoes the commit.
+- This is the `events.outbox` = `none` version. With an outbox the constructor and `CommitTransactionAsync` differ: the rows are written before `COMMIT` (`outbox.md` "The kernel files that change"). Generate only the chosen one.
+- Sync handlers run before the events are collected, so an event a sync handler raises is delivered too.
 - Only the caller that began the transaction (same key) commits it.
 
 ## DatabaseExceptionHandler
@@ -403,8 +407,7 @@ public static IServiceCollection AddInfrastructureModule(this IServiceCollection
 
     services.AddScoped<IUnitOfWork, UnitOfWork>();
     services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
-    services.AddScoped<IEventDispatcher, LoggingEventDispatcher>();
-    services.AddScoped<IEventDispatcher, AsyncEventHandlerDispatcher>();
+    services.AddSingleton<EventPublisher>();
     services.AddPersistenceModule();
 
     return services;
@@ -413,31 +416,9 @@ public static IServiceCollection AddInfrastructureModule(this IServiceCollection
 
 When `naming.database` is `as-code`, both this file and `DesignTimeDbContextFactory` leave out `.UseSnakeCaseNamingConvention()`.
 
-## Logging middleware
+## Logging
 
-File `Logging/LoggingCommandHandlerMiddleware.cs`:
-
-```csharp
-public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddleware> logger) : ICommandHandlerMiddleware
-```
-
-```csharp
-public void Before(ICommand command)
-{
-    var commandContext = (command as IContextCommand)?.Context;
-
-    logger.LogInformation("{Command} started correlation {CorrelationId} causation {CausationId}", command.GetType().Name, commandContext?.CorrelationId, commandContext?.CausationId);
-}
-```
-
-```csharp
-public void After(ICommand command, CommandResult commandResult)
-{
-    var commandContext = (command as IContextCommand)?.Context;
-
-    logger.LogInformation("{Command} finished correlation {CorrelationId}", command.GetType().Name, commandContext?.CorrelationId);
-}
-```
+The logging middleware, the JSON line formatter and the log fields are on `logging.md`.
 
 ## Per aggregate: repository
 
@@ -551,7 +532,7 @@ dotnet tool install --global dotnet-ef --version 10.0.15
 dotnet ef migrations add Initial --project src/{Name}.Infrastructure --output-dir Persistence/Migrations
 ```
 
-This writes `*_Initial.cs`, `*_Initial.Designer.cs` and `AppDbContextModelSnapshot.cs`. A project without an aggregate has no migration. Hosts never migrate; `dotnet ef database update --project src/{Name}.Infrastructure` does.
+This writes `*_Initial.cs`, `*_Initial.Designer.cs` and `AppDbContextModelSnapshot.cs`. A project with neither an aggregate nor an outbox has no migration; with an outbox the table is in `Initial`. Hosts never migrate; `dotnet ef database update --project src/{Name}.Infrastructure` does.
 
 ## Tests
 
@@ -563,8 +544,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 
 | File | Namespace | Usings |
 |---|---|---|
-| `src/{Name}.Infrastructure/InfrastructureModule.cs` | `{Name}.Infrastructure` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Persistence, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Persistence |
-| `src/{Name}.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs` | `{Name}.Infrastructure.Logging` | Microsoft.Extensions.Logging, {Name}.Shared.Application |
+| `src/{Name}.Infrastructure/InfrastructureModule.cs` | `{Name}.Infrastructure` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Persistence, {Name}.Shared.Application, {Name}.Shared.Persistence |
 | `src/{Name}.Infrastructure/Persistence/AppDbContext.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore |
 | `src/{Name}.Infrastructure/Persistence/Categories/CategoryConfiguration.cs` | `{Name}.Infrastructure.Persistence.Categories` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Categories |
 | `src/{Name}.Infrastructure/Persistence/Categories/CategoryRepository.cs` | `{Name}.Infrastructure.Persistence.Categories` | {Name}.Domain.Aggregates.Categories, {Name}.Shared.Domain, {Name}.Shared.Persistence |
@@ -581,4 +561,4 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Infrastructure/Persistence/PersistenceModule.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.Extensions.DependencyInjection, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Infrastructure.Persistence.Categories, {Name}.Infrastructure.Persistence.Customers, {Name}.Infrastructure.Persistence.Orders, {Name}.Infrastructure.Persistence.Products |
 | `src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs` | `{Name}.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Products |
 | `src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs` | `{Name}.Infrastructure.Persistence.Products` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Shared.Persistence |
-| `src/{Name}.Infrastructure/Persistence/UnitOfWork.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Storage, Microsoft.Extensions.Logging, {Name}.Shared.Domain, {Name}.Shared.Persistence |
+| `src/{Name}.Infrastructure/Persistence/UnitOfWork.cs` | `{Name}.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Storage, Microsoft.Extensions.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Shared.Persistence |

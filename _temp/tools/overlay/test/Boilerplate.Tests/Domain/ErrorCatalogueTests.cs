@@ -12,9 +12,10 @@ public class ErrorCatalogueTests
             .Where(type => type.Name.EndsWith("Constants"))
             .SelectMany(type => type.GetFields(BindingFlags.Public | BindingFlags.Static))
             .Where(field => field.IsLiteral && field.Name.EndsWith("Code"))
-            .Select(field => (string)field.GetRawConstantValue());
+            .Select(field => (string)field.GetRawConstantValue())
+            .ToList();
 
-        Assert.Empty(codes.Where(code => !ErrorCatalogue.Messages.ContainsKey(code)));
+        Assert.All(codes, code => Assert.True(ErrorCatalogue.Messages.ContainsKey(code), $"{code} has no message"));
     }
 
     [Fact]

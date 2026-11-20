@@ -472,58 +472,7 @@ public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Except
 }
 ```
 
-```csharp
-public class AsyncEventHandlerDispatcherBuilder
-```
-
-```csharp
-private readonly ServiceCollection _services = new();
-```
-
-```csharp
-private readonly RecordingLogger<AsyncEventHandlerDispatcher> _logger = new();
-```
-
-```csharp
-public static AsyncEventHandlerDispatcherBuilder Create() => new();
-```
-
-```csharp
-public AsyncEventHandlerDispatcherBuilder WithUnitOfWork(IUnitOfWork unitOfWork)
-{
-    _services.AddScoped(_ => unitOfWork);
-    return this;
-}
-```
-
-```csharp
-public AsyncEventHandlerDispatcherBuilder WithEventHandler<TEvent>(BaseAsyncEventHandler<TEvent> eventHandler) where TEvent : EventBase, IQueueEvent
-{
-    _services.AddSingleton(eventHandler);
-    return this;
-}
-```
-
-```csharp
-public AsyncEventHandlerDispatcherBuilder WithScopedEventHandler<TEvent>(Func<IServiceProvider, BaseAsyncEventHandler<TEvent>> factory) where TEvent : EventBase, IQueueEvent
-{
-    _services.AddScoped(factory);
-    return this;
-}
-```
-
-```csharp
-public RecordingLogger<AsyncEventHandlerDispatcher> BuildLogger() => _logger;
-```
-
-```csharp
-public AsyncEventHandlerDispatcher Build()
-{
-    var serviceProvider = _services.BuildServiceProvider();
-
-    return new AsyncEventHandlerDispatcher(serviceProvider.GetRequiredService<IServiceScopeFactory>(), _logger);
-}
-```
+`EventPublisherBuilder` is on `events-inprocess.md`.
 
 ### Api
 
@@ -590,9 +539,10 @@ Every project has them; each is written out in `testing-kernel.md`.
 |---|---|
 | `AggregateRootTests`, `EventContextTests`, `EventHandlerExecutorTests` | `Shared/Domain/` |
 | `CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests`, `CommandContextTests` | `Shared/Application/` |
-| `AsyncEventHandlerDispatcherTests` | `Infrastructure/Messaging/` |
+| `EventPublisherTests` (only with `events.outbox` = `none`) | `Infrastructure/Messaging/` |
 | `ContextCommandFilterTests` | `Api/Filters/` |
-| `CommandScenarioTests` | `Console/` |
+| `ConsoleCommandRunnerTests` | `Console/` |
+| `JsonLineFormatterTests` | `Infrastructure/Logging/` |
 
 ## Namespaces and usings
 
@@ -601,7 +551,6 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | File | Namespace | Usings |
 |---|---|---|
 | `test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs` | `{Name}.Tests.TestSupport.Api` | Microsoft.AspNetCore.Http, Microsoft.AspNetCore.Mvc, Microsoft.AspNetCore.Mvc.Abstractions, Microsoft.AspNetCore.Mvc.Filters, Microsoft.AspNetCore.Routing, System.Security.Claims, {Name}.Api.Middlewares |
-| `test/{Name}.Tests/TestSupport/Infrastructure/Messaging/AsyncEventHandlerDispatcherBuilder.cs` | `{Name}.Tests.TestSupport.Infrastructure.Messaging` | Microsoft.Extensions.DependencyInjection, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs` | `{Name}.Tests.TestSupport.Infrastructure.Messaging` | Microsoft.Extensions.Logging |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Persistence/AppDbContextBuilder.cs` | `{Name}.Tests.TestSupport.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, {Name}.Infrastructure.Persistence |
 | `test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Application` | Microsoft.Extensions.DependencyInjection, {Name}.Shared.Application |

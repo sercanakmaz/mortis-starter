@@ -16,7 +16,6 @@
  "Domain/EventBase.cs": "Domain event",
  "Domain/EventContext.cs": "Unit of work",
  "Domain/EventHandlerExecutor.cs": "Sync event handler",
- "Domain/IEventDispatcher.cs": "Event dispatcher",
  "Domain/SystemUser.cs": "Command",
  "Persistence/IRepository.cs": "Repository interface",
  "Persistence/IUnitOfWork.cs": "Unit of work",

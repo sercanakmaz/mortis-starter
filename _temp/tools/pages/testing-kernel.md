@@ -22,7 +22,11 @@ Every project has these tests, written exactly so. Each class lives in the folde
 
 ## Infrastructure/Messaging
 
-@@members test/Boilerplate.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs::AsyncEventHandlerDispatcherTests@@
+`EventPublisherTests` (only when `events.outbox` is `none`) are on `events-inprocess.md`; the outbox's tests on `outbox.md`.
+
+## Infrastructure/Logging
+
+@@members test/Boilerplate.Tests/Infrastructure/Logging/JsonLineFormatterTests.cs::JsonLineFormatterTests@@
 
 ## Api/Middlewares
 
@@ -34,7 +38,7 @@ Every project has these tests, written exactly so. Each class lives in the folde
 
 ## Console
 
-@@members test/Boilerplate.Tests/Console/CommandScenarioTests.cs::CommandScenarioTests@@
+@@members test/Boilerplate.Tests/Console/ConsoleCommandRunnerTests.cs::ConsoleCommandRunnerTests@@
 
 ## Namespaces and usings
 

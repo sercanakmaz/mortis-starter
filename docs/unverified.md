@@ -25,18 +25,10 @@ Everything written in phase 1 that has never been compiled or generated. Phase 2
 | 06 | The `correlation` add-on: `CorrelationIdMiddleware` with a logging scope, its tests, ADR 0009, `correlation.md`; core: correlation and causation on the command log lines, the async failure log line, the Console printing its run's id | Written by hand, never compiled |
 | 06 | `conformance/addon-correlation.sh` (header returned, malformed header, three log checks with the example) | Never run |
 | 06 | `structure.py` treats a `when` on a list key (`addons`) as "contains" | Never run on a project with an add-on |
-| 07 | `failures.md`, `ErrorReference`, the new `ExceptionHandler`, `ErrorCatalogue` and its test, `ExceptionHandlerTests`, the minimal `SaveChangesAsync`, ADR 0010, the `Failure` block in layer 1 | Written by hand, never compiled |
+| 07 | `failures.md`, `ErrorReference`, the new `ExceptionHandler`, `ErrorCatalogue` and its test, `ExceptionHandlerTests`, the minimal `SaveChangesAsync`, ADR 0010, the `Failure` block in layer 1 | Compiled in step 08's assembled build (catalogued variant); behaviour never run on a generated project |
 | 07 | Conformance: `example-http.sh` expects 500 `unexpected_error` for database failures at `minimal`, 409/400 from `coded` up | Never run; the pilot (lean, minimal) predates it and answered 409 |
-
-## Reader test (step 01)
-
-Fresh Haiku-class model, given only the eight architecture files and the twenty questions without their answers.
-
-| Run | Result | Note |
-|---|---|---|
-| 1 | 17/20 | Three questions were ambiguous or had no matching block; the questions were reworded, not the files |
-| 2 | 19/20 | The miss was a block-name choice (`Command` instead of `Host adapter`) for a host loop |
-| 3 | 19/20 | After the cheat sheet and the cardinality changes (same questions); the same host-loop question missed |
-| 4 | 20/20 | After decision 28 (use cases may change several aggregates); one question replaced by a transfer question |
-
-The questions were revised after run 1, so run 2 is a re-test, not an independent first pass. The first run of a different model on the same questions would be the honest confirmation.
+| 08 | The three publishing models, the plain Console, the JSON log lines (pages, overlay, variants) | Built and tested on the template with the overlay applied (`_temp/tools/assemble.py`), not on a generated project; the example there still has the old `{Aggregate}Service` code |
+| 08 | `example-console.sh`, `outbox.sh`, `kernel.sh` and the JSON log checks | Run once per model on that assembled solution; `addon-correlation.sh`'s new JSON checks never run |
+| 08 | Two workers on one table; a crash mid-transaction | No check; safe by construction (`skip locked`, one transaction per row), unproven |
+| 08 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only |
+| 08 | `kernel-shape.txt` variant lines and their filter in `verify.sh` | Compared by hand against the three assembled solutions; never through a full `verify.sh` run |

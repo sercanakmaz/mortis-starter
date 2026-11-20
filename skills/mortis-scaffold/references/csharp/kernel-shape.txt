@@ -15,40 +15,34 @@ type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHand
 member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
 type {Name}.Application: public static class ApplicationModule
 member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
-type {Name}.Console.Scenarios: public class CommandScenario<TCommand, TContent>(ICommandDispatcher commandDispatcher) : IScenario where TCommand : ICommand<TContent>
-member {Name}.Console.Scenarios.CommandScenario: public string Name
-member {Name}.Console.Scenarios.CommandScenario: public async Task RunAsync(string[] args)
-type {Name}.Console.Scenarios: public static class CommandScenarioExtensions
-member {Name}.Console.Scenarios.CommandScenarioExtensions: public static IServiceCollection AddCommandScenario<TCommand, TContent>(this IServiceCollection services) where TCommand : ICommand<TContent>
-type {Name}.Console.Scenarios: public static class ConsoleUserExtensions
-member {Name}.Console.Scenarios.ConsoleUserExtensions: public static TCommand AsConsoleUser<TCommand>(this TCommand command)
-type {Name}.Console.Scenarios: public interface IScenario
-member {Name}.Console.Scenarios.IScenario: string Name { get; }
-member {Name}.Console.Scenarios.IScenario: Task RunAsync(string[] args)
-type {Name}.Console.Scenarios: public static class ScenarioConstants
-member {Name}.Console.Scenarios.ScenarioConstants: public const string UserId = "console"
-member {Name}.Console.Scenarios.ScenarioConstants: public const string UserEmail = "console@localhost"
-member {Name}.Console.Scenarios.ScenarioConstants: public const string CommandSuffix = "Command"
-member {Name}.Console.Scenarios.ScenarioConstants: public const string FilePrefix = "@"
-member {Name}.Console.Scenarios.ScenarioConstants: public static readonly Guid RunCorrelationId = Guid.CreateVersion7()
-member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions OutputOptions = new()
-member {Name}.Console.Scenarios.ScenarioConstants: public static readonly JsonSerializerOptions InputOptions = new()
-type {Name}.Console.Scenarios: public static class ScenarioModule
-member {Name}.Console.Scenarios.ScenarioModule: public static IServiceCollection AddScenariosModule(this IServiceCollection services)
+type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
+member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument)
+type {Name}.Console: public static class ConsoleConstants
+member {Name}.Console.ConsoleConstants: public const string UserId = "console"
+member {Name}.Console.ConsoleConstants: public const string UserEmail = "console@localhost"
+member {Name}.Console.ConsoleConstants: public const string CommandSuffix = "Command"
+member {Name}.Console.ConsoleConstants: public const string FilePrefix = "@"
+member {Name}.Console.ConsoleConstants: public static readonly JsonSerializerOptions OutputOptions = new()
+member {Name}.Console.ConsoleConstants: public static readonly JsonSerializerOptions InputOptions = new()
 type {Name}.Domain: public static class DomainModule
 member {Name}.Domain.DomainModule: public static IServiceCollection AddDomainModule(this IServiceCollection services)
 type {Name}.Infrastructure: public static class InfrastructureModule
 member {Name}.Infrastructure.InfrastructureModule: public static IServiceCollection AddInfrastructureModule(this IServiceCollection services, IConfiguration configuration)
+type {Name}.Infrastructure.Logging: public sealed class JsonLineFormatter() : ConsoleFormatter(LoggingConstants.FormatterName)
+member {Name}.Infrastructure.Logging.JsonLineFormatter: public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider scopeProvider, TextWriter textWriter)
+type {Name}.Infrastructure.Logging: public static class LogFields
+member {Name}.Infrastructure.Logging.LogFields: public static Dictionary<string, object> Of(ICommand command)
+member {Name}.Infrastructure.Logging.LogFields: public static Dictionary<string, object> Of(EventBase @event)
 type {Name}.Infrastructure.Logging: public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddleware> logger) : ICommandHandlerMiddleware
 member {Name}.Infrastructure.Logging.LoggingCommandHandlerMiddleware: public void Before(ICommand command)
 member {Name}.Infrastructure.Logging.LoggingCommandHandlerMiddleware: public void After(ICommand command, CommandResult commandResult)
-type {Name}.Infrastructure.Messaging: public class AsyncEventHandlerDispatcher(IServiceScopeFactory serviceScopeFactory, ILogger<AsyncEventHandlerDispatcher> logger) : IEventDispatcher
-member {Name}.Infrastructure.Messaging.AsyncEventHandlerDispatcher: public async Task Publish(EventBase @event)
-type {Name}.Infrastructure.Messaging: public class LoggingEventDispatcher(ILogger<LoggingEventDispatcher> logger) : IEventDispatcher
-member {Name}.Infrastructure.Messaging.LoggingEventDispatcher: public Task Publish(EventBase @event)
-type {Name}.Infrastructure.Messaging: public static class MessagingConstants
-member {Name}.Infrastructure.Messaging.MessagingConstants: public const int MaxAttempts = 10
-member {Name}.Infrastructure.Messaging.MessagingConstants: public const int RetryDelayMilliseconds = 20
+type {Name}.Infrastructure.Logging: public static class LoggingConstants
+member {Name}.Infrastructure.Logging.LoggingConstants: public const string FormatterName = "json-line"
+member {Name}.Infrastructure.Logging.LoggingConstants: public const string Service = "{Name}"
+member {Name}.Infrastructure.Logging.LoggingConstants: public const string CorrelationId = "CorrelationId"
+member {Name}.Infrastructure.Logging.LoggingConstants: public const string OriginalFormat = "{OriginalFormat}"
+type {Name}.Infrastructure.Logging: public static class LoggingModule
+member {Name}.Infrastructure.Logging.LoggingModule: public static ILoggingBuilder AddJsonLogging(this ILoggingBuilder logging, bool toStandardError = false)
 type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
 type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
@@ -76,7 +70,9 @@ member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int 
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
 type {Name}.Infrastructure.Persistence: public static class PersistenceModule
 member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
-type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, IEnumerable<IEventDispatcher> eventDispatchers, ILogger<UnitOfWork> logger) : IUnitOfWork
+[events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
+[events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
+[events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
 member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
@@ -173,8 +169,6 @@ member {Name}.Shared.Domain.EventContext: public EventBase TakeDispatched()
 member {Name}.Shared.Domain.EventContext: public void Clear()
 type {Name}.Shared.Domain: public sealed class EventHandlerExecutor(IServiceProvider serviceProvider, EventContext eventContext)
 member {Name}.Shared.Domain.EventHandlerExecutor: public async Task ExecuteRaisedAsync()
-type {Name}.Shared.Domain: public interface IEventDispatcher
-member {Name}.Shared.Domain.IEventDispatcher: Task Publish(EventBase @event)
 type {Name}.Shared.Domain: public static class SystemUser
 member {Name}.Shared.Domain.SystemUser: public const string Id = "system"
 member {Name}.Shared.Domain.SystemUser: public const string Email = "system@localhost"

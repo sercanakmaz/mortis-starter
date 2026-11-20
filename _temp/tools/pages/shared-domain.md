@@ -150,14 +150,6 @@ File `Domain/EventHandlerExecutor.cs`. Runs the sync handlers of every raised ev
 
 - A handler that throws stops the loop; the exception reaches the pipeline, which rolls back.
 
-## IEventDispatcher
-
-File `Domain/IEventDispatcher.cs`. Receives every committed queue event; several may be registered.
-
-@@decl src/Boilerplate.Shared/Domain/IEventDispatcher.cs::IEventDispatcher@@
-
-@@member src/Boilerplate.Shared/Domain/IEventDispatcher.cs::IEventDispatcher::Publish@@
-
 ## Tests
 
 The kernel tests for these types are `AggregateRootTests`, `EventContextTests` and `EventHandlerExecutorTests`, in `testing-kernel.md`.

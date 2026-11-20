@@ -78,13 +78,13 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 
 Each item is a conformance check or an integration test that fails without the feature.
 
-- [ ] **Atomicity:** a command that rolls back leaves no outbox row; a committed one leaves exactly one row per queue event.
+- [x] **Atomicity:** a command that rolls back leaves no outbox row; a committed one leaves exactly one row per queue event.
 - [ ] **No loss:** with `after-command`, make the transport fail once; the row stays `pending`, the request still succeeds, and the sweeper publishes it. With the process killed between COMMIT and publish (a test hook that exits), the next start publishes it.
-- [ ] **Idempotency:** deliver the same row twice; the handler's effect (stock) happens once.
+- [x] **Idempotency:** deliver the same row twice; the handler's effect (stock) happens once.
 - [ ] **Two relays:** run two relay instances against one table for a few hundred events; every event is handled exactly once in effect and no row is claimed by both at the same time.
-- [ ] **Retry and failure:** a handler that always throws ends in `failed` after `MaxAttempts`, with the error stored, and does not block later rows.
-- [ ] **Context:** the handler runs with the event's correlation id, user and (when present) tenant.
-- [ ] **Latency:** `background` delivers within two polling intervals in the conformance run; `after-command` before the HTTP response returns in the normal case.
+- [x] **Retry and failure:** a handler that always throws ends in `failed` after `MaxAttempts`, with the error stored, and does not block later rows.
+- [x] **Context:** the handler runs with the event's correlation id, user and (when present) tenant.
+- [x] **Latency:** `background` delivers within two polling intervals in the conformance run; `after-command` before the HTTP response returns in the normal case.
 - [ ] A project generated with `events.outbox` = `none` contains no outbox table, type or setting.
 
 ## Out of scope
@@ -97,3 +97,17 @@ RabbitMQ (step 09). Ordering guarantees per aggregate beyond "claimed in `occurr
 - `for update skip locked` only protects while the claiming transaction is open; that is why `locked_until` exists.
 - The sync handlers run before the outbox write; an event raised by a sync handler's command must also be stored. Test it with the example's `LineCancelled` chain.
 - `after-command` publishing must never fail the request. The change is committed; the caller must get its success.
+
+## Notes (done)
+
+Second version, after the maintainer's review (decisions 33 to 36). The first version (an `IEventDelivery` seam, an inbox, a transport seam, a lock column, a runtime `Mode` setting and Console operator scenarios) was replaced before it was committed.
+
+- **none:** `EventPublisher` and `MessagingConstants` in `Messaging/`. The unit of work publishes each queue event after `COMMIT`. `IEventDispatcher`, `AsyncEventHandlerDispatcher` and `LoggingEventDispatcher` are gone.
+- **background and after-command:** `OutboxMessage`, `OutboxMessageConfiguration`, `OutboxRepository`, `OutboxWorker`, `OutboxSettings`, `OutboxModule` in `Messaging/Outbox/`. One row, its handlers and its deletion are one transaction. `after-command` adds `OutboxRepository.ClaimAsync(id)`, `OutboxWorker.PublishAsync(id)` and the singleton registration; the unit of work calls it after `COMMIT`.
+- The unit of work and `InfrastructureModule` have one version per model (`_temp/tools/overlay-variants/`); `kernel-shape.txt` marks the differing line `[events.outbox=<value>]` and `verify.sh` keeps only the project's.
+- The outbox table is in the first migration (`Initial`); there is no separate `Outbox` migration.
+- The Console was reduced to `Program`, `ConsoleCommandRunner` and `ConsoleConstants` (decision 34); the conformance flows are sequences of Console runs.
+- JSON log lines (decision 35): `JsonLineFormatter`, `LogFields`, `LoggingModule`, `LoggingConstants`; the command middleware and the publishers open scopes. ADR 0012. New page `logging.md`.
+- The ADR is `0011-outbox-and-publishing-models.md`.
+- Built with `-warnaserror` and unit-tested in all three models (164, 161, 161 tests); conformance run on PostgreSQL: `kernel.sh` 4, `example-console.sh` 29, and `outbox.sh` 2 (`none`), 7 (`after-command`), 9 (`background`, with the worker in the Api and in a separate Worker).
+- Not done: two workers on one table under load; a process killed mid-transaction (the transaction makes it safe by construction, unproven by a check).

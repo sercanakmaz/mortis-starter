@@ -11,7 +11,7 @@ Event handlers of products and customers react to order events, so the domain co
 3. Infrastructure of the four (configuration, repository, registration line) and their tests.
 4. The four controllers.
 
-Then the Console scenarios and their registration, then the migration (`infrastructure-postgres.md` "Migrations").
+Then the migration (`infrastructure-postgres.md` "Migrations"). The Console needs nothing for the example: it finds every command by name.
 
 ## Categories
 
@@ -230,15 +230,16 @@ public static IServiceCollection AddPersistenceModule(this IServiceCollection se
 
 @@members src/Boilerplate.Api/Controllers/OrdersController.cs::OrdersController@@
 
-## Console scenarios
+## Trying it from the Console
 
-@@members src/Boilerplate.Console/Scenarios/OrderFlowScenario.cs::OrderFlowScenario@@
+A flow is a sequence of runs; each prints the result on stdout:
 
-@@members src/Boilerplate.Console/Scenarios/BlockedCustomerScenario.cs::BlockedCustomerScenario@@
-
-@@members src/Boilerplate.Console/Scenarios/StockFlowScenario.cs::StockFlowScenario@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioModule.cs::ScenarioModule::AddScenariosModule@@
+```bash
+dotnet run --project src/{Name}.Console -- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'
+dotnet run --project src/{Name}.Console -- CreateCustomer '{"name":"Ada","email":"ada@example.com"}'
+dotnet run --project src/{Name}.Console -- CreateOrder '{"orderNumber":"ORD-1","customerId":"<id>","lines":[{"sku":"BOLT","price":1,"currency":"EUR","quantity":3}]}'
+dotnet run --project src/{Name}.Console -- GetProduct '{"id":"<id>"}'
+```
 
 ## Namespaces and usings
 

@@ -31,53 +31,56 @@ So "one command, one event" is wrong in both directions: a command raises as man
 
 A reaction to another aggregate's event is a handler in the reacting aggregate's folder, and it sends that aggregate's own command. It never calls the service of the aggregate that raised the event.
 
-## The three delivery models
+## The three publishing models
 
-An event that must leave the process (to another service, to a broker) can be delivered in three ways. The model is chosen once per project.
+An async handler, and anything outside the process, hears of a queue event through one of three publishing models. The model is chosen once per project (`events.outbox`), and the project contains only that model's code.
 
 | Model | What happens | What can be lost |
 |---|---|---|
-| `none` | events are handled in-process only; nothing is published | anything outside the process never hears of the change |
-| `after-command` | after `COMMIT`, in the same request, the event is written to the outbox and sent to the broker straight away; if the send fails, the outbox row stays for a retry | nothing is lost once the outbox row is written; a crash between `COMMIT` and the send is covered because the row was written inside the transaction |
-| `background` | the event is written to the outbox inside the command's transaction; a relay loop reads the pending rows and publishes them | nothing is lost; delivery is delayed by the relay's polling interval |
+| `none` | after `COMMIT`, a publisher in the same process runs the async handlers directly | an event whose handlers had not run when the process died |
+| `background` (publish in the command) | the command writes an outbox row per event in its own transaction; a worker publishes the rows | nothing; publishing waits up to one polling interval |
+| `after-command` (publish after the command) | the same rows; right after `COMMIT` the request publishes its own rows; the worker sweeps and retries what is left | nothing |
 
-In both outbox models the write of the outbox row is part of the command's transaction, so "the change happened" and "the message will be sent" are one fact.
+In both outbox models the row is written in the command's transaction, so "the change happened" and "the event will be handled" are one fact. Choose `after-command` when the caller should see the consequences when it gets its answer; `background` when the request should do nothing more than its own change.
 
 ## Outbox write
 
 ```
-inside the command's transaction, at commit:
-  for each queue event raised:
-    outbox.insert(
-      id: event.id,
-      type: event.wireName,
-      payload: serialize(event),
-      correlation, causation, tenant, actor, language,
-      status: pending, attempts: 0, nextAttemptAt: now)
+commit(transaction):
+  save the aggregates
+  run the sync handlers                          they may raise more events
+  for each queue event raised in this transaction:
+    outbox.add(id: event.id, type: event.type, payload: serialize(event), attempts: 0, nextAttemptAt: now)
+  save
+  COMMIT
+  after-command only: for each of these rows: worker.publish(row.id)
 ```
 
-## Relay loop
+## Worker
 
 ```
-loop:
-  rows := claim pending rows where nextAttemptAt <= now, locked for this worker only
-  for each row:
-    try
-      broker.publish(row.type, row.payload, headers from row)
-      row.status := published
-    on failure
-      row.attempts += 1
-      row.nextAttemptAt := now + backoff(row.attempts)
-      if row.attempts exceeds the limit: row.status := failed
-  release rows whose lock expired            (sweeper)
-  wait the polling interval
+publish(claim):
+  BEGIN
+  row := claim()                                 next due row, or one row by id; "for update skip locked"
+  if none: ROLLBACK; stop
+  try
+    run the event's async handlers               in this transaction; events they raise become rows
+    delete row
+    COMMIT
+  on failure
+    ROLLBACK
+    row.attempts += 1; row.nextAttemptAt := now + 2^attempts seconds; row.lastError := the error
+    at the attempt limit the row stays for an operator
+
+loop every polling interval:
+  repeat publish(next due row) until nothing is due
 ```
 
-Claiming uses a lock that other workers skip, so two relays never publish the same row.
-
-## At-least-once and the inbox
-
-Delivery is **at-least-once**: a message may arrive twice (a crash after publish, before the row is marked published). The receiver therefore records `(message id, handler)` in an inbox and skips what it has seen. Every async handler and every consumer is written so that running it twice has the same result as running it once.
+- One row, its handlers and its deletion are one transaction: a row is handled once or not at all, so no inbox is needed.
+- `skip locked` lets two workers, or a request and a worker, run side by side; each row goes to one of them.
+- Rows are taken in the order they happened; a retry can put a later event first.
+- An operator retries a row that reached the limit by resetting its attempts.
+- A broker transport (a later option) sends the row to the broker instead of running the handlers; its consumers then need an inbox, because a broker can deliver twice.
 
 ## Correlation and causation
 

@@ -340,18 +340,6 @@ public async Task ExecuteRaisedAsync()
 
 - A handler that throws stops the loop; the exception reaches the pipeline, which rolls back.
 
-## IEventDispatcher
-
-File `Domain/IEventDispatcher.cs`. Receives every committed queue event; several may be registered.
-
-```csharp
-public interface IEventDispatcher
-```
-
-```csharp
-Task Publish(EventBase @event);
-```
-
 ## Tests
 
 The kernel tests for these types are `AggregateRootTests`, `EventContextTests` and `EventHandlerExecutorTests`, in `testing-kernel.md`.
@@ -370,5 +358,4 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Shared/Domain/EventBase.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Domain/EventContext.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/EventHandlerExecutor.cs` | `{Name}.Shared.Domain` | Microsoft.Extensions.DependencyInjection |
-| `src/{Name}.Shared/Domain/IEventDispatcher.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Domain/SystemUser.cs` | `{Name}.Shared.Domain` | none |

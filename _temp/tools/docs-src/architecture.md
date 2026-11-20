@@ -28,7 +28,7 @@ How a request moves through this solution, and why each piece is where it is. Th
 
 ## 2. What happens when a command runs
 
-A controller, a Console scenario or an event handler calls `Send` on `ICommandDispatcher` with a command. It does not know, and cannot name, the handler: the command declares its result type (`ICommand<OrderDto>`), the dispatcher finds the `BaseCommandHandler<TCommand, TContent>` registered for that command type and calls it. `BaseCommandHandler` passes the call to `CommandPipeline<TCommand>`, which does this, in this order:
+A controller, the Console or an event handler calls `Send` on `ICommandDispatcher` with a command. It does not know, and cannot name, the handler: the command declares its result type (`ICommand<OrderDto>`), the dispatcher finds the `BaseCommandHandler<TCommand, TContent>` registered for that command type and calls it. `BaseCommandHandler` passes the call to `CommandPipeline<TCommand>`, which does this, in this order:
 
 1. **Validate.** Every registered `IValidator<TCommand>` runs. Failures throw `ValidationFailedException` (HTTP 422) before anything else happens. Because validation is part of the pipeline, a command is validated no matter who calls it.
 2. **Middlewares, before.** Each `ICommandHandlerMiddleware.Before` runs.
@@ -60,10 +60,8 @@ repository write        events move to EventContext, aggregate is cleared, SQL i
 commit, before COMMIT   EventHandlerExecutor runs every BaseSyncEventHandler<TEvent>, awaited, by Sequence
                         a handler may write and may raise more events; those are handled too
 COMMIT
-commit, after COMMIT    events marked IQueueEvent go to every IEventDispatcher:
-                          LoggingEventDispatcher        logs the exchange name
-                          AsyncEventHandlerDispatcher   runs every BaseAsyncEventHandler<TEvent> in a new scope,
-                                                        each in its own transaction, as `SystemUser`
+commit, after COMMIT    each event marked IQueueEvent goes to EventPublisher, which runs every
+                        BaseAsyncEventHandler<TEvent> in a new scope, each in its own transaction, as `SystemUser`
                         then the OnCommitted actions run
 ```
 
@@ -99,19 +97,18 @@ commit, after COMMIT    events marked IQueueEvent go to every IEventDispatcher:
 
 ## 5. The Console project
 
-`Boilerplate.Console` is for testing by hand. It has the same wiring as the Api and a `Scenarios/` folder. Its first argument is the name of a **scenario** (a small class that calls command handlers and prints what came back) or of a **command**:
+`Boilerplate.Console` is a host for testing by hand: the same wiring as the Api, and it runs one command per run.
 
 ```bash
-dotnet run --project src/Boilerplate.Console --                                        # lists every name
 dotnet run --project src/Boilerplate.Console -- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'
 dotnet run --project src/Boilerplate.Console -- CreateProduct @product.json            # JSON from a file
+dotnet run --project src/Boilerplate.Console -- GetProduct '{"id":"<id>"}'
 ```
 
-- A command is run by `CommandScenario<TCommand, TContent>`: it reads the second argument as JSON (names are case-insensitive, an empty argument means the command's defaults), sends the command through the dispatcher and prints the content as JSON. The name is the command's type name without `Command`.
-- **You decide which commands the Console can run.** Each one is a single line in `ScenarioModule`: `services.AddCommandScenario<CreateProductCommand, ProductDto>();`. Remove a line to take it away.
-- A failure is printed to stderr as `{ code, message, errors }` and the process exits with 2 (an unknown name exits with 1), so scripts can tell them apart.
-- **VS Code:** `.vscode/launch.json` has a configuration that asks for the name and the JSON each time you press F5, plus fixed ones you can copy and edit (`args` holds the name and the JSON). It needs the C# extension and builds the Console first through the `build-console` task.
-- The Console user is `console` and the Console runs a command's async handlers before it exits, so audit columns and stock changes are visible as soon as it returns.
+- The first argument is the command's type name without `Command` (case ignored); the runner finds it in the Application assembly, so a new command needs nothing in the Console. The second is the JSON (names ignore case; empty means the command's defaults).
+- stdout holds only the result as JSON; the log lines go to stderr. A failure is one line `{ code, message, errors }` on stderr and exit code 2; no command name is exit code 1.
+- A flow that spans several commands is several runs. The Console user is `console`; each run has its own correlation id.
+- **VS Code:** `.vscode/launch.json` asks for the name and the JSON each time you press F5. It needs the C# extension and builds the Console first through the `build-console` task.
 
 ## 6. What is deliberately not here
 
@@ -125,7 +122,7 @@ dotnet run --project src/Boilerplate.Console -- CreateProduct @product.json     
 | A service per aggregate | Command handlers that load and save; domain services only for logic that fits no aggregate | A per-aggregate service collects every operation and hides where the use case is |
 | Database-generated ids, views, functions | See §4 | |
 
-The decisions behind this layout are written down in [adr/](adr/): [0001](adr/0001-commands-are-sent-through-a-dispatcher.md) the dispatcher, [0002](adr/0002-commands-are-records-that-implement-interfaces.md) commands as records with interfaces, [0003](adr/0003-the-user-is-data-on-the-command.md) the user on the command, [0004](adr/0004-event-handlers-live-in-application-and-send-commands.md) event handlers, [0005](adr/0005-the-console-runs-commands-and-does-not-migrate.md) the Console, [0006](adr/0006-command-handlers-are-the-use-cases.md) command handlers as use cases, [0007](adr/0007-one-context-on-the-command.md) one context on the command.
+The decisions behind this layout are written down in [adr/](adr/): [0001](adr/0001-commands-are-sent-through-a-dispatcher.md) the dispatcher, [0002](adr/0002-commands-are-records-that-implement-interfaces.md) commands as records with interfaces, [0003](adr/0003-the-user-is-data-on-the-command.md) the user on the command, [0004](adr/0004-event-handlers-live-in-application-and-send-commands.md) event handlers, [0005](adr/0005-the-console-runs-commands-and-does-not-migrate.md) the Console, [0006](adr/0006-command-handlers-are-the-use-cases.md) command handlers as use cases, [0007](adr/0007-one-context-on-the-command.md) one context on the command, [0012](adr/0012-json-log-lines.md) the JSON log lines.
 
 ## 7. When to split something out
 
@@ -135,8 +132,8 @@ The decisions behind this layout are written down in [adr/](adr/): [0001](adr/00
 
 ## 8. Known gaps
 
-- Queue events are only logged by `LoggingEventDispatcher`. There is no broker adapter and no outbox table yet, so a crash between the commit and the publish loses the message.
+- Queue events are published in process after the commit. There is no outbox, so a crash between the commit and an async handler loses that handler's work.
 - There is no guard against two event handlers that trigger each other forever.
 - Error messages are English only.
 - Authentication is not configured. `ContextCommandFilter` reads the standard claims once it is; until then the audit user of an Api write is empty.
-- `EfRepository` and the EF mappings are tested without a database (change-tracker state and model shape). Behaviour that only a real PostgreSQL shows is checked by running Console scenarios.
+- `EfRepository` and the EF mappings are tested without a database (change-tracker state and model shape). Behaviour that only a real PostgreSQL shows is checked by running Console commands against it.

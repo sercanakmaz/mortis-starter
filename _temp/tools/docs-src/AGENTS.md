@@ -13,7 +13,7 @@ src/
   Boilerplate.Application/     <Plural>/ : commands (command + validator + handler in one file), event handlers, DTOs
   Boilerplate.Infrastructure/  Persistence/ : AppDbContext, EfRepository, UnitOfWork, <Plural>/ repository + EF configuration, Migrations/
   Boilerplate.Api/             HTTP host: controllers, middlewares
-  Boilerplate.Console/         manual-testing host: Scenarios/, run with `dotnet run --project src/Boilerplate.Console -- <scenario>`
+  Boilerplate.Console/         manual-testing host: runs one command, `dotnet run --project src/Boilerplate.Console -- <Command> '<json>'`
 test/
   Boilerplate.Tests/           TestSupport/ (every fake, builder and mock) + tests, named after the type under test
 ```
@@ -53,7 +53,6 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | Infrastructure | `Persistence/<Plural>/<Aggregate>Repository.cs`, `<Aggregate>Configuration.cs`, one line in `PersistenceModule.cs`, and a migration |
 | Application | `<Plural>/<Verb><Aggregate>Command.cs` per command, `<Aggregate>Dto.cs`, and the handler and validator lines in `ApplicationModule.cs` |
 | Api | `Controllers/<Plural>Controller.cs` |
-| Console | one `AddCommandScenario<...>()` line in `ScenarioModule.cs` per command you want to run from arguments, and a scenario in `Scenarios/` when a manual test needs several steps |
 | Tests | `TestSupport/Domain/<Plural>/Fake<Aggregate>.cs`, `<Aggregate>RepositoryBuilder.cs`; `Domain/<Plural>/<Aggregate>Tests.cs`; `Infrastructure/Persistence/<Plural>/<Aggregate>RepositoryTests.cs`, `<Aggregate>ConfigurationTests.cs`; `Application/<Plural>/<Command>HandlerTests.cs` per command that writes, and one per event handler |
 
 An aggregate whose key the database assigns (`int`, `long`) raises `Created` from `MarkCreated()` after the insert, never in its constructor (ADR 0008).
@@ -62,7 +61,7 @@ Write the fakes, builders and tests first, watch them fail, then write the code.
 
 ## 4. How work is done
 
-- **Know how it will be verified before you start**: a test, a Console scenario, or a request against the running Api.
+- **Know how it will be verified before you start**: a test, a Console command, or a request against the running Api.
 - **Name the files you expect to touch before you touch them.** A finding outside that list is written down, not fixed on the way.
 - **Fixing a bug**: first a test that fails with the bug's own symptom, then the fix, then the same test passes unchanged. Never narrow the scenario, never fit the expected value to the output, never weaken an assertion that went red.
 - **"Done" needs output.** Show the build and test result; say which part was skipped and why.
@@ -77,7 +76,6 @@ dotnet build
 dotnet test
 docker compose up -d postgres
 dotnet ef database update --project src/Boilerplate.Infrastructure
-dotnet run --project src/Boilerplate.Console --                 # lists scenarios and commands
 dotnet run --project src/Boilerplate.Console -- <Command> '<json>'  # runs one command; F5 in VS Code asks for both
 dotnet ef migrations add <Name> --project src/Boilerplate.Infrastructure --output-dir Persistence/Migrations
 ```

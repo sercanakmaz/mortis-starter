@@ -20,7 +20,7 @@ Each scenario walks one situation block by block. Every numbered step starts wit
 2. [Application] the handler loads the order and calls its operation.
 3. [Domain] the order adds the line and raises `LineAdded`.
 4. [Shared] the pipeline commits the order.
-5. [Infrastructure] after `COMMIT` the in-process event dispatcher runs the async handler in a new scope.
+5. [Infrastructure] after `COMMIT` the event publisher runs the async handler in a new scope (with an outbox, the worker does).
 6. [Application] the async handler sends `ReserveStock`.
 7. [Domain] the product reduces its stock.
 

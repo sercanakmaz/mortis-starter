@@ -45,8 +45,12 @@ Layer 1 names roles (see `mortis-architect/references/architecture/glossary.md`)
 | storage mapping | `{Aggregate}Configuration`, `{Child}Configuration` | `src/{Name}.Infrastructure/Persistence/{Plural}/{Aggregate}Configuration.cs` |
 | anti-corruption adapter | the outside system plus the port, e.g. `HttpTaxRates` | `src/{Name}.Infrastructure/Integrations/{Type}.cs` |
 | controller | `{Plural}Controller` | `src/{Name}.Api/Controllers/{Plural}Controller.cs` |
-| console scenario | `{Flow}Scenario`, run name in kebab case (`order-flow`) | `src/{Name}.Console/Scenarios/{Flow}Scenario.cs` |
 | registration of a layer | `{Layer}Module` with `Add{Layer}Module` | the layer's project root |
+| publishing committed events | `EventPublisher` (`none`) or `OutboxRepository` + `OutboxWorker` (an outbox) | `src/{Name}.Infrastructure/Messaging/` or its `Outbox/` folder |
+| outbox types | the fixed names on `outbox.md` | `src/{Name}.Infrastructure/Messaging/Outbox/` |
+| worker host | `{Name}.Worker` | `src/{Name}.Worker/` |
+| console command runner | `ConsoleCommandRunner`, `ConsoleConstants` | `src/{Name}.Console/` |
+| log formatting | `JsonLineFormatter`, `LogFields`, `LoggingModule` | `src/{Name}.Infrastructure/Logging/` |
 | test class | `{Type}Tests` | mirrors the type's path under `test/{Name}.Tests/` |
 | fake aggregate for tests | `Fake{Aggregate}` | `test/{Name}.Tests/TestSupport/Domain/{Plural}/Fake{Aggregate}.cs` |
 | builder of a mock | `{Interface without I}Builder` | `test/{Name}.Tests/TestSupport/<mirrored path>/{Type}Builder.cs` |
@@ -58,7 +62,7 @@ A command's name says what the user asked for. A reaction's command says what ha
 | Key | Value | What it changes in C# |
 |---|---|---|
 | `naming.database` | `snake_case` | `UseSnakeCaseNamingConvention()` on the context; tables are named explicitly in snake case: `builder.ToTable("order_lines")` |
-| | `as-code` | no naming convention; `builder.ToTable("OrderLines")` |
+| | `as-code` | no naming convention; `builder.ToTable("OrderLines")`; the outbox's raw SQL (`outbox.md`) is written for `snake_case` and must quote the as-code names |
 | `naming.json` | `camelCase` | the ASP.NET default; nothing to add |
 | | `snake_case` | `options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower` in `AddControllers().AddJsonOptions(...)` |
 | `naming.routes` | `kebab-case` | `[Route("order-lines")]` for multi-word resources |

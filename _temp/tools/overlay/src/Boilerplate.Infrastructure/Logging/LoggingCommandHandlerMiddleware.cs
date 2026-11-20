@@ -5,17 +5,22 @@ namespace Boilerplate.Infrastructure.Logging;
 
 public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddleware> logger) : ICommandHandlerMiddleware
 {
+    private readonly Stack<IDisposable> _scopes = new();
+
     public void Before(ICommand command)
     {
-        var commandContext = (command as IContextCommand)?.Context;
+        _scopes.Push(logger.BeginScope(LogFields.Of(command)));
 
-        logger.LogInformation("{Command} started correlation {CorrelationId} causation {CausationId}", command.GetType().Name, commandContext?.CorrelationId, commandContext?.CausationId);
+        logger.LogInformation("{Command} started", command.GetType().Name);
     }
 
     public void After(ICommand command, CommandResult commandResult)
     {
-        var commandContext = (command as IContextCommand)?.Context;
+        logger.LogInformation("{Command} finished", command.GetType().Name);
 
-        logger.LogInformation("{Command} finished correlation {CorrelationId}", command.GetType().Name, commandContext?.CorrelationId);
+        if (_scopes.TryPop(out var scope))
+        {
+            scope.Dispose();
+        }
     }
 }

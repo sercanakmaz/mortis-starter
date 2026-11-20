@@ -87,7 +87,9 @@ Fields: `private readonly List<Func<Task>> _committedActions = [];`, `private ID
 
 @@member src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::OnCommitted@@
 
-- Commit order: save, sync handlers (`EventHandlerExecutor`), `COMMIT`, queue events to every `IEventDispatcher`, after-commit actions. A dispatcher's failure is logged and never undoes the commit.
+- Commit order: save, sync handlers (`EventHandlerExecutor`), collect the queue events, `COMMIT`, publish each queue event with `EventPublisher`, after-commit actions. A failure after `COMMIT` is logged and never undoes the commit.
+- This is the `events.outbox` = `none` version. With an outbox the constructor and `CommitTransactionAsync` differ: the rows are written before `COMMIT` (`outbox.md` "The kernel files that change"). Generate only the chosen one.
+- Sync handlers run before the events are collected, so an event a sync handler raises is delivered too.
 - Only the caller that began the transaction (same key) commits it.
 
 ## DatabaseExceptionHandler
@@ -143,15 +145,9 @@ File `InfrastructureModule.cs` at the project root:
 
 When `naming.database` is `as-code`, both this file and `DesignTimeDbContextFactory` leave out `.UseSnakeCaseNamingConvention()`.
 
-## Logging middleware
+## Logging
 
-File `Logging/LoggingCommandHandlerMiddleware.cs`:
-
-@@decl src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware@@
-
-@@member src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware::Before@@
-
-@@member src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware::After@@
+The logging middleware, the JSON line formatter and the log fields are on `logging.md`.
 
 ## Per aggregate: repository
 
@@ -193,7 +189,7 @@ dotnet tool install --global dotnet-ef --version 10.0.15
 dotnet ef migrations add Initial --project src/{Name}.Infrastructure --output-dir Persistence/Migrations
 ```
 
-This writes `*_Initial.cs`, `*_Initial.Designer.cs` and `AppDbContextModelSnapshot.cs`. A project without an aggregate has no migration. Hosts never migrate; `dotnet ef database update --project src/{Name}.Infrastructure` does.
+This writes `*_Initial.cs`, `*_Initial.Designer.cs` and `AppDbContextModelSnapshot.cs`. A project with neither an aggregate nor an outbox has no migration; with an outbox the table is in `Initial`. Hosts never migrate; `dotnet ef database update --project src/{Name}.Infrastructure` does.
 
 ## Tests
 

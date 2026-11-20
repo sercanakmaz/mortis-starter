@@ -43,6 +43,7 @@ LANGUAGE="$(get language)"
 EXAMPLE="$(get example)"
 DATABASE_KIND="$(get database)"
 EXCEPTIONS="$(get exceptions)"
+OUTBOX="$(get events.outbox)"
 LANG_SH="$HERE/lang/$LANGUAGE.sh"
 SHAPE_FILE="$HERE/../references/$LANGUAGE/kernel-shape.txt"
 mkdir -p "$PROJECT/.mortis"
@@ -62,7 +63,7 @@ step "house rules: no comments, names match files, one context line per command,
 shape_matches() {
   local database
   database="$(printf '%s' "$NAME" | tr 'A-Z' 'a-z' | tr -d '.')"
-  diff <(grep -v '^#' "$SHAPE_FILE" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g") <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g")
+  diff <(grep -v '^#' "$SHAPE_FILE" | sed -e "s/^\[events.outbox=$OUTBOX\] //" -e '/^\[/d' -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g") <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g")
 }
 step "kernel shape: every public kernel type and member is exactly as in kernel-shape.txt" shape_matches
 step "editor files: the launch configurations ask for the arguments and point at this project" "$LANG_SH" editor-checks "$PROJECT" "$NAME"
@@ -85,6 +86,7 @@ else
     PASSED=$before_passed; FAILED=$before_failed
     if [ "$result" = 0 ]; then pass "conformance: $1"; else fail "conformance: $1" "see the lines above"; fi
   }
+  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)"
   run_conformance kernel.sh
 
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
@@ -104,6 +106,11 @@ else
   ADDONS=",$(get addons),"
   export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
   case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac
+  if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
+    run_conformance outbox.sh
+  elif [ "$EXAMPLE" = "true" ]; then
+    skip "conformance: outbox.sh" "PostgreSQL is not reachable"
+  fi
 fi
 
 rm -rf "$WORK"

@@ -155,6 +155,24 @@
    "kernel": false
   },
   {
+   "path": "docs/adr/0011-outbox-and-publishing-models.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "docs/adr/0012-json-log-lines.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -494,73 +512,22 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Console/ConsoleCommandRunner.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/ConsoleConstants.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
    "path": "src/{Name}.Console/Program.cs",
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/BlockedCustomerScenario.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "when": {
-    "example": "true"
-   },
-   "kernel": false
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/CommandScenario.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/CommandScenarioExtensions.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/ConsoleUserExtensions.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/IScenario.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/OrderFlowScenario.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "when": {
-    "example": "true"
-   },
-   "kernel": false
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/ScenarioConstants.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/ScenarioModule.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
-   "path": "src/{Name}.Console/Scenarios/StockFlowScenario.cs",
-   "page": "hosts.md",
-   "source": "snippets",
-   "when": {
-    "example": "true"
-   },
-   "kernel": false
   },
   {
    "path": "src/{Name}.Console/appsettings.json",
@@ -845,28 +812,124 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Logging/JsonLineFormatter.cs",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Logging/LogFields.cs",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
    "path": "src/{Name}.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs",
-   "page": "infrastructure-postgres.md",
+   "page": "logging.md",
    "source": "snippets",
    "kernel": true
   },
   {
-   "path": "src/{Name}.Infrastructure/Messaging/AsyncEventHandlerDispatcher.cs",
-   "page": "events-inprocess.md",
+   "path": "src/{Name}.Infrastructure/Logging/LoggingConstants.cs",
+   "page": "logging.md",
    "source": "snippets",
    "kernel": true
   },
   {
-   "path": "src/{Name}.Infrastructure/Messaging/LoggingEventDispatcher.cs",
-   "page": "events-inprocess.md",
+   "path": "src/{Name}.Infrastructure/Logging/LoggingModule.cs",
+   "page": "logging.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": "none"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Messaging/MessagingConstants.cs",
    "page": "events-inprocess.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": false,
+   "when": {
+    "events.outbox": "none"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxModule.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxRepository.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/AppDbContext.cs",
@@ -944,9 +1007,17 @@
    "path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs",
    "page": "infrastructure-postgres.md",
    "source": "tool",
-   "when": {
-    "example": "true"
-   },
+   "when_any": [
+    {
+     "example": "true"
+    },
+    {
+     "events.outbox": [
+      "after-command",
+      "background"
+     ]
+    }
+   ],
    "kernel": false,
    "glob": true
   },
@@ -954,9 +1025,17 @@
    "path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs",
    "page": "infrastructure-postgres.md",
    "source": "tool",
-   "when": {
-    "example": "true"
-   },
+   "when_any": [
+    {
+     "example": "true"
+    },
+    {
+     "events.outbox": [
+      "after-command",
+      "background"
+     ]
+    }
+   ],
    "kernel": false,
    "glob": true
   },
@@ -964,9 +1043,17 @@
    "path": "src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs",
    "page": "infrastructure-postgres.md",
    "source": "tool",
-   "when": {
-    "example": "true"
-   },
+   "when_any": [
+    {
+     "example": "true"
+    },
+    {
+     "events.outbox": [
+      "after-command",
+      "background"
+     ]
+    }
+   ],
    "kernel": false
   },
   {
@@ -1138,12 +1225,6 @@
    "kernel": true
   },
   {
-   "path": "src/{Name}.Shared/Domain/IEventDispatcher.cs",
-   "page": "shared-domain.md",
-   "source": "snippets",
-   "kernel": true
-  },
-  {
    "path": "src/{Name}.Shared/Domain/SystemUser.cs",
    "page": "shared-domain.md",
    "source": "snippets",
@@ -1226,6 +1307,33 @@
    "page": "solution.md",
    "source": "data",
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Worker/Program.cs",
+   "page": "outbox.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "hosts.worker": "separate"
+   }
+  },
+  {
+   "path": "src/{Name}.Worker/appsettings.json",
+   "page": "outbox.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "hosts.worker": "separate"
+   }
+  },
+  {
+   "path": "src/{Name}.Worker/{Name}.Worker.csproj",
+   "page": "outbox.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "hosts.worker": "separate"
+   }
   },
   {
    "path": "test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs",
@@ -1393,7 +1501,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Console/CommandScenarioTests.cs",
+   "path": "test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
@@ -1453,10 +1561,31 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs",
+   "path": "test/{Name}.Tests/Infrastructure/Logging/JsonLineFormatterTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/EventPublisherTests.cs",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": "none"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs",
+   "page": "outbox.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ]
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Categories/CategoryConfigurationTests.cs",
@@ -1624,10 +1753,13 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/AsyncEventHandlerDispatcherBuilder.cs",
-   "page": "testing.md",
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs",
+   "page": "events-inprocess.md",
    "source": "snippets",
-   "kernel": false
+   "kernel": false,
+   "when": {
+    "events.outbox": "none"
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs",

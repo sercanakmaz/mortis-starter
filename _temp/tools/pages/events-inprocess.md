@@ -1,10 +1,25 @@
-# Events in process, C#
+# Publishing events directly, C#
 
-Applies when `events.outbox` is `none` and `events.transport` is `in-process`. Project `{Name}.Infrastructure`, folder `Messaging/`. Layer 1: `events.md`.
+Applies when `events.outbox` is `none`. Project `{Name}.Infrastructure`, folder `Messaging/`. Layer 1: `events.md`.
 
-Committed queue events go to every registered `IEventDispatcher`. Two are registered, in this order: `LoggingEventDispatcher` writes the wire name to the log; `AsyncEventHandlerDispatcher` runs the async handlers in a new scope, each in its own transaction, as the system user.
+Two classes. After `COMMIT` the unit of work hands each queue event to `EventPublisher`, which logs it and runs its async handlers in a new scope, each in its own transaction, as the system user. Nothing is stored.
 
 What can be lost: an event whose async handler had not run when the process died. Say so plainly when it matters; the outbox options remove it.
+
+With an outbox, neither class exists in the project (`outbox.md`).
+
+## EventPublisher
+
+File `Messaging/EventPublisher.cs`, registered as a singleton by `AddInfrastructureModule`:
+
+@@decl src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs::EventPublisher@@
+
+@@member src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs::EventPublisher::PublishAsync@@
+
+- One scope for the event; one transaction per handler, in `Sequence` order.
+- A concurrency conflict is retried in a fresh transaction up to `MaxAttempts`; any other failure is logged and the next handler still runs.
+- Its log lines carry the event's fields (`LogFields.Of(event)`, `logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.
+- An async handler that writes a contended row needs the `xmin` row version on that aggregate (`infrastructure-postgres.md`).
 
 ## MessagingConstants
 
@@ -16,31 +31,19 @@ File `Messaging/MessagingConstants.cs`:
 
 @@member src/Boilerplate.Infrastructure/Messaging/MessagingConstants.cs::MessagingConstants::RetryDelayMilliseconds@@
 
-## LoggingEventDispatcher
+## The unit of work's part
 
-File `Messaging/LoggingEventDispatcher.cs`:
+`UnitOfWork` (`infrastructure-postgres.md`) takes `EventPublisher` and, after `COMMIT`, publishes each queue event; a failure is logged and never undoes the commit:
 
-@@decl src/Boilerplate.Infrastructure/Messaging/LoggingEventDispatcher.cs::LoggingEventDispatcher@@
-
-@@member src/Boilerplate.Infrastructure/Messaging/LoggingEventDispatcher.cs::LoggingEventDispatcher::Publish@@
-
-- The wire name is `<namespace>:<type>`, for example `{Name}.Domain.Aggregates.Orders.Events:Completed`.
-
-## AsyncEventHandlerDispatcher
-
-File `Messaging/AsyncEventHandlerDispatcher.cs`:
-
-@@decl src/Boilerplate.Infrastructure/Messaging/AsyncEventHandlerDispatcher.cs::AsyncEventHandlerDispatcher@@
-
-@@member src/Boilerplate.Infrastructure/Messaging/AsyncEventHandlerDispatcher.cs::AsyncEventHandlerDispatcher::Publish@@
-
-- One scope for the event; one transaction per handler.
-- A concurrency conflict is retried in a fresh transaction up to `MaxAttempts`; any other failure is logged and the next handler still runs.
-- An async handler that writes a contended row needs the `xmin` row version on that aggregate (`infrastructure-postgres.md`).
+@@member src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork::CommitTransactionAsync@@
 
 ## Tests
 
-`AsyncEventHandlerDispatcherTests` in `testing-kernel.md`.
+File `test/{Name}.Tests/Infrastructure/Messaging/EventPublisherTests.cs`, with `EventPublisherBuilder` in `TestSupport/Infrastructure/Messaging/`:
+
+@@members test/Boilerplate.Tests/Infrastructure/Messaging/EventPublisherTests.cs::EventPublisherTests@@
+
+@@members test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs::EventPublisherBuilder@@
 
 ## Namespaces and usings
 

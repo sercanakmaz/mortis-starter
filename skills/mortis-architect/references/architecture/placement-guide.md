@@ -12,7 +12,7 @@ Host ──► Command ──► Pipeline ──► Command handler (use case) �
                                        COMMIT
                                           ├─ before it: sync handlers ──► send Command ──► another aggregate (may veto)
                                           └─ after it:  async handlers ──► send Command ──► another aggregate, email, stock
-                                                        event dispatchers ──► outbox ──► relay ──► broker
+                                                        event publisher ──► outbox ──► worker ──► handlers
 ```
 
 One command runs one handler. The handler changes one aggregate, or several when the action is about all of them. Each change can raise several events, and each event can have several handlers. Each event handler sends one command, so one request can fan out into many commands, all with the same correlation id.
@@ -29,7 +29,7 @@ Ask these questions in order and stop at the first yes.
 4. **Is it running one user action** (load, call the domain, save, map the result)? → command handler; the pipeline gives the transaction.
 5. **Does the action change a second aggregate?** Decide between the command handler and an event handler with the test below.
 6. **Should it happen because something else happened, without the originator knowing?** → event handler. It sends one command; it holds no rule of its own.
-7. **Must it succeed or fail together with the change?** → sync handler (inside the transaction, can veto). **May it lag or fail alone?** → async handler. **Must it leave the process?** → the event dispatcher with the outbox model chosen for the project.
+7. **Must it succeed or fail together with the change?** → sync handler (inside the transaction, can veto). **May it lag or fail alone?** → async handler. **Must it leave the process?** → the event publisher with the outbox model chosen for the project.
 8. **Does it touch storage, a broker, the clock, ids or a third party?** → infrastructure, behind something declared in Shared or Domain.
 9. **Is it a read for a screen or report?** → a query, not an aggregate.
 
@@ -128,7 +128,7 @@ Look up "I need to …" and read across: the layer, the block, and why. Roles ar
 | import a thousand rows | Application | One command per row from a loop in a host or Worker | each row has its own transaction |
 | run a job on a timer | Host | Worker that sends a command | hosts turn triggers into commands |
 | consume a message from a broker | Host | Worker consumer that sends a command | the message becomes a command |
-| publish a message to a broker | Infrastructure | Event dispatcher (outbox relay) | delivery is infrastructure |
+| publish a message to a broker | Infrastructure | Event publisher (outbox worker) | delivery is infrastructure |
 | make publishing survive a crash | Infrastructure | Outbox written in the command's transaction | one fact: changed and will be sent |
 | ignore a message seen before | Infrastructure | Inbox check before the handler | at-least-once delivery |
 | authorise that a user may do something | Application | A rule on the command or a policy the aggregate checks | needs the actor from context |
@@ -137,7 +137,7 @@ Look up "I need to …" and read across: the layer, the block, and why. Roles ar
 | log a command and its timing | Shared | Middleware | same for every command |
 | translate a database error into a failure | Infrastructure | Exception translator | storage details stop here |
 | seed reference data | Infrastructure | Seed step at startup | not a business operation |
-| run a one-off manual test | Host | Console scenario | same wiring, no HTTP |
+| run a one-off manual test | Host | Console command | same wiring, no HTTP |
 | name a stable failure code | Domain | Rule code on the failing operation | codes are part of the contract |
 | version an event's shape | Domain | New event name or additive field | wire names are forever |
 

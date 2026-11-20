@@ -29,6 +29,9 @@ REPLACEMENTS = [
 
 
 def read_source(file):
+    if file.startswith("variant:"):
+        mode, _, relative = file[len("variant:"):].partition("/")
+        return (OVERLAY.parent / "overlay-variants" / mode / relative).read_text(encoding="utf-8")
     overlay = OVERLAY / file
     if overlay.exists():
         return overlay.read_text(encoding="utf-8")
@@ -204,7 +207,7 @@ def usings_for(page):
         if not (OVERLAY / relative).exists() and not (TEMPLATE / relative).exists():
             continue
         source = read_source(relative)
-        usings = [l.strip()[6:-1] for l in source.splitlines() if l.startswith("using ")]
+        usings = [l.strip()[6:-1] for l in source.splitlines() if l.startswith("using ") and not l.startswith("using var ")]
         namespace = next((l.strip()[10:-1] for l in source.splitlines() if l.startswith("namespace ")), "")
         rows.append((entry["path"], namespace.replace("Boilerplate", "{Name}"), ", ".join(sorted(u.replace("Boilerplate", "{Name}") for u in usings)) or "none"))
     out = ["| File | Namespace | Usings |", "|---|---|---|"]

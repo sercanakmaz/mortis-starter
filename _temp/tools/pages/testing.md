@@ -79,7 +79,7 @@ File `RecordingEventHandler.cs` holds two handlers:
 
 @@members test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs::RecordingLogger@@
 
-@@members test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/AsyncEventHandlerDispatcherBuilder.cs::AsyncEventHandlerDispatcherBuilder@@
+`EventPublisherBuilder` is on `events-inprocess.md`.
 
 ### Api
 
@@ -93,9 +93,10 @@ Every project has them; each is written out in `testing-kernel.md`.
 |---|---|
 | `AggregateRootTests`, `EventContextTests`, `EventHandlerExecutorTests` | `Shared/Domain/` |
 | `CommandPipelineTests`, `CommandDispatcherTests`, `ContextCommandTests`, `CommandContextTests` | `Shared/Application/` |
-| `AsyncEventHandlerDispatcherTests` | `Infrastructure/Messaging/` |
+| `EventPublisherTests` (only with `events.outbox` = `none`) | `Infrastructure/Messaging/` |
 | `ContextCommandFilterTests` | `Api/Filters/` |
-| `CommandScenarioTests` | `Console/` |
+| `ConsoleCommandRunnerTests` | `Console/` |
+| `JsonLineFormatterTests` | `Infrastructure/Logging/` |
 
 ## Namespaces and usings
 

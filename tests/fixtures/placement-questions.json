@@ -47,7 +47,7 @@
  {
   "question": "Publish a message to a broker after commit",
   "layer": "Infrastructure",
-  "block": "Event dispatcher"
+  "block": "Event publisher"
  },
  {
   "question": "Hold a street, city and postal code together",

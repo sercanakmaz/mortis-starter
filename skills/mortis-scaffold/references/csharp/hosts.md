@@ -1,4 +1,4 @@
-# Hosts: Api and Console, C#
+# Hosts: Api, Console and Worker, C#
 
 Layer 1: `layers.md` "Hosts", `building-blocks.md` "Host adapter". A host authenticates, fills the command's user, sends it through `ICommandDispatcher` and translates the outcome. A host never opens a transaction, never calls a repository and never migrates.
 
@@ -13,12 +13,15 @@ Top-level statements, the whole file:
 ```csharp
 using {Name}.Api.Middlewares;
 using {Name}.Api.Filters;
+using {Name}.Infrastructure.Logging;
 using {Name}.Infrastructure;
 using {Name}.Application;
 using {Name}.Domain;
 using {Name}.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddJsonLogging();
 
 builder.Services.AddControllers(options => options.Filters.Add<ContextCommandFilter>());
 builder.Services.AddOpenApi();
@@ -58,6 +61,8 @@ app.Run();
   }
 }
 ```
+
+With an outbox and `hosts.worker` = `in-api`, the Api also runs the outbox worker: one more line after `.AddInfrastructureModule(builder.Configuration)`, `.AddOutboxWorker()` (`outbox.md`).
 
 ### Filling the context
 
@@ -214,60 +219,67 @@ public async Task<IActionResult> Complete([FromRoute] Guid id)
 
 ## Console
 
-Project `{Name}.Console`. Runs any registered command by name with a JSON argument, or a named scenario. Exit codes: 0 done, 1 unknown name, 2 a failure printed to stderr as `{ code, message, errors }`.
+Project `{Name}.Console`. A host that runs one command and exits: `dotnet run -- <Command> [json | @file.json]`. No scenarios: a sequence of commands is a sequence of runs.
+
+- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the console user, with a new correlation id per run.
+- stdout holds only the result, as indented JSON; logs go to stderr as JSON lines (`logging.md`), so the result can be piped.
+- Exit codes: 0 done, 1 no command name, 2 a failure printed to stderr as one line `{ code, message, errors }`.
+- With `events.outbox` = `background` the Console only writes outbox rows; the worker in the Api or the Worker publishes them.
 
 ### Program.cs
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
-using {Name}.Console.Scenarios;
+using {Name}.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
+using {Name}.Shared.Application;
 using {Name}.Shared.Exceptions;
-using System.Text.Json;
 using {Name}.Infrastructure;
 using {Name}.Application;
+using {Name}.Console;
 using {Name}.Domain;
 using {Name}.Shared;
+using System.Text.Json;
 
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { Args = args, ContentRootPath = AppContext.BaseDirectory });
+
+builder.Logging.AddJsonLogging(toStandardError: true);
 
 builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration)
-    .AddScenariosModule();
+    .AddInfrastructureModule(builder.Configuration);
 
 using var host = builder.Build();
-using var scope = host.Services.CreateScope();
 
-var scenarios = scope.ServiceProvider.GetServices<IScenario>().ToList();
-var scenario = scenarios.FirstOrDefault(candidate => string.Equals(candidate.Name, args.FirstOrDefault(), StringComparison.OrdinalIgnoreCase));
-
-if (scenario is null)
+if (args.Length == 0)
 {
-    System.Console.WriteLine("Usage: dotnet run -- <scenario | command> [json | @file.json]");
-    System.Console.WriteLine($"Names: {string.Join(", ", scenarios.Select(candidate => candidate.Name).Order())}");
+    System.Console.Error.WriteLine("Usage: dotnet run -- <Command> [json | @file.json]");
 
     return 1;
 }
 
-System.Console.WriteLine($"correlation {ScenarioConstants.RunCorrelationId}");
+using var scope = host.Services.CreateScope();
+
+var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
 
 try
 {
-    await scenario.RunAsync(args.Skip(1).ToArray());
+    var content = await consoleCommandRunner.RunAsync(args[0], args.ElementAtOrDefault(1));
+
+    System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
+
+    return 0;
 }
 catch (ExceptionBase exception)
 {
     var errors = (exception as ValidationFailedException)?.Errors;
 
-    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }, ScenarioConstants.OutputOptions));
+    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }));
 
     return 2;
 }
-
-return 0;
 ```
 
 ### appsettings.json
@@ -287,24 +299,67 @@ return 0;
 }
 ```
 
-### Scenarios
+### ConsoleCommandRunner
 
-Folder `Scenarios/`, namespace `{Name}.Console.Scenarios`.
+File `ConsoleCommandRunner.cs`, namespace `{Name}.Console`:
 
 ```csharp
-public interface IScenario
+public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
 ```
 
 ```csharp
-string Name { get; }
+public async Task<object> RunAsync(string name, string argument)
+{
+    var commandType = commandAssembly.GetTypes()
+        .FirstOrDefault(type => !type.IsAbstract && type.Name.Equals(name + ConsoleConstants.CommandSuffix, StringComparison.OrdinalIgnoreCase));
+
+    var contentType = commandType?.GetInterfaces()
+        .FirstOrDefault(contract => contract.IsGenericType && contract.GetGenericTypeDefinition() == typeof(ICommand<>))?
+        .GetGenericArguments()[0]
+        ?? throw new InvalidParameterException("command", $"{name} is not a command");
+
+    var json = string.IsNullOrWhiteSpace(argument) ? "{}"
+        : argument.StartsWith(ConsoleConstants.FilePrefix) ? await File.ReadAllTextAsync(argument[ConsoleConstants.FilePrefix.Length..])
+        : argument;
+
+    object command;
+
+    try
+    {
+        command = JsonSerializer.Deserialize(json, commandType, ConsoleConstants.InputOptions);
+    }
+    catch (JsonException exception)
+    {
+        throw new InvalidParameterException("arguments", exception.Message, exception);
+    }
+
+    if (command is null)
+    {
+        throw new InvalidParameterException("arguments", "a JSON object is required");
+    }
+
+    if (command is IContextCommand contextCommand)
+    {
+        contextCommand.Context = new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail) };
+    }
+
+    var send = typeof(ICommandDispatcher).GetMethod(nameof(ICommandDispatcher.Send)).MakeGenericMethod(contentType);
+    dynamic commandResult = await (dynamic)send.Invoke(commandDispatcher, [command]);
+
+    return commandResult.Content;
+}
+```
+
+- A new command needs nothing in the Console: the runner finds it.
+
+File `ConsoleConstants.cs`:
+
+```csharp
+public static class ConsoleConstants
 ```
 
 ```csharp
-Task RunAsync(string[] args);
-```
-
-```csharp
-public static class ScenarioConstants
+public static class ConsoleConstants
 ```
 
 ```csharp
@@ -324,116 +379,12 @@ public const string FilePrefix = "@";
 ```
 
 ```csharp
-public static readonly Guid RunCorrelationId = Guid.CreateVersion7();
-```
-
-```csharp
 public static readonly JsonSerializerOptions OutputOptions = new() { WriteIndented = true };
 ```
 
 ```csharp
 public static readonly JsonSerializerOptions InputOptions = new() { PropertyNameCaseInsensitive = true };
 ```
-
-File `Scenarios/ConsoleUserExtensions.cs`:
-
-```csharp
-public static class ConsoleUserExtensions
-```
-
-```csharp
-public static TCommand AsConsoleUser<TCommand>(this TCommand command)
-{
-    if (command is IContextCommand contextCommand)
-    {
-        contextCommand.Context = new CommandContext
-        {
-            User = new AuditUser(ScenarioConstants.UserId, ScenarioConstants.UserEmail),
-            CorrelationId = ScenarioConstants.RunCorrelationId
-        };
-    }
-
-    return command;
-}
-```
-
-File `Scenarios/CommandScenario.cs`, the scenario that runs one command:
-
-```csharp
-public class CommandScenario<TCommand, TContent>(ICommandDispatcher commandDispatcher) : IScenario
-    where TCommand : ICommand<TContent>
-```
-
-```csharp
-public string Name => typeof(TCommand).Name[..^ScenarioConstants.CommandSuffix.Length];
-```
-
-```csharp
-public async Task RunAsync(string[] args)
-{
-    var argument = args.FirstOrDefault();
-
-    var json = string.IsNullOrWhiteSpace(argument) ? "{}"
-        : argument.StartsWith(ScenarioConstants.FilePrefix) ? await File.ReadAllTextAsync(argument[ScenarioConstants.FilePrefix.Length..])
-        : argument;
-
-    TCommand command;
-
-    try
-    {
-        command = JsonSerializer.Deserialize<TCommand>(json, ScenarioConstants.InputOptions);
-    }
-    catch (JsonException exception)
-    {
-        throw new InvalidParameterException("arguments", exception.Message, exception);
-    }
-
-    if (command is null)
-    {
-        throw new InvalidParameterException("arguments", "a JSON object is required");
-    }
-
-    var commandResult = await commandDispatcher.Send(command.AsConsoleUser());
-
-    System.Console.WriteLine(JsonSerializer.Serialize(commandResult.Content, ScenarioConstants.OutputOptions));
-}
-```
-
-File `Scenarios/CommandScenarioExtensions.cs`:
-
-```csharp
-public static class CommandScenarioExtensions
-```
-
-```csharp
-public static IServiceCollection AddCommandScenario<TCommand, TContent>(this IServiceCollection services)
-    where TCommand : ICommand<TContent>
-{
-    services.AddScoped<IScenario, CommandScenario<TCommand, TContent>>();
-
-    return services;
-}
-```
-
-File `Scenarios/ScenarioModule.cs`: one line per scenario class, then one `AddCommandScenario` line per command the Console may run, grouped by aggregate.
-
-```csharp
-public static class ScenarioModule
-```
-
-```csharp
-public static IServiceCollection AddScenariosModule(this IServiceCollection services)
-{
-    services.AddScoped<IScenario, OrderFlowScenario>();
-
-    services.AddCommandScenario<CreateOrderCommand, OrderDto>();
-    services.AddCommandScenario<GetOrderCommand, OrderDto>();
-
-    return services;
-}
-```
-
-Written first with an empty body (only `return services;`), and lines added with the example or each new aggregate.
 
 ## VS Code
 
@@ -454,14 +405,14 @@ Written first with an empty body (only `return services;`), and lines added with
 }
 ```
 
-`.vscode/launch.json`. The first configuration asks for the name and the JSON; the others belong to the example and are left out when `example` is `false`.
+`.vscode/launch.json`. The first configuration asks for the name and the JSON; the second belongs to the example and is left out when `example` is `false`.
 
 ```json
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Console: run a command or scenario (asks for the arguments)",
+      "name": "Console: run a command (asks for the name and the JSON)",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build-console",
@@ -487,44 +438,18 @@ Written first with an empty body (only `return services;`), and lines added with
       "cwd": "${workspaceFolder}/src/{Name}.Console",
       "console": "integratedTerminal",
       "stopAtEntry": false
-    },
-    {
-      "name": "Console: stock-flow scenario",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build-console",
-      "program": "${workspaceFolder}/src/{Name}.Console/bin/Debug/net10.0/{Name}.Console.dll",
-      "args": [
-        "stock-flow"
-      ],
-      "cwd": "${workspaceFolder}/src/{Name}.Console",
-      "console": "integratedTerminal",
-      "stopAtEntry": false
-    },
-    {
-      "name": "Console: order-flow scenario",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build-console",
-      "program": "${workspaceFolder}/src/{Name}.Console/bin/Debug/net10.0/{Name}.Console.dll",
-      "args": [
-        "order-flow"
-      ],
-      "cwd": "${workspaceFolder}/src/{Name}.Console",
-      "console": "integratedTerminal",
-      "stopAtEntry": false
     }
   ],
   "inputs": [
     {
       "id": "name",
       "type": "promptString",
-      "description": "A command name without its Command suffix, or a scenario name"
+      "description": "A command name without its Command suffix"
     },
     {
       "id": "json",
       "type": "promptString",
-      "description": "The command as JSON, or @path/to/file.json. Leave empty for a scenario",
+      "description": "The command as JSON, or @path/to/file.json. Leave empty for a command without fields",
       "default": ""
     }
   ]
@@ -533,7 +458,7 @@ Written first with an empty body (only `return services;`), and lines added with
 
 ## Tests
 
-`ContextCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
+`ContextCommandFilterTests` and `ConsoleCommandRunnerTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 
@@ -549,14 +474,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Api/Middlewares/ApiConstants.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ErrorResponseModel.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ExceptionHandler.cs` | `{Name}.Api.Middlewares` | Microsoft.AspNetCore.Diagnostics, System.Net, {Name}.Shared.Exceptions |
-| `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Shared |
-| `src/{Name}.Console/Program.cs` | `` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, System.Text.Json, var host = builder.Build(), var scope = host.Services.CreateScope(), {Name}.Application, {Name}.Console.Scenarios, {Name}.Domain, {Name}.Infrastructure, {Name}.Shared, {Name}.Shared.Exceptions |
-| `src/{Name}.Console/Scenarios/BlockedCustomerScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application, {Name}.Shared.Exceptions |
-| `src/{Name}.Console/Scenarios/CommandScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Exceptions |
-| `src/{Name}.Console/Scenarios/CommandScenarioExtensions.cs` | `{Name}.Console.Scenarios` | Microsoft.Extensions.DependencyInjection, {Name}.Shared.Application |
-| `src/{Name}.Console/Scenarios/ConsoleUserExtensions.cs` | `{Name}.Console.Scenarios` | {Name}.Shared.Application, {Name}.Shared.Domain |
-| `src/{Name}.Console/Scenarios/IScenario.cs` | `{Name}.Console.Scenarios` | none |
-| `src/{Name}.Console/Scenarios/OrderFlowScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
-| `src/{Name}.Console/Scenarios/ScenarioConstants.cs` | `{Name}.Console.Scenarios` | System.Text.Json |
-| `src/{Name}.Console/Scenarios/ScenarioModule.cs` | `{Name}.Console.Scenarios` | Microsoft.Extensions.DependencyInjection, {Name}.Application.Categories, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products |
-| `src/{Name}.Console/Scenarios/StockFlowScenario.cs` | `{Name}.Console.Scenarios` | System.Text.Json, {Name}.Application.Customers, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Application |
+| `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Shared |
+| `src/{Name}.Console/ConsoleCommandRunner.cs` | `{Name}.Console` | System.Reflection, System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
+| `src/{Name}.Console/ConsoleConstants.cs` | `{Name}.Console` | System.Text.Json |
+| `src/{Name}.Console/Program.cs` | `` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, System.Text.Json, {Name}.Application, {Name}.Console, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Shared, {Name}.Shared.Application, {Name}.Shared.Exceptions |

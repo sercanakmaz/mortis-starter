@@ -27,7 +27,7 @@
 | Read port | a narrow interface in the domain's words that answers one question from storage, e.g. the open order total of a customer |
 | DTO / view | a flat serialisable description of a result |
 | Entity | a thing with an identity |
-| Event dispatcher | carries committed events to handlers or the broker |
+| Event publisher | carries committed events to handlers or the broker |
 | Event handler | receives one event, sends one command; one event may have many handlers |
 | Host | the entry point that turns the outside world into a command |
 | Failure | a stable code, status and message for what went wrong; the shape is the same at every level |
@@ -41,7 +41,6 @@
 | Repository | declares how the domain asks for aggregates |
 | Role | a part in the architecture, named without a language's spelling |
 | Rule (business rule) | a stable-coded failure raised by an aggregate |
-| Scenario | a small console program that sends commands and prints results |
 | Sweeper | releases outbox rows whose lock expired |
 | Sync handler | an event handler that runs inside the command's transaction |
 | System actor | the actor used when no user caused the work |

@@ -23,13 +23,13 @@ How one command travels from a host to a result, and what happens to its events.
 save changes
 run sync handlers, in order       they may write and raise more events, which are handled too
 COMMIT                            on any failure before this line: roll back, clear events, rethrow
-hand committed events to every event dispatcher
+hand committed events to the event publisher
 run the after-commit actions
 ```
 
 Everything above `COMMIT` is all-or-nothing. Everything below it is allowed to fail without undoing the change.
 
-13. **[Infrastructure]** the event dispatchers receive the committed events: the in-process one runs async handlers, each in its own scope and transaction; the outbox one stores or forwards them to the broker (see [events.md](events.md)).
+13. **[Infrastructure]** the event publisher of the project's model takes the committed events: in process it runs the async handlers, each in its own scope and transaction; with an outbox the rows were written before `COMMIT` and its worker runs them (see [events.md](events.md)).
 14. **[Shared]** the pipeline runs the after-middlewares and returns the view.
 15. **[Host]** turns the view into the outside world's response, or a failure into `code, message, errors` with the failure's status.
 

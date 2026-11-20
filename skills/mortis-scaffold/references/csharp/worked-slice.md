@@ -11,7 +11,7 @@ Event handlers of products and customers react to order events, so the domain co
 3. Infrastructure of the four (configuration, repository, registration line) and their tests.
 4. The four controllers.
 
-Then the Console scenarios and their registration, then the migration (`infrastructure-postgres.md` "Migrations").
+Then the migration (`infrastructure-postgres.md` "Migrations"). The Console needs nothing for the example: it finds every command by name.
 
 ## Categories
 
@@ -1197,223 +1197,15 @@ public async Task<IActionResult> Complete([FromRoute] Guid id)
 }
 ```
 
-## Console scenarios
+## Trying it from the Console
 
-```csharp
-public class OrderFlowScenario(ICommandDispatcher commandDispatcher) : IScenario
-```
+A flow is a sequence of runs; each prints the result on stdout:
 
-```csharp
-public string Name => "order-flow";
-```
-
-```csharp
-public async Task RunAsync(string[] args)
-{
-    var suffix = Guid.CreateVersion7().ToString("N")[^8..];
-
-    var firstProduct = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"SKU-1-{suffix}", Name = "First product", Stock = 100 }.AsConsoleUser())).Content;
-    var secondProduct = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"SKU-2-{suffix}", Name = "Second product", Stock = 100 }.AsConsoleUser())).Content;
-    var thirdProduct = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"SKU-3-{suffix}", Name = "Third product", Stock = 100 }.AsConsoleUser())).Content;
-
-    var customer = (await commandDispatcher.Send(new CreateCustomerCommand
-    {
-        Name = "Console Customer",
-        Email = $"customer-{suffix}@example.com"
-    }.AsConsoleUser())).Content;
-
-    var order = (await commandDispatcher.Send(new CreateOrderCommand
-    {
-        OrderNumber = $"ORD-{suffix}",
-        CustomerId = customer.Id,
-        Lines =
-        [
-            new OrderLineModel(firstProduct.Sku, 10.50m, "eur", 2),
-            new OrderLineModel(secondProduct.Sku, 4.00m, "EUR", 1)
-        ]
-    }.AsConsoleUser())).Content;
-
-    var orderWithAddedLine = (await commandDispatcher.Send(new AddOrderLineCommand
-    {
-        Id = order.Id,
-        Line = new OrderLineModel(thirdProduct.Sku, 1.25m, "EUR", 4)
-    }.AsConsoleUser())).Content;
-
-    await commandDispatcher.Send(new CancelOrderLineCommand
-    {
-        Id = order.Id,
-        LineId = orderWithAddedLine.Lines.First(orderLine => orderLine.Sku == secondProduct.Sku).Id,
-        Reason = "out of stock"
-    }.AsConsoleUser());
-
-    var completedOrder = (await commandDispatcher.Send(new CompleteOrderCommand(order.Id).AsConsoleUser())).Content;
-    var customerAfterCompletion = (await commandDispatcher.Send(new GetCustomerCommand(customer.Id))).Content;
-    var firstProductAfterCompletion = (await commandDispatcher.Send(new GetProductCommand(firstProduct.Id))).Content;
-    var secondProductAfterCompletion = (await commandDispatcher.Send(new GetProductCommand(secondProduct.Id))).Content;
-    var thirdProductAfterCompletion = (await commandDispatcher.Send(new GetProductCommand(thirdProduct.Id))).Content;
-
-    System.Console.WriteLine(JsonSerializer.Serialize(new
-    {
-        Order = completedOrder,
-        Customer = customerAfterCompletion,
-        Products = new[] { firstProductAfterCompletion, secondProductAfterCompletion, thirdProductAfterCompletion }
-    }, ScenarioConstants.OutputOptions));
-}
-```
-
-```csharp
-public class BlockedCustomerScenario(ICommandDispatcher commandDispatcher) : IScenario
-```
-
-```csharp
-public string Name => "blocked-customer";
-```
-
-```csharp
-public async Task RunAsync(string[] args)
-{
-    var suffix = Guid.CreateVersion7().ToString("N")[^8..];
-
-    var product = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"SKU-{suffix}", Name = "Product", Stock = 10 }.AsConsoleUser())).Content;
-
-    var customer = (await commandDispatcher.Send(new CreateCustomerCommand
-    {
-        Name = "Blocked Customer",
-        Email = $"blocked-{suffix}@example.com"
-    }.AsConsoleUser())).Content;
-
-    var order = (await commandDispatcher.Send(new CreateOrderCommand
-    {
-        OrderNumber = $"BLK-{suffix}",
-        CustomerId = customer.Id,
-        Lines = [new OrderLineModel(product.Sku, 25.00m, "EUR", 1)]
-    }.AsConsoleUser())).Content;
-
-    await commandDispatcher.Send(new BlockCustomerCommand(customer.Id).AsConsoleUser());
-
-    string rejectedWith = null;
-
-    try
-    {
-        await commandDispatcher.Send(new CompleteOrderCommand(order.Id).AsConsoleUser());
-    }
-    catch (BusinessRuleException exception)
-    {
-        rejectedWith = exception.Code;
-    }
-
-    var orderAfterRejection = (await commandDispatcher.Send(new GetOrderCommand(order.Id))).Content;
-    var customerAfterRejection = (await commandDispatcher.Send(new GetCustomerCommand(customer.Id))).Content;
-
-    System.Console.WriteLine(JsonSerializer.Serialize(new { RejectedWith = rejectedWith, Order = orderAfterRejection, Customer = customerAfterRejection }, ScenarioConstants.OutputOptions));
-}
-```
-
-```csharp
-public class StockFlowScenario(ICommandDispatcher commandDispatcher) : IScenario
-```
-
-```csharp
-public string Name => "stock-flow";
-```
-
-```csharp
-public async Task RunAsync(string[] args)
-{
-    var suffix = Guid.CreateVersion7().ToString("N")[^8..];
-
-    var bolt = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"BOLT-{suffix}", Name = "Bolt", Stock = 10 }.AsConsoleUser())).Content;
-    var nut = (await commandDispatcher.Send(new CreateProductCommand { Sku = $"NUT-{suffix}", Name = "Nut", Stock = 5 }.AsConsoleUser())).Content;
-
-    var customer = (await commandDispatcher.Send(new CreateCustomerCommand
-    {
-        Name = "Stock Customer",
-        Email = $"stock-{suffix}@example.com"
-    }.AsConsoleUser())).Content;
-
-    var order = (await commandDispatcher.Send(new CreateOrderCommand
-    {
-        OrderNumber = $"STK-{suffix}",
-        CustomerId = customer.Id,
-        Lines = [new OrderLineModel(bolt.Sku, 1.00m, "EUR", 3), new OrderLineModel(nut.Sku, 0.50m, "EUR", 2)]
-    }.AsConsoleUser())).Content;
-
-    var boltAfterOrder = (await commandDispatcher.Send(new GetProductCommand(bolt.Id))).Content;
-    var nutAfterOrder = (await commandDispatcher.Send(new GetProductCommand(nut.Id))).Content;
-
-    await commandDispatcher.Send(new CancelOrderLineCommand
-    {
-        Id = order.Id,
-        LineId = order.Lines.First(orderLine => orderLine.Sku == bolt.Sku).Id,
-        Reason = "changed mind"
-    }.AsConsoleUser());
-
-    var orderAfterFirstCancel = (await commandDispatcher.Send(new GetOrderCommand(order.Id))).Content;
-    var boltAfterFirstCancel = (await commandDispatcher.Send(new GetProductCommand(bolt.Id))).Content;
-
-    await commandDispatcher.Send(new CancelOrderLineCommand
-    {
-        Id = order.Id,
-        LineId = order.Lines.First(orderLine => orderLine.Sku == nut.Sku).Id,
-        Reason = "changed mind"
-    }.AsConsoleUser());
-
-    var orderAfterLastCancel = (await commandDispatcher.Send(new GetOrderCommand(order.Id))).Content;
-    var nutAfterLastCancel = (await commandDispatcher.Send(new GetProductCommand(nut.Id))).Content;
-
-    var oversoldOrder = (await commandDispatcher.Send(new CreateOrderCommand
-    {
-        OrderNumber = $"OVR-{suffix}",
-        CustomerId = customer.Id,
-        Lines = [new OrderLineModel(bolt.Sku, 1.00m, "EUR", 20)]
-    }.AsConsoleUser())).Content;
-
-    var oversoldOrderAfterwards = (await commandDispatcher.Send(new GetOrderCommand(oversoldOrder.Id))).Content;
-    var boltAfterOversell = (await commandDispatcher.Send(new GetProductCommand(bolt.Id))).Content;
-```
-
-The member continues:
-
-```csharp
-    System.Console.WriteLine(JsonSerializer.Serialize(new
-    {
-        AfterOrder = new { Bolt = boltAfterOrder.Stock, Nut = nutAfterOrder.Stock },
-        AfterFirstCancel = new { OrderStatus = orderAfterFirstCancel.Status, Bolt = boltAfterFirstCancel.Stock },
-        AfterLastCancel = new { OrderStatus = orderAfterLastCancel.Status, Nut = nutAfterLastCancel.Stock },
-        Oversell = new { OrderStatus = oversoldOrderAfterwards.Status, Bolt = boltAfterOversell.Stock }
-    }, ScenarioConstants.OutputOptions));
-}
-```
-
-```csharp
-public static IServiceCollection AddScenariosModule(this IServiceCollection services)
-{
-    services.AddScoped<IScenario, OrderFlowScenario>();
-    services.AddScoped<IScenario, StockFlowScenario>();
-    services.AddScoped<IScenario, BlockedCustomerScenario>();
-
-    services.AddCommandScenario<CreateCategoryCommand, CategoryDto>();
-    services.AddCommandScenario<GetCategoryCommand, CategoryDto>();
-
-    services.AddCommandScenario<CreateCustomerCommand, CustomerDto>();
-    services.AddCommandScenario<BlockCustomerCommand, CustomerDto>();
-    services.AddCommandScenario<GetCustomerCommand, CustomerDto>();
-    services.AddCommandScenario<RegisterCompletedOrderCommand, CustomerDto>();
-
-    services.AddCommandScenario<CreateOrderCommand, OrderDto>();
-    services.AddCommandScenario<AddOrderLineCommand, OrderDto>();
-    services.AddCommandScenario<CancelOrderLineCommand, OrderDto>();
-    services.AddCommandScenario<CompleteOrderCommand, OrderDto>();
-    services.AddCommandScenario<GetOrderCommand, OrderDto>();
-    services.AddCommandScenario<CancelOrderWhenAllLinesCancelledCommand, OrderDto>();
-
-    services.AddCommandScenario<CreateProductCommand, ProductDto>();
-    services.AddCommandScenario<GetProductCommand, ProductDto>();
-    services.AddCommandScenario<IncreaseProductStockCommand, ProductDto>();
-    services.AddCommandScenario<DecreaseProductStockCommand, ProductDto>();
-
-    return services;
-}
+```bash
+dotnet run --project src/{Name}.Console -- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'
+dotnet run --project src/{Name}.Console -- CreateCustomer '{"name":"Ada","email":"ada@example.com"}'
+dotnet run --project src/{Name}.Console -- CreateOrder '{"orderNumber":"ORD-1","customerId":"<id>","lines":[{"sku":"BOLT","price":1,"currency":"EUR","quantity":3}]}'
+dotnet run --project src/{Name}.Console -- GetProduct '{"id":"<id>"}'
 ```
 
 ## Namespaces and usings

@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value. With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the async handlers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -45,7 +45,7 @@ A test, a build rule, a check in the review script, or "review only".
 
 - Status: accepted
 - Date: <the date the project was generated>
-- Context: Controllers, Console scenarios and event handlers took the command handlers they needed as constructor arguments (`OrdersController(CreateOrderCommandHandler, GetOrderCommandHandler, ...)`, `CommandScenario<TCommand, TContent, TCommandHandler>`). Every new command meant editing the host's constructor, and a host knew every handler type of the Application layer.
+- Context: Controllers, the Console and event handlers took the command handlers they needed as constructor arguments (`OrdersController(CreateOrderCommandHandler, GetOrderCommandHandler, ...)`, `CommandScenario<TCommand, TContent, TCommandHandler>`). Every new command meant editing the host's constructor, and a host knew every handler type of the Application layer.
 
 ## Decision
 
@@ -65,7 +65,7 @@ Which handler serves a command. The host must not know.
 
 ## Consequences
 
-- Gained: a controller or scenario has one dependency; a new command needs no host change; the Console runs any registered command by name.
+- Gained: a controller has one dependency; a new command needs no host change; the Console runs any command by name.
 - Lost or owed: a command with no registered handler fails at its first `Send`, not at start-up. The invoker cache is static and keyed by command type.
 - Cost of going back: low. Handlers are unchanged; only the call sites would return to `Handle`.
 
@@ -121,7 +121,7 @@ Nothing: this is a placement decision.
 
 ## Decision
 
-A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `CommandScenario` / `.AsConsoleUser()` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an async handler sends it as `SystemUser`.
+A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleCommandRunner` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an async handler sends it as `SystemUser`.
 
 ## What varies
 
@@ -143,7 +143,7 @@ Who the actor is (a person, the console, the system). The domain must not look i
 
 ## How it is enforced
 
-`UserCommandFilterTests`, `CommandScenarioTests`, the aggregate tests for stamping, and rule 20 in `AGENTS.md`.
+`UserCommandFilterTests`, `ConsoleCommandRunnerTests`, the aggregate tests for stamping, and rule 20 in `AGENTS.md`.
 ~~~~
 
 ## 0004-event-handlers-live-in-application-and-send-commands.md
@@ -169,7 +169,7 @@ Whether the reaction must succeed together with the change (sync) or may follow 
 |---|---|---|
 | Handlers in Domain calling repositories | None | Skips the command pipeline |
 | Sync handlers only | One mechanism | A slow or failing side effect would block or roll back the main change |
-| **Sync and async, both in Application, both sending commands** | Two base classes and an in-process dispatcher | n/a |
+| **Sync and async, both in Application, both sending commands** | Two base classes and an event publisher | n/a |
 
 ## Consequences
 
@@ -179,21 +179,21 @@ Whether the reaction must succeed together with the change (sync) or may follow 
 
 ## How it is enforced
 
-The Console scenarios `stock-flow` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests`.
+The conformance checks `stock` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests`.
 ~~~~
 
 ## 0005-the-console-runs-commands-and-does-not-migrate.md
 
 ~~~~markdown
-# 0005 — The Console runs commands by name and does not migrate
+# 0005 — The Console runs one command by name and does not migrate
 
 - Status: accepted
 - Date: <the date the project was generated>
-- Context: The Console migrated the database and ran a fixed set of scenarios. Trying a new command meant writing a scenario first, and applying a migration is a deployment concern, not a testing one.
+- Context: A developer needs to try any command by hand without writing code for it, and applying a migration is a deployment concern, not a testing one.
 
 ## Decision
 
-`dotnet run --project src/{Name}.Console -- <Name> '<json>'` runs the scenario or the command of that name (case-insensitive; a command's name is its type name without `Command`). Which commands the Console can run is decided by one line each in `ScenarioModule`: `AddCommandScenario<TCommand, TContent>()`. The JSON argument may be `@file`. The Console user is `console`, and async handlers are awaited before the process exits. Migrations are applied with `dotnet ef database update`. Exit code 1 means an unknown name, 2 a domain error printed as `{code, message, errors}` on stderr.
+`dotnet run --project src/{Name}.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The Console user is `console`. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
 
 ## What varies
 
@@ -203,18 +203,19 @@ Which commands a developer wants to try by hand.
 
 | Option | Cost | Why it was not chosen |
 |---|---|---|
-| Fixed scenarios plus a migrate step | Nothing new | Every experiment needs code, and migration hides in a test host |
-| **A generic command runner plus scenarios** | `CommandScenario`, one registration line per command, a VS Code launch configuration | n/a |
+| Fixed scenarios plus a migrate step | Code for every experiment | Every experiment needs code, and migration hides in a test host |
+| A registration line per command, plus scenarios | A line per command, scenario classes to keep up | More to maintain than the problem needs |
+| **One runner that finds the command by name** | `ConsoleCommandRunner`, a VS Code launch configuration | n/a |
 
 ## Consequences
 
-- Gained: any command can be run from VS Code with arguments; a flow that spans several commands stays a scenario.
-- Lost or owed: a new database needs `dotnet ef database update` first.
+- Gained: any command can be run from VS Code or a script with no Console change; stdout can be piped.
+- Lost or owed: a new database needs `dotnet ef database update` first; a multi-step flow is a script of runs.
 - Cost of going back: low.
 
 ## How it is enforced
 
-`CommandScenarioTests` and the Console checks of the conformance suite.
+`ConsoleCommandRunnerTests` and the Console checks of the conformance suite.
 ~~~~
 
 ## 0006-command-handlers-are-the-use-cases.md
@@ -394,4 +395,85 @@ How much a failure says, never its shape or its status.
 ## How it is enforced
 
 `ExceptionHandlerTests`, `ErrorCatalogueTests` at `catalogued`, `verify.sh` (rule codes are constants), and the conformance table of failures.
+~~~~
+
+## 0011-outbox-and-publishing-models.md
+
+~~~~markdown
+# 0011 — Events that leave the transaction go through an outbox
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: An async handler runs after the command's transaction has committed (0004). If the process dies in between, the event is lost and the change it should have caused never happens. This project must not lose events.
+
+## Decision
+
+Every queue event is written to `outbox_messages` by the unit of work, in the command's own transaction, after the sync handlers have run. `OutboxWorker`, a background service, takes the next due row with `for update skip locked`, runs the event's async handlers and deletes the row, all in one transaction. A failure rolls back, counts the attempt and waits `2^attempts` seconds; at `MaxAttempts` the row stays for an operator.
+
+This project publishes `{outbox}`:
+
+- `background` (publish in the command): the command only writes rows; the worker publishes them within a polling interval.
+- `after-command` (publish after the command): right after `COMMIT` the request publishes its own rows; the worker sweeps and retries what is left.
+
+Only the chosen mode's code is in the project.
+
+## What varies
+
+When an event is published after the change that raised it.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Publish in process after `COMMIT` (`none`) | Nothing | An event is lost when the process dies before its handlers run |
+| Publish in the transaction, before `COMMIT` | Nothing | A rolled-back command would have published its events |
+| An outbox plus an inbox and a separate send step | A second table, a lock column, idempotent handlers | More moving parts than one transaction per row |
+| **One table; the row, its handlers and its deletion in one transaction** | One table, a worker host | n/a |
+
+## Consequences
+
+- Gained: "the change happened" and "the event will be handled" are one fact; a row is handled once or not at all.
+- Lost or owed: a slow handler holds its row's lock; a retry can reorder two events; renaming an event type strands its pending rows until they are published.
+- Cost of going back: medium; the table and the worker go, the handlers stay.
+
+## How it is enforced
+
+`OutboxMessageTests`, and the conformance checks in `outbox.sh`: atomicity, deletion, failure, context and latency.
+~~~~
+
+## 0012-json-log-lines.md
+
+~~~~markdown
+# 0012 — Every log line is one flat JSON object, CorrelationId first
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Log lines are read by machines first (search, alerts, the conformance suite) and must tie every line of one request, command or event together. Text lines need a parser per format; nested JSON needs a query per level.
+
+## Decision
+
+Every host logs through `JsonLineFormatter`: one JSON object per line, no nesting. `CorrelationId` is the first field, then `Timestamp`, `Level`, `Service`, `Version`, `Category`, `Message`, then every field of the open logging scopes and of the message template, then `Exception`. The command pipeline opens a scope with `CorrelationId`, `CausationId`, `TenantId`, `UserId` and `Command`; publishing or handling an event opens one with the event's fields and `Event`, `EventId`. Messages are templates, never built strings. The Console writes its log lines to stderr, so stdout holds only the result.
+
+## What varies
+
+Nothing per project: every environment logs the same way.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Text lines | Nothing | Every reader needs its own parser |
+| The built-in JSON console formatter | Nothing | Scope fields are nested in a `Scopes` list, not at the top level |
+| A logging library with enrichers and sinks | A dependency to pin and teach | More than one flat line needs |
+| **One small formatter class** | `JsonLineFormatter`, `LogFields` | n/a |
+
+## Consequences
+
+- Gained: any line can be found by `CorrelationId` with one field query; the conformance suite reads fields, not text.
+- Lost or owed: lines are harder to read by eye in a terminal.
+- Cost of going back: low.
+
+## How it is enforced
+
+`JsonLineFormatterTests`, and the log checks of `example-console.sh`.
 ~~~~

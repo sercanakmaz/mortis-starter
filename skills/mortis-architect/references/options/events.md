@@ -4,7 +4,7 @@ How an event raised by an aggregate leaves the process, and over what.
 
 ## events.outbox
 
-Whether the event is stored in the command's transaction before it is published. The three models and what each can lose are in `references/architecture/events.md`.
+Whether the event is stored in the command's transaction before it is published. The three models and what each can lose are in `references/architecture/events.md`. The generated project contains only the chosen model's code.
 
 **By preset:** lean `none`, standard `after-command`, advanced `background`.
 
@@ -12,23 +12,27 @@ Whether the event is stored in the command's transaction before it is published.
 
 **Choose when:** a prototype, or when losing an event after a crash is acceptable.
 
-**Costs:** an event is lost if the process dies between the commit and the handler; nothing leaves the process.
+**Costs:** an event is lost if the process dies between the commit and the handler; nothing leaves the process. Two small classes, no table, no worker.
 
 **Rules:** R1.
 
 ### after-command
 
-**Choose when:** events must not be lost and publishing right after the commit keeps latency low.
+Publish after the command.
 
-**Costs:** one more table, a sweeper for leftovers, a worker host, handlers that must be safe to run twice.
+**Choose when:** events must not be lost and the caller should see the consequences when it gets its answer.
+
+**Costs:** one table, a worker in a host for sweeping and retrying, the request waits for its own events' handlers after its commit, a migration.
 
 **Rules:** R1, R3.
 
 ### background
 
+Publish in the command.
+
 **Choose when:** events must not be lost and the request should not wait for publishing.
 
-**Costs:** a delay of one polling interval before an event leaves; a relay to run.
+**Costs:** one table, a worker in a host, a delay of up to one polling interval before an event is handled, a migration.
 
 **Rules:** R1, R3.
 

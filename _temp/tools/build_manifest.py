@@ -3,7 +3,7 @@ from pathlib import Path
 T = Path("/home/claude/zeyrek-skills/_temp/template/assets/csharp")
 OV = Path("/home/claude/zeyrek-skills/_temp/tools/overlay")
 removed = set((OV/"REMOVED.txt").read_text().split())
-files = sorted((set(str(p.relative_to(T)) for p in T.rglob("*") if p.is_file() and not ({"bin","obj"} & set(p.parts))) | set(str(p.relative_to(OV)) for p in OV.rglob("*.cs"))) - removed)
+files = sorted((set(str(p.relative_to(T)) for p in T.rglob("*") if p.is_file() and not ({"bin","obj"} & set(p.parts))) | set(str(p.relative_to(OV)) for p in OV.rglob("*") if p.is_file() and p.name != "REMOVED.txt" and "__pycache__" not in p.parts)) - removed)
 deletes = [l.split(" ",1)[1] for l in (T.parent/"csharp-example.txt").read_text().splitlines() if l.startswith("delete ")]
 deletes += ["src/Boilerplate.Application/Categories", "src/Boilerplate.Infrastructure/Persistence/Categories"]
 def is_example(f):
@@ -15,7 +15,15 @@ OPTION_FILES = {
     "src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": {"exceptions": ["coded", "catalogued"]},
     "src/Boilerplate.Domain/ErrorCatalogue.cs": {"exceptions": "catalogued"},
     "test/Boilerplate.Tests/Domain/ErrorCatalogueTests.cs": {"exceptions": "catalogued"},
+    "src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs": {"events.outbox": "none"},
+    "src/Boilerplate.Infrastructure/Messaging/MessagingConstants.cs": {"events.outbox": "none"},
+    "test/Boilerplate.Tests/Infrastructure/Messaging/EventPublisherTests.cs": {"events.outbox": "none"},
+    "test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs": {"events.outbox": "none"},
+    "src/Boilerplate.Worker/Boilerplate.Worker.csproj": {"hosts.worker": "separate"},
+    "src/Boilerplate.Worker/Program.cs": {"hosts.worker": "separate"},
+    "src/Boilerplate.Worker/appsettings.json": {"hosts.worker": "separate"},
 }
+OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
 OPTION_PAGES = {"src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": "infrastructure-postgres.md"}
 KERNEL_PAGES = {"src/Boilerplate.Api/Middlewares/ErrorReference.cs": "failures.md"}
 
@@ -29,11 +37,13 @@ def page_of(f):
     if "/Migrations/" in f: return "infrastructure-postgres.md"
     if f.startswith("test/"):
         if is_example(f): return "worked-slice-tests.md"
+        if "Infrastructure/Messaging/EventPublisher" in f: return "events-inprocess.md"
         return "testing.md" if "/TestSupport/" in f else "testing-kernel.md"
     if "Boilerplate.Shared/Domain" in f: return "shared-domain.md"
     if "Boilerplate.Shared/Application" in f: return "shared-application.md"
     if "Boilerplate.Shared/" in f: return "shared-other.md"
     if "Boilerplate.Infrastructure/Messaging" in f: return "events-inprocess.md"
+    if "Boilerplate.Infrastructure/Logging" in f or "Tests/Infrastructure/Logging" in f: return "logging.md"
     if "Boilerplate.Infrastructure" in f: return "infrastructure-postgres.md"
     if "Boilerplate.Api" in f or "Boilerplate.Console" in f: return "hosts.md"
     if "Boilerplate.Domain" in f: return "domain.md" if not is_example(f) else "worked-slice.md"
@@ -41,6 +51,7 @@ def page_of(f):
     return "solution.md"
 def source_of(f):
     if "/Migrations/" in f: return "tool"
+    if f == "src/Boilerplate.Worker/Program.cs": return "data"
     if f.endswith((".cs",)): return "snippets"
     return "data"
 out=[]
@@ -50,28 +61,34 @@ for f in files:
         dropped.append(f); continue
     if "/Migrations/" in f:
         continue
-    ex = is_example(f) or f in ("src/Boilerplate.Console/Scenarios/BlockedCustomerScenario.cs","src/Boilerplate.Console/Scenarios/OrderFlowScenario.cs","src/Boilerplate.Console/Scenarios/StockFlowScenario.cs")
+    ex = is_example(f)
     entry = {"path": f.replace("Boilerplate", "{Name}"), "page": KERNEL_PAGES.get(f, page_of(f)), "source": source_of(f)}
     if ex: entry["when"] = {"example": "true"}
     entry["kernel"] = (not ex) and f.endswith(".cs") and not f.startswith("test/")
+    if f.startswith(OUTBOX_PREFIXES) and f not in OPTION_FILES:
+        entry["when"] = {"events.outbox": ["after-command", "background"]}
+        entry["kernel"] = False
+        entry["page"] = "outbox.md"
     if f in OPTION_FILES:
         entry["when"] = OPTION_FILES[f]
         entry["kernel"] = False
-        entry["page"] = OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "failures.md")
+        entry["page"] = OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "outbox.md" if ("Outbox" in f or "Worker" in f) else "events-inprocess.md" if "EventPublisher" in f or "MessagingConstants" in f else "failures.md")
     out.append(entry)
 # decision 28 additions: handler tests replacing service tests
 for cmd,plural in [("CreateCustomer","Customers"),("BlockCustomer","Customers"),("RegisterCompletedOrder","Customers"),("AddOrderLine","Orders"),("CancelOrderLine","Orders"),("CompleteOrder","Orders"),("CancelOrderWhenAllLinesCancelled","Orders")]:
     p=f"test/{{Name}}.Tests/Application/{plural}/{cmd}CommandHandlerTests.cs"
     if not any(e["path"]==p for e in out):
         out.append({"path":p,"page":"worked-slice-tests.md","source":"snippets","when":{"example":"true"},"kernel":False})
-out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False,"glob":True})
-out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False,"glob":True})
-out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs","page":"infrastructure-postgres.md","source":"tool","when":{"example":"true"},"kernel":False})
+out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs","page":"infrastructure-postgres.md","source":"tool","when_any":[{"example":"true"},{"events.outbox":["after-command","background"]}],"kernel":False,"glob":True})
+out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs","page":"infrastructure-postgres.md","source":"tool","when_any":[{"example":"true"},{"events.outbox":["after-command","background"]}],"kernel":False,"glob":True})
+out.append({"path":"src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs","page":"infrastructure-postgres.md","source":"tool","when_any":[{"example":"true"},{"events.outbox":["after-command","background"]}],"kernel":False})
 out.append({"path":"docs/adr/0006-command-handlers-are-the-use-cases.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0007-one-context-on-the-command.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0008-each-aggregate-chooses-its-key.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0010-one-error-body.md","page":"project-docs-adr.md","source":"data","kernel":False})
 out.append({"path":"docs/adr/0009-correlation-header.md","page":"project-docs-adr.md","source":"data","kernel":False,"when":{"addons":"correlation"}})
+out.append({"path":"docs/adr/0012-json-log-lines.md","page":"project-docs-adr.md","source":"data","kernel":False})
+out.append({"path":"docs/adr/0011-outbox-and-publishing-models.md","page":"project-docs-adr.md","source":"data","kernel":False,"when":{"events.outbox":["after-command","background"]}})
 out.append({"path":"MORTIS.md","page":"project-docs.md","source":"tool","kernel":False})
 out.sort(key=lambda e:e["path"])
 manifest={

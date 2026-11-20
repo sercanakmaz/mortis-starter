@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: <the date the project was generated>
-- Context: Controllers, Console scenarios and event handlers took the command handlers they needed as constructor arguments (`OrdersController(CreateOrderCommandHandler, GetOrderCommandHandler, ...)`, `CommandScenario<TCommand, TContent, TCommandHandler>`). Every new command meant editing the host's constructor, and a host knew every handler type of the Application layer.
+- Context: Controllers, the Console and event handlers took the command handlers they needed as constructor arguments (`OrdersController(CreateOrderCommandHandler, GetOrderCommandHandler, ...)`, `CommandScenario<TCommand, TContent, TCommandHandler>`). Every new command meant editing the host's constructor, and a host knew every handler type of the Application layer.
 
 ## Decision
 
@@ -22,7 +22,7 @@ Which handler serves a command. The host must not know.
 
 ## Consequences
 
-- Gained: a controller or scenario has one dependency; a new command needs no host change; the Console runs any registered command by name.
+- Gained: a controller has one dependency; a new command needs no host change; the Console runs any command by name.
 - Lost or owed: a command with no registered handler fails at its first `Send`, not at start-up. The invoker cache is static and keyed by command type.
 - Cost of going back: low. Handlers are unchanged; only the call sites would return to `Handle`.
 

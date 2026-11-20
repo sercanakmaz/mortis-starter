@@ -1,4 +1,4 @@
-# Hosts: Api and Console, C#
+# Hosts: Api, Console and Worker, C#
 
 Layer 1: `layers.md` "Hosts", `building-blocks.md` "Host adapter". A host authenticates, fills the command's user, sends it through `ICommandDispatcher` and translates the outcome. A host never opens a transaction, never calls a repository and never migrates.
 
@@ -15,6 +15,8 @@ Top-level statements, the whole file:
 ### appsettings.json
 
 @@data src/Boilerplate.Api/appsettings.json json@@
+
+With an outbox and `hosts.worker` = `in-api`, the Api also runs the outbox worker: one more line after `.AddInfrastructureModule(builder.Configuration)`, `.AddOutboxWorker()` (`outbox.md`).
 
 ### Filling the context
 
@@ -87,7 +89,12 @@ An action with no body builds the command itself:
 
 ## Console
 
-Project `{Name}.Console`. Runs any registered command by name with a JSON argument, or a named scenario. Exit codes: 0 done, 1 unknown name, 2 a failure printed to stderr as `{ code, message, errors }`.
+Project `{Name}.Console`. A host that runs one command and exits: `dotnet run -- <Command> [json | @file.json]`. No scenarios: a sequence of commands is a sequence of runs.
+
+- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the console user, with a new correlation id per run.
+- stdout holds only the result, as indented JSON; logs go to stderr as JSON lines (`logging.md`), so the result can be piped.
+- Exit codes: 0 done, 1 no command name, 2 a failure printed to stderr as one line `{ code, message, errors }`.
+- With `events.outbox` = `background` the Console only writes outbox rows; the worker in the Api or the Worker publishes them.
 
 ### Program.cs
 
@@ -97,69 +104,21 @@ Project `{Name}.Console`. Runs any registered command by name with a JSON argume
 
 @@data src/Boilerplate.Console/appsettings.json json@@
 
-### Scenarios
+### ConsoleCommandRunner
 
-Folder `Scenarios/`, namespace `{Name}.Console.Scenarios`.
+File `ConsoleCommandRunner.cs`, namespace `{Name}.Console`:
 
-@@decl src/Boilerplate.Console/Scenarios/IScenario.cs::IScenario@@
+@@decl src/Boilerplate.Console/ConsoleCommandRunner.cs::ConsoleCommandRunner@@
 
-@@member src/Boilerplate.Console/Scenarios/IScenario.cs::IScenario::Name@@
+@@member src/Boilerplate.Console/ConsoleCommandRunner.cs::ConsoleCommandRunner::RunAsync@@
 
-@@member src/Boilerplate.Console/Scenarios/IScenario.cs::IScenario::RunAsync@@
+- A new command needs nothing in the Console: the runner finds it.
 
-@@decl src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants@@
+File `ConsoleConstants.cs`:
 
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::UserId@@
+@@decl src/Boilerplate.Console/ConsoleConstants.cs::ConsoleConstants@@
 
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::UserEmail@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::CommandSuffix@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::FilePrefix@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::RunCorrelationId@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::OutputOptions@@
-
-@@member src/Boilerplate.Console/Scenarios/ScenarioConstants.cs::ScenarioConstants::InputOptions@@
-
-File `Scenarios/ConsoleUserExtensions.cs`:
-
-@@decl src/Boilerplate.Console/Scenarios/ConsoleUserExtensions.cs::ConsoleUserExtensions@@
-
-@@member src/Boilerplate.Console/Scenarios/ConsoleUserExtensions.cs::ConsoleUserExtensions::AsConsoleUser@@
-
-File `Scenarios/CommandScenario.cs`, the scenario that runs one command:
-
-@@decl src/Boilerplate.Console/Scenarios/CommandScenario.cs::CommandScenario@@
-
-@@member src/Boilerplate.Console/Scenarios/CommandScenario.cs::CommandScenario::Name@@
-
-@@member src/Boilerplate.Console/Scenarios/CommandScenario.cs::CommandScenario::RunAsync@@
-
-File `Scenarios/CommandScenarioExtensions.cs`:
-
-@@decl src/Boilerplate.Console/Scenarios/CommandScenarioExtensions.cs::CommandScenarioExtensions@@
-
-@@member src/Boilerplate.Console/Scenarios/CommandScenarioExtensions.cs::CommandScenarioExtensions::AddCommandScenario@@
-
-File `Scenarios/ScenarioModule.cs`: one line per scenario class, then one `AddCommandScenario` line per command the Console may run, grouped by aggregate.
-
-@@decl src/Boilerplate.Console/Scenarios/ScenarioModule.cs::ScenarioModule@@
-
-```csharp
-public static IServiceCollection AddScenariosModule(this IServiceCollection services)
-{
-    services.AddScoped<IScenario, OrderFlowScenario>();
-
-    services.AddCommandScenario<CreateOrderCommand, OrderDto>();
-    services.AddCommandScenario<GetOrderCommand, OrderDto>();
-
-    return services;
-}
-```
-
-Written first with an empty body (only `return services;`), and lines added with the example or each new aggregate.
+@@members src/Boilerplate.Console/ConsoleConstants.cs::ConsoleConstants@@
 
 ## VS Code
 
@@ -167,13 +126,13 @@ Written first with an empty body (only `return services;`), and lines added with
 
 @@data .vscode/tasks.json json@@
 
-`.vscode/launch.json`. The first configuration asks for the name and the JSON; the others belong to the example and are left out when `example` is `false`.
+`.vscode/launch.json`. The first configuration asks for the name and the JSON; the second belongs to the example and is left out when `example` is `false`.
 
 @@data .vscode/launch.json json@@
 
 ## Tests
 
-`ContextCommandFilterTests` and `CommandScenarioTests` in `testing-kernel.md`.
+`ContextCommandFilterTests` and `ConsoleCommandRunnerTests` in `testing-kernel.md`.
 
 ## Namespaces and usings
 

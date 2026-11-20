@@ -9,5 +9,6 @@ Holds the C# solution that used to ship inside the `mortis-scaffold` skill, with
 | `template/scripts/scaffold.sh` | the old copy-and-rename script |
 | `pilot-acme/` | the project the pilot generated from the skills (lean, with the example), build output removed; the model's notes are in `.mortis/pilot-notes.md`. See `docs/pilot.md`. Generated before the pilot's fixes to the pages |
 | `tools/expand_pages.py`, `tools/pages/`, `tools/docs-src/`, `tools/build_manifest.py` | the page sources and the script that writes the C# pages with member snippets extracted from the template; rerun after changing a page source: `python3 _temp/tools/expand_pages.py` |
+| `tools/overlay/`, `tools/overlay-variants/<value>/`, `tools/assemble.py` | changed or new sources over the template (`overlay/REMOVED.txt` lists deletions); a file whose content depends on `events.outbox` has one version per value under `overlay-variants/` (`outbox/` for both outbox values); `python3 _temp/tools/assemble.py <none\|background\|after-command> <dir>` builds a full solution for one value, to compile and run |
 
 It is **source material** for phase 1: the kernel pages are written from this working code. It is not changed, not installed, and it is deleted when phase 2 has replaced it with projects the skills generated. `tests/smoke.sh` still builds and tests it from here.

@@ -69,6 +69,7 @@ def check_kernel_shape():
     for f in kernel:
         expected += shape_of_file(source_path(f), "Boilerplate")
     written = [l for l in open(os.path.join(CSHARP, "kernel-shape.txt"), encoding="utf-8").read().splitlines() if l and not l.startswith("#")]
+    written = [l.removeprefix("[events.outbox=none] ") for l in written if not l.startswith("[") or l.startswith("[events.outbox=none] ")]
     if expected != written:
         missing = [l for l in expected if l not in written][:5]
         extra = [l for l in written if l not in expected][:5]

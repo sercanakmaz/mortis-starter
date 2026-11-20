@@ -6,7 +6,7 @@
 
 ## Decision
 
-A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `CommandScenario` / `.AsConsoleUser()` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an async handler sends it as `SystemUser`.
+A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleCommandRunner` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an async handler sends it as `SystemUser`.
 
 ## What varies
 
@@ -28,4 +28,4 @@ Who the actor is (a person, the console, the system). The domain must not look i
 
 ## How it is enforced
 
-`UserCommandFilterTests`, `CommandScenarioTests`, the aggregate tests for stamping, and rule 20 in `AGENTS.md`.
+`UserCommandFilterTests`, `ConsoleCommandRunnerTests`, the aggregate tests for stamping, and rule 20 in `AGENTS.md`.

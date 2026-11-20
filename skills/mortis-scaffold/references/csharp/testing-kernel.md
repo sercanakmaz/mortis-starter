@@ -556,112 +556,51 @@ public void FromEvent_Should_KeepCorrelationTenantAndLanguageAndMakeTheEventTheC
 
 ## Infrastructure/Messaging
 
+`EventPublisherTests` (only when `events.outbox` is `none`) are on `events-inprocess.md`; the outbox's tests on `outbox.md`.
+
+## Infrastructure/Logging
+
 ```csharp
-public class AsyncEventHandlerDispatcherTests
+public class JsonLineFormatterTests
 ```
 
 ```csharp
 [Fact]
-public async Task Publish_WithTwoHandlers_Should_RunEachInItsOwnTransactionInSequenceOrder()
+public void Write_Should_WriteOneFlatJsonObjectWithTheCorrelationIdFirstAndTheScopeAndMessageFields()
 {
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcher = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("second", 2, calls))
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("first", 1, calls))
-        .Build();
+    var correlationId = Guid.CreateVersion7();
+    var scopeProvider = new LoggerExternalScopeProvider();
+    var writer = new StringWriter();
+    var state = new Dictionary<string, object> { ["Command"] = "CreateProductCommand", ["{OriginalFormat}"] = "{Command} started" };
 
-    await asyncEventHandlerDispatcher.Publish(new FakeQueueEvent("event"));
+    using (scopeProvider.Push(new Dictionary<string, object> { [LoggingConstants.CorrelationId] = correlationId, ["UserId"] = "console" }))
+    {
+        new JsonLineFormatter().Write(new LogEntry<Dictionary<string, object>>(LogLevel.Information, "Category", default, state, null, (_, _) => "CreateProductCommand started"), scopeProvider, writer);
+    }
 
-    Assert.Equal(["BeginTransactionAsync", "first", "CommitTransactionAsync", "BeginTransactionAsync", "second", "CommitTransactionAsync"], calls);
+    using var document = JsonDocument.Parse(writer.ToString());
+    var properties = document.RootElement.EnumerateObject().ToList();
+    Assert.Equal(LoggingConstants.CorrelationId, properties[0].Name);
+    Assert.Equal(correlationId.ToString(), properties[0].Value.GetString());
+    Assert.Equal("console", document.RootElement.GetProperty("UserId").GetString());
+    Assert.Equal("CreateProductCommand", document.RootElement.GetProperty("Command").GetString());
+    Assert.Equal("CreateProductCommand started", document.RootElement.GetProperty("Message").GetString());
+    Assert.All(properties, property => Assert.NotEqual(JsonValueKind.Object, property.Value.ValueKind));
+    Assert.DoesNotContain(properties, property => property.Name == "{OriginalFormat}");
 }
 ```
 
 ```csharp
 [Fact]
-public async Task Publish_WhenAHandlerThrows_Should_RollBackLogAndStillRunTheNextHandler()
+public void Write_WithAnException_Should_AddItAsOneTextField()
 {
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcherBuilder = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("failing", 1, calls, 1, new InvalidOperationException("boom")))
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("healthy", 2, calls));
-    var asyncEventHandlerDispatcher = asyncEventHandlerDispatcherBuilder.Build();
+    var writer = new StringWriter();
 
-    await asyncEventHandlerDispatcher.Publish(new FakeQueueEvent("event"));
+    new JsonLineFormatter().Write(new LogEntry<string>(LogLevel.Error, "Category", default, "state", new InvalidOperationException("boom"), (_, _) => "failed"), null, writer);
 
-    Assert.Equal(["BeginTransactionAsync", "failing", "RollbackTransactionAsync", "BeginTransactionAsync", "healthy", "CommitTransactionAsync"], calls);
-    var entry = Assert.Single(asyncEventHandlerDispatcherBuilder.BuildLogger().Entries);
-    Assert.Equal(LogLevel.Error, entry.Level);
-    Assert.IsType<InvalidOperationException>(entry.Exception);
-}
-```
-
-```csharp
-[Fact]
-public async Task Publish_WhenTheHandlerHitsAConcurrencyConflict_Should_RetryInAFreshTransaction()
-{
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcherBuilder = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("contended", 0, calls, 2, new DbUpdateConcurrencyException("stale")));
-    var asyncEventHandlerDispatcher = asyncEventHandlerDispatcherBuilder.Build();
-
-    await asyncEventHandlerDispatcher.Publish(new FakeQueueEvent("event"));
-
-    Assert.Equal(
-        ["BeginTransactionAsync", "contended", "RollbackTransactionAsync", "BeginTransactionAsync", "contended", "RollbackTransactionAsync", "BeginTransactionAsync", "contended", "CommitTransactionAsync"],
-        calls);
-    Assert.Empty(asyncEventHandlerDispatcherBuilder.BuildLogger().Entries);
-}
-```
-
-```csharp
-[Fact]
-public async Task Publish_WhenTheConflictNeverEnds_Should_GiveUpAfterTheMaximumAttemptsAndLog()
-{
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcherBuilder = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("contended", 0, calls, int.MaxValue, new DbUpdateConcurrencyException("stale")));
-    var asyncEventHandlerDispatcher = asyncEventHandlerDispatcherBuilder.Build();
-
-    await asyncEventHandlerDispatcher.Publish(new FakeQueueEvent("event"));
-
-    Assert.Equal(MessagingConstants.MaxAttempts, calls.Count(call => call == "contended"));
-    Assert.Equal(MessagingConstants.MaxAttempts, calls.Count(call => call == "RollbackTransactionAsync"));
-    Assert.Single(asyncEventHandlerDispatcherBuilder.BuildLogger().Entries);
-}
-```
-
-```csharp
-[Fact]
-public async Task Publish_WithoutHandlersForTheEvent_Should_NotOpenATransaction()
-{
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcher = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .Build();
-
-    await asyncEventHandlerDispatcher.Publish(new FakeQueueEvent("event"));
-
-    Assert.Empty(calls);
-}
-```
-
-```csharp
-[Fact]
-public async Task Publish_WithAnEventThatIsNotAQueueEvent_Should_DoNothing()
-{
-    var calls = new List<string>();
-    var asyncEventHandlerDispatcher = AsyncEventHandlerDispatcherBuilder.Create()
-        .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-        .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("handler", 0, calls))
-        .Build();
-
-    await asyncEventHandlerDispatcher.Publish(new FakeEvent("event"));
-
-    Assert.Empty(calls);
+    using var document = JsonDocument.Parse(writer.ToString());
+    Assert.Contains("boom", document.RootElement.GetProperty("Exception").GetString());
+    Assert.Equal(LoggingConstants.CorrelationId, document.RootElement.EnumerateObject().First().Name);
 }
 ```
 
@@ -790,27 +729,17 @@ public async Task OnActionExecutionAsync_Should_LeaveOtherArgumentsUntouchedAndR
 ## Console
 
 ```csharp
-public class CommandScenarioTests
+public class ConsoleCommandRunnerTests
 ```
 
 ```csharp
 [Fact]
-public void Name_Should_BeTheCommandNameWithoutItsSuffix()
-{
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), [])).Build());
-
-    Assert.Equal("Fake", commandScenario.Name);
-}
-```
-
-```csharp
-[Fact]
-public async Task RunAsync_WithJson_Should_HandleTheCommandReadFromItIgnoringTheCaseOfTheNames()
+public async Task RunAsync_WithJson_Should_FindTheCommandByItsNameIgnoringCaseAndReadItsFieldsIgnoringCase()
 {
     var handled = new List<FakeCommand>();
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build());
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await commandScenario.RunAsync(["{\"NAME\":\"from json\"}"]);
+    await consoleCommandRunner.RunAsync("fake", "{\"NAME\":\"from json\"}");
 
     Assert.Equal("from json", Assert.Single(handled).Name);
 }
@@ -818,12 +747,12 @@ public async Task RunAsync_WithJson_Should_HandleTheCommandReadFromItIgnoringThe
 
 ```csharp
 [Fact]
-public async Task RunAsync_WithEmptyArguments_Should_HandleTheCommandWithItsDefaults()
+public async Task RunAsync_WithoutJson_Should_RunTheCommandWithItsDefaults()
 {
     var handled = new List<FakeCommand>();
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build());
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await commandScenario.RunAsync([""]);
+    await consoleCommandRunner.RunAsync("Fake", null);
 
     Assert.Equal("Default name", Assert.Single(handled).Name);
 }
@@ -836,9 +765,9 @@ public async Task RunAsync_WithAFileReference_Should_ReadTheJsonFromTheFile()
     var handled = new List<FakeCommand>();
     var path = Path.GetTempFileName();
     await File.WriteAllTextAsync(path, "{\"name\":\"from file\"}");
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build());
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await commandScenario.RunAsync([ScenarioConstants.FilePrefix + path]);
+    await consoleCommandRunner.RunAsync("Fake", ConsoleConstants.FilePrefix + path);
 
     File.Delete(path);
     Assert.Equal("from file", Assert.Single(handled).Name);
@@ -847,12 +776,24 @@ public async Task RunAsync_WithAFileReference_Should_ReadTheJsonFromTheFile()
 
 ```csharp
 [Fact]
-public async Task RunAsync_WithBrokenJson_Should_ThrowInvalidParameterForArgumentsAndNotHandle()
+public async Task RunAsync_WithAnUnknownName_Should_ThrowInvalidParameterForTheCommand()
+{
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().Build(), typeof(FakeCommand).Assembly);
+
+    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("NoSuch", null));
+
+    Assert.StartsWith("command is invalid", exception.Message);
+}
+```
+
+```csharp
+[Fact]
+public async Task RunAsync_WithBrokenJson_Should_ThrowInvalidParameterForTheArgumentsAndNotHandle()
 {
     var handled = new List<FakeCommand>();
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build());
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => commandScenario.RunAsync(["{not json"]));
+    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("Fake", "{not json"));
 
     Assert.StartsWith("arguments is invalid", exception.Message);
     Assert.Empty(handled);
@@ -861,29 +802,16 @@ public async Task RunAsync_WithBrokenJson_Should_ThrowInvalidParameterForArgumen
 
 ```csharp
 [Fact]
-public async Task RunAsync_WithJsonNull_Should_ThrowInvalidParameterForArgumentsAndNotHandle()
-{
-    var handled = new List<FakeCommand>();
-    var commandScenario = new CommandScenario<FakeCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build());
-
-    await Assert.ThrowsAsync<InvalidParameterException>(() => commandScenario.RunAsync(["null"]));
-
-    Assert.Empty(handled);
-}
-```
-
-```csharp
-[Fact]
-public async Task RunAsync_WithAContextCommand_Should_RunItAsTheConsoleUserWithTheCorrelationIdOfTheRun()
+public async Task RunAsync_WithAContextCommand_Should_RunItAsTheConsoleUserWhateverTheJsonSays()
 {
     var handled = new List<FakeContextCommand>();
-    var commandScenario = new CommandScenario<FakeContextCommand, string>(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeContextCommandHandler(CommandPipelineBuilder<FakeContextCommand>.Create().Build(), handled)).Build());
+    var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeContextCommandHandler(CommandPipelineBuilder<FakeContextCommand>.Create().Build(), handled)).Build(), typeof(FakeContextCommand).Assembly);
 
-    await commandScenario.RunAsync(["{\"context\":{\"user\":{\"id\":\"spoofed\"}}}"]);
+    await consoleCommandRunner.RunAsync("FakeContext", "{\"context\":{\"user\":{\"id\":\"spoofed\"}}}");
 
     var contextCommand = Assert.Single(handled);
-    Assert.Equal([ScenarioConstants.UserId, ScenarioConstants.UserEmail], [contextCommand.Context.User.Id, contextCommand.Context.User.Email]);
-    Assert.Equal(ScenarioConstants.RunCorrelationId, contextCommand.Context.CorrelationId);
+    Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail], [contextCommand.Context.User.Id, contextCommand.Context.User.Email]);
+    Assert.NotEqual(Guid.Empty, contextCommand.Context.CorrelationId);
 }
 ```
 
@@ -895,8 +823,8 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 |---|---|---|
 | `test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs` | `{Name}.Tests.Api.Filters` | {Name}.Api.Filters, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Api, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Api/Middlewares/ExceptionHandlerTests.cs` | `{Name}.Tests.Api.Middlewares` | Microsoft.AspNetCore.Http, Microsoft.Extensions.Logging, System.Text.Json, {Name}.Api.Middlewares, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Messaging |
-| `test/{Name}.Tests/Console/CommandScenarioTests.cs` | `{Name}.Tests.Console` | {Name}.Console.Scenarios, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
-| `test/{Name}.Tests/Infrastructure/Messaging/AsyncEventHandlerDispatcherTests.cs` | `{Name}.Tests.Infrastructure.Messaging` | Microsoft.EntityFrameworkCore, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Infrastructure.Messaging, {Name}.Tests.TestSupport.Shared.Domain, {Name}.Tests.TestSupport.Shared.Persistence |
+| `test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs` | `{Name}.Tests.Console` | {Name}.Console, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Infrastructure/Logging/JsonLineFormatterTests.cs` | `{Name}.Tests.Infrastructure.Logging` | Microsoft.Extensions.Logging, Microsoft.Extensions.Logging.Abstractions, System.Text.Json, {Name}.Infrastructure.Logging |
 | `test/{Name}.Tests/Shared/Application/CommandContextTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Shared/Application/CommandDispatcherTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Shared/Application/CommandPipelineTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain, {Name}.Tests.TestSupport.Shared.Persistence |

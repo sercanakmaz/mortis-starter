@@ -35,6 +35,8 @@ def pattern_to_regex(pattern, name):
 
 
 def applies(entry, values):
+    if "when_any" in entry:
+        return any(applies({"when": when}, values) for when in entry["when_any"])
     for key, expected in entry.get("when", {}).items():
         actual = values.get(key)
         if isinstance(expected, list):
