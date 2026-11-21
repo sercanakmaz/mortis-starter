@@ -24,7 +24,7 @@ Follow these steps in order. Keep `.mortis/progress.md` in the project: one line
 | 3 | Shared: failures, persistence contracts | `shared-other.md` | build |
 | 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`) | `shared-application.md` | build |
 | 5 | Domain and Application project roots: `DomainModule`, `ApplicationModule` with empty bodies | `domain.md`, `application.md` | build |
-| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both); persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule` | `logging.md`, `events-inprocess.md` or `outbox.md`, `infrastructure-postgres.md`, `failures.md` | build |
+| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both), and `rabbitmq.md` when `events.transport` is `rabbitmq`; persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule` | `logging.md`, `events-inprocess.md` or `outbox.md`, `rabbitmq.md`, `infrastructure-postgres.md`, `failures.md` | build |
 | 7 | Hosts: Api and Console, the Worker when `hosts.worker` is `separate`, `ErrorReference`, VS Code files with the first launch configuration only; the add-ons' host files (`correlation.md`) | `hosts.md`, `outbox.md`, `failures.md` | build |
 | 8 | Test support and the kernel tests | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
 | 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
@@ -87,12 +87,13 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/failures.md` | the `exceptions` level: what each level adds, the status table, `ErrorReference`, the catalogue |
 | `references/csharp/correlation.md` | `addons` contains `correlation` |
 | `references/csharp/outbox.md` | steps 6 and 7, when `events.outbox` is `background` or `after-command` |
+| `references/csharp/rabbitmq.md` | steps 6 and 7, when `events.transport` is `rabbitmq` |
 | `references/csharp/adopting.md` | the project already exists |
 | `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |
 | `../mortis-architect/references/architecture/` | why a block is where it is: `layers.md`, `building-blocks.md`, `placement-guide.md`, `example-domain.md` |
 
 ## Limits to state when they matter
 
-- With `events.outbox` = `none`, an async handler that had not run when the process died is lost.
+- With `events.outbox` = `none`, an event consumer that had not run when the process died is lost.
 - Error messages are English only; authentication is not configured unless `auth` says so.
 - C# is the only language with references today.

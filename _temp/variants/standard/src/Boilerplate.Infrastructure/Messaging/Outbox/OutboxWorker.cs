@@ -9,7 +9,7 @@ using Boilerplate.Domain;
 
 namespace Boilerplate.Infrastructure.Messaging.Outbox;
 
-public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<OutboxSettings> settings, ILogger<OutboxWorker> logger) : BackgroundService
+public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, EventConsumerRegistry eventConsumerRegistry, IOptions<OutboxSettings> settings, ILogger<OutboxWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -17,7 +17,7 @@ public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<Out
         {
             try
             {
-                while (await PublishAsync(outboxRepository => outboxRepository.ClaimNextAsync(settings.Value.MaxAttempts)))
+                while (await PublishAsync(outboxRepository => outboxRepository.ClaimNextAsync()))
                 {
                 }
             }
@@ -30,9 +30,11 @@ public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<Out
         }
     }
 
-    public Task PublishAsync(Guid id)
+    public async Task PublishAsync(Guid eventId)
     {
-        return PublishAsync(outboxRepository => outboxRepository.ClaimAsync(id));
+        while (await PublishAsync(outboxRepository => outboxRepository.ClaimAsync(eventId)))
+        {
+        }
     }
     private async Task<bool> PublishAsync(Func<OutboxRepository, Task<OutboxMessage>> claim)
     {
@@ -57,28 +59,22 @@ public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<Out
 
         try
         {
-            var eventHandlers = scope.ServiceProvider
-                .GetServices(typeof(BaseAsyncEventHandler<>).MakeGenericType(@event.GetType()))
-                .Cast<IAsyncEventHandler>()
-                .OrderBy(eventHandler => eventHandler.Sequence);
+            var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerRegistry.ByConsumer(message.Consumer).ConsumerType);
 
-            foreach (var eventHandler in eventHandlers)
-            {
-                await eventHandler.Handle(@event);
-            }
+            await eventConsumer.Handle(@event);
 
             outboxRepository.Remove(message);
 
             await unitOfWork.CommitTransactionAsync(nameof(OutboxWorker));
 
-            logger.LogInformation("Published {Event} {EventId}", @event.GetType().Name, @event.EventId);
+            logger.LogInformation("Handled {Event} {EventId} by {EventConsumer}", @event.GetType().Name, @event.EventId, message.Consumer);
         }
         catch (Exception exception)
         {
             await unitOfWork.RollbackTransactionAsync();
             await outboxRepository.RecordFailureAsync(message, exception);
 
-            logger.LogWarning(exception, "Async handler failed for {Event} {EventId}, attempt {Attempt}", @event.GetType().Name, @event.EventId, message.Attempts + 1);
+            logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", message.Consumer, @event.GetType().Name, @event.EventId, message.Attempts + 1);
         }
 
         return true;

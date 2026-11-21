@@ -12,7 +12,7 @@ This project was started with mortis-starter. The table below records what was c
 | preset | advanced |  |
 | database | postgres |  |
 | events.outbox | background |  |
-| events.transport | database | not built yet in phase 1; this variant holds only built options |
+| events.transport | rabbitmq |  |
 | keys.default | guid |  |
 | naming.database | snake_case |  |
 | naming.json | camelCase |  |

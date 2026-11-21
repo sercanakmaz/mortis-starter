@@ -21,6 +21,7 @@ public static class InfrastructureModule
         services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
         services.AddSingleton<EventPublisher>();
         services.AddPersistenceModule();
+        services.AddEventConsumerRegistry();
 
         return services;
     }

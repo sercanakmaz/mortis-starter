@@ -3,6 +3,8 @@ using Boilerplate.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Exceptions;
+using Boilerplate.Infrastructure.Messaging;
+using Boilerplate.Application.Products;
 using Boilerplate.Infrastructure;
 using Boilerplate.Application;
 using Boilerplate.Console;
@@ -18,7 +20,9 @@ builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration);
+    .AddInfrastructureModule(builder.Configuration)
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 using var host = builder.Build();
 

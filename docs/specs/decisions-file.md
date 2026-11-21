@@ -92,7 +92,7 @@ The keys `version` (always `1`), `name` (letters, digits, dot, dash, underscore)
 | `addons` | any of `correlation`, `soft-delete`, `caching`, `scheduler`, `storage`, `secrets`, `loop-guard`, `contexts`, `events-project`, `idempotent-commands`, `observability`, `api-conventions` | none | `correlation`, `api-conventions` | all but `storage` |
 | `example` | `true`, `false` | `true` | `true` | `false` |
 
-The three outbox models are exactly: `none` (events reach async handlers in the same process after the commit; lost if the process dies in between), `after-command` (saved with the change, published by the same request right after the commit, with a sweeper for leftovers), `background` (saved with the change, published by a relay job).
+The three outbox models are exactly: `none` (events reach event consumers in the same process after the commit; lost if the process dies in between), `after-command` (saved with the change, published by the same request right after the commit, with a sweeper for leftovers), `background` (saved with the change, published by a relay job).
 
 ## Rules
 

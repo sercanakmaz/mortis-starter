@@ -1,58 +1,60 @@
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Logging;
 using Boilerplate.Shared.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Boilerplate.Shared.Domain;
 
 namespace Boilerplate.Infrastructure.Messaging;
 
-public class EventPublisher(IServiceScopeFactory serviceScopeFactory, ILogger<EventPublisher> logger)
+public class EventPublisher(IServiceScopeFactory serviceScopeFactory, EventConsumerRegistry eventConsumerRegistry, ILogger<EventPublisher> logger)
 {
     public async Task PublishAsync(EventBase @event)
     {
         using var logScope = logger.BeginScope(LogFields.Of(@event));
-        using var scope = serviceScopeFactory.CreateScope();
 
         logger.LogInformation("Published {Event} {EventId}", @event.GetType().Name, @event.EventId);
 
-        var eventHandlers = scope.ServiceProvider
-            .GetServices(typeof(BaseAsyncEventHandler<>).MakeGenericType(@event.GetType()))
-            .Cast<IAsyncEventHandler>()
-            .OrderBy(eventHandler => eventHandler.Sequence)
-            .ToList();
-
-        if (eventHandlers.Count == 0) return;
-
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-        foreach (var eventHandler in eventHandlers)
+        foreach (var eventConsumerEndpoint in eventConsumerRegistry.For(@event.GetType()))
         {
-            var transactionKey = $"{@event.EventId}:{eventHandler.GetType().Name}";
+            await ConsumeAsync(eventConsumerEndpoint, @event);
+        }
+    }
 
-            for (var attempt = 1; attempt <= MessagingConstants.MaxAttempts; attempt++)
+    private async Task ConsumeAsync(EventConsumerEndpoint eventConsumerEndpoint, EventBase @event)
+    {
+        var consumerName = eventConsumerEndpoint.ConsumerType.FullName;
+
+        for (var attempt = 1; ; attempt++)
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerEndpoint.ConsumerType);
+
+            try
             {
-                try
-                {
-                    await unitOfWork.BeginTransactionAsync(transactionKey);
-                    await eventHandler.Handle(@event);
-                    await unitOfWork.CommitTransactionAsync(transactionKey);
+                await unitOfWork.BeginTransactionAsync(nameof(EventPublisher));
+                await eventConsumer.Handle(@event);
+                await unitOfWork.CommitTransactionAsync(nameof(EventPublisher));
 
-                    break;
-                }
-                catch (DbUpdateConcurrencyException) when (attempt < MessagingConstants.MaxAttempts)
-                {
-                    await unitOfWork.RollbackTransactionAsync();
-                    await Task.Delay(TimeSpan.FromMilliseconds(attempt * MessagingConstants.RetryDelayMilliseconds));
-                }
-                catch (Exception exception)
-                {
-                    await unitOfWork.RollbackTransactionAsync();
+                logger.LogInformation("Handled {Event} {EventId} by {EventConsumer}", @event.GetType().Name, @event.EventId, consumerName);
 
-                    logger.LogError(exception, "Async handler {EventHandler} failed; the transaction that raised the event stays committed", eventHandler.GetType().Name);
+                return;
+            }
+            catch (Exception exception) when (attempt <= eventConsumerEndpoint.RetryCount)
+            {
+                await unitOfWork.RollbackTransactionAsync();
 
-                    break;
-                }
+                logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", consumerName, @event.GetType().Name, @event.EventId, attempt);
+
+                await Task.Delay(TimeSpan.FromMilliseconds(attempt * MessagingConstants.RetryDelayMilliseconds));
+            }
+            catch (Exception exception)
+            {
+                await unitOfWork.RollbackTransactionAsync();
+
+                logger.LogError(exception, "Event consumer {EventConsumer} failed for {Event} {EventId} after {Attempt} attempts; the transaction that raised the event stays committed", consumerName, @event.GetType().Name, @event.EventId, attempt);
+
+                return;
             }
         }
     }

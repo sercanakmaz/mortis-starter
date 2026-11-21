@@ -67,9 +67,9 @@ What carries an event from the outbox to its consumers.
 
 ### rabbitmq
 
-**Choose when:** another process or service consumes the events.
+**Choose when:** another process or service consumes the events, including services built on MassTransit 8: our bus speaks its wire format both ways.
 
-**Costs:** a broker to run, exchanges and queues to manage, retry and dead-letter queues, a consumer host.
+**Costs:** a broker to run; every event consumer must be safe to run twice (the broker can redeliver); receive endpoints configured in code in the Worker, one line per consumer; failed messages land in `<queue>_error` for an operator. No request/response, sagas, scheduling or delayed redelivery.
 
 **Rules:** R2, R4.
 

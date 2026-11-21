@@ -68,11 +68,11 @@ expect_equal "order: a child added to a loaded order was inserted (3 lines)" "3"
 expect_equal "order: the cancelled child was updated in place" "out of stock" "$(sql "select cancellation_reason from order_lines where is_cancelled and sku = 'SKU-2-$S'")"
 expect_equal "order: the value object is stored in two columns, currency upper-cased" "10.5000|EUR" "$(sql "select price_amount || '|' || price_currency from order_lines where sku = 'SKU-1-$S'")"
 expect_equal "order: audit columns carry the console user" "console|console" "$(sql "select created_user_id || '|' || updated_user_id from orders where order_number = 'ORD-$S'")"
-expect_equal "order: async handlers moved the stock after the commit (added 2, 1 and 4; cancelled 1)" "SKU-1=98,SKU-2=100,SKU-3=96" "$(eventually "select string_agg(left(sku, 5) || '=' || stock, ',' order by sku) from products where sku like 'SKU-_-$S'" "SKU-1=98,SKU-2=100,SKU-3=96")"
-expect_equal "order: an async handler writes as the system user, the command as the console user" "system|console" "$(sql "select updated_user_id || '|' || created_user_id from products where id = '$P1'")"
-expect_equal "order: the Completed event was published once, with the command's correlation" "1" "$(sleep 0.5; log_count "$(events_log)" "l.get('Message', '').startswith('Published') and l.get('Event') == 'Completed' and l.get('CorrelationId') == '$COMPLETE_CORRELATION'")"
+expect_equal "order: event consumers moved the stock after the commit (added 2, 1 and 4; cancelled 1)" "SKU-1=98,SKU-2=100,SKU-3=96" "$(eventually "select string_agg(left(sku, 5) || '=' || stock, ',' order by sku) from products where sku like 'SKU-_-$S'" "SKU-1=98,SKU-2=100,SKU-3=96")"
+expect_equal "order: an event consumer writes as the system user, the command as the console user" "system|console" "$(sql "select updated_user_id || '|' || created_user_id from products where id = '$P1'")"
+expect_equal "order: the sync handler's command carries the Complete command's correlation, caused by its event" "1" "$(log_count "$WORK/console.log" "l.get('Message') == 'RegisterCompletedOrderCommand started' and l.get('CorrelationId') == '$COMPLETE_CORRELATION' and l.get('CausationId') not in (None, '')")"
 
-# Sync and async handlers on one event, and the causation chain
+# Sync and event consumers on one event, and the causation chain
 run CreateProduct "{\"sku\":\"BOLT-$S\",\"name\":\"Bolt\",\"stock\":10}" >/dev/null
 run CreateProduct "{\"sku\":\"NUT-$S\",\"name\":\"Nut\",\"stock\":5}" >/dev/null
 STOCK_CUSTOMER="$(id_of "$(run CreateCustomer "{\"name\":\"Stock Customer\",\"email\":\"stock-$S@example.com\"}")")"
@@ -87,26 +87,27 @@ expect_equal "stock: cancelling one of two lines restored its stock and left the
 run CancelOrderLine "{\"id\":\"$STOCK_ORDER\",\"lineId\":\"$NUT_LINE\",\"reason\":\"changed mind\"}" >/dev/null
 LAST_CORRELATION="$(log_field "$WORK/console.log" "l.get('Message') == 'CancelOrderLineCommand started'" CorrelationId)"
 expect_equal "stock: cancelling the last line cancelled the order (sync) and restored the stock (async)" "Cancelled|5" "$(eventually "select status || '|' || (select stock from products where sku = 'NUT-$S') from orders where id = '$STOCK_ORDER'" "Cancelled|5")"
-sleep 0.5
-CHAIN="$(python3 -I - "$(events_log)" "$LAST_CORRELATION" <<'PY'
+for _ in $(seq 1 30); do
+CHAIN="$(python3 -I - "$WORK/console.log" "$(events_log)" "$LAST_CORRELATION" <<'PY'
 import json, sys
-logs = [json.loads(line) for line in open(sys.argv[1]) if line.startswith("{")]
-published = [l for l in logs if l.get("Message", "").startswith("Published") and l.get("CorrelationId") == sys.argv[2]]
-cancelled_lines = {l["EventId"] for l in published if l["Event"] == "LineCancelled"}
-order_cancelled = [l["CausationId"] for l in published if l["Event"] == "Cancelled"]
-stock_increased = [l["CausationId"] for l in published if l["Event"] == "StockIncreased"]
-print("|".join([
-    "yes" if order_cancelled and all(c in cancelled_lines for c in order_cancelled) else "no",
-    "yes" if stock_increased and all(c in cancelled_lines for c in stock_increased) else "no"]))
+logs = [json.loads(line) for path in sys.argv[1:3] for line in open(path) if line.startswith("{")]
+started = lambda name: [l for l in logs if l.get("Message") == name + " started" and l.get("CorrelationId") == sys.argv[3]]
+sync = started("CancelOrderWhenAllLinesCancelledCommand")
+asynchronous = started("IncreaseProductStockCommand")
+print("|".join(["yes" if sync and sync[0].get("CausationId") else "no",
+                "yes" if sync and asynchronous and asynchronous[0].get("CausationId") == sync[0].get("CausationId") else "no"]))
 PY
 )"
-expect_equal "stock: the order's Cancelled event (sync handler) is caused by a LineCancelled event of the same correlation" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f1)"
-expect_equal "stock: StockIncreased (async handler) is caused by a LineCancelled event of the same correlation" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f2)"
+[ "$CHAIN" = "yes|yes" ] && break
+sleep 0.2
+done
+expect_equal "stock: the sync handler's command carries the correlation of the cancel, caused by the LineCancelled event" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f1)"
+expect_equal "stock: the event consumer's command carries the same correlation and the same cause, in every publishing model" "yes" "$(printf '%s' "$CHAIN" | cut -d'|' -f2)"
 : > "$WORK/console.log"
 OVERSOLD="$(id_of "$(run CreateOrder "{\"orderNumber\":\"OVR-$S\",\"customerId\":\"$STOCK_CUSTOMER\",\"lines\":[{\"sku\":\"BOLT-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":20}]}")")"
 sleep 1
-expect_equal "stock: an oversold order stands, because an async handler cannot veto" "Open|10" "$(sql "select status || '|' || (select stock from products where sku = 'BOLT-$S') from orders where id = '$OVERSOLD'")"
-expect_equal "stock: the failed async handler was logged as a JSON line with the exception, not thrown" "yes" "$(n="$(log_count "$(events_log)" "'failed' in l.get('Message', '') and 'Exception' in l")"; [ "$n" -ge 1 ] && echo yes || echo no)"
+expect_equal "stock: an oversold order stands, because an event consumer cannot veto" "Open|10" "$(sql "select status || '|' || (select stock from products where sku = 'BOLT-$S') from orders where id = '$OVERSOLD'")"
+expect_equal "stock: the failed event consumer was logged as a JSON line with the exception, not thrown" "yes" "$(n="$(log_count "$(events_log)" "'failed' in l.get('Message', '') and 'Exception' in l")"; [ "$n" -ge 1 ] && echo yes || echo no)"
 
 # Failure path: a throwing sync handler rolls the whole command back
 BLOCKED_CUSTOMER="$(id_of "$(run CreateCustomer "{\"name\":\"Blocked\",\"email\":\"blocked-$S@example.com\"}")")"

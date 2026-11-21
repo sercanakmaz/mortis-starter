@@ -8,7 +8,7 @@ Two separate things people mean by "multi-language": messages the system produce
 
 ## Design
 
-**The language of a call.** The host puts it on `CommandContext.Language`: the Api from `Accept-Language` limited to `languages.supported` with `languages.default` as fallback; the Console from `--language`. Events carry it, so a notification sent by an async handler is in the language of the person who caused it.
+**The language of a call.** The host puts it on `CommandContext.Language`: the Api from `Accept-Language` limited to `languages.supported` with `languages.default` as fallback; the Console from `--language`. Events carry it, so a notification sent by an event consumer is in the language of the person who caused it.
 
 **Messages (`language-messages`).**
 - An exception carries a code and parameters (needs `exceptions` = `coded` or `catalogued`). The message text is looked up at the edge: `IMessageLocalizer.Get(code, parameters, language)`.
@@ -41,7 +41,7 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 - [ ] The same failing request returns its message in `tr` with `Accept-Language: tr` and in the default language with an unsupported one (conformance).
 - [ ] Removing a text from the default resource file fails a unit test.
 - [ ] A product created with a Turkish name and updated with an English one returns each under its language and falls back to the default for a third (tests and conformance).
-- [ ] An async handler sees the language of the original request.
+- [ ] An event consumer sees the language of the original request.
 
 ## Out of scope
 

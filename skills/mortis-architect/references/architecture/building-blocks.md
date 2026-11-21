@@ -224,7 +224,7 @@ on Completed [sync] do send CountCompletedOrder(customerId, context)
 - Lives in Application, sends one command.
 - **Commonest mistake:** a slow call (email, network) in a sync handler.
 
-## Async event handler
+## Event consumer
 
 **Purpose:** a reaction that may follow the change and may fail on its own.
 
@@ -233,7 +233,8 @@ on LineAdded [async] do send ReserveStock(productId, quantity, context)
 ```
 
 - Runs after the commit, in a new scope and its own transaction, as the system actor.
-- If it fails, the original change stays committed.
+- Registered by hand, one line per consumer in the host that runs it, with its own retry count; nothing is discovered.
+- If it fails after its retries, the original change stays committed.
 - Must be safe to run twice: delivery is at-least-once.
 - **Commonest mistake:** assuming the result of the reaction is visible to the caller's next read.
 

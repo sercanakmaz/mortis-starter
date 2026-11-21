@@ -1,6 +1,6 @@
 # Shared: domain building blocks, C#
 
-Project `{Name}.Shared`, folder `Domain/`, namespace `{Name}.Shared.Domain`. These types know nothing about storage. Layer 1: `building-blocks.md` sections Entity, AggregateRoot, Domain event, Sync and Async event handler, Event dispatcher.
+Project `{Name}.Shared`, folder `Domain/`, namespace `{Name}.Shared.Domain`. These types know nothing about storage. Layer 1: `building-blocks.md` sections Entity, AggregateRoot, Domain event, Sync and Event consumer, Event dispatcher.
 
 Each section gives the file, the contract, the rules, and a snippet for every member with a real body. Write each file as: `using` lines the members need, the file-scoped namespace, then the type with the members in the order shown.
 
@@ -51,7 +51,7 @@ File `Domain/AuditUser.cs`:
 
 @@decl src/Boilerplate.Shared/Domain/AuditUser.cs::AuditUser@@
 
-File `Domain/SystemUser.cs`, the actor of async handlers:
+File `Domain/SystemUser.cs`, the actor of event consumers:
 
 @@decl src/Boilerplate.Shared/Domain/SystemUser.cs::SystemUser@@
 
@@ -83,7 +83,7 @@ File `Domain/EventBase.cs`, both types. The user is stamped by the aggregate; co
 
 @@decl src/Boilerplate.Shared/Domain/EventBase.cs::IQueueEvent@@
 
-- An event that must leave the transaction (async handlers, publishing) also implements `IQueueEvent`. An event without it is handled only by sync handlers.
+- An event that must leave the transaction (event consumers, publishing) also implements `IQueueEvent`. An event without it is handled only by sync handlers.
 
 ## EventContext
 
@@ -109,7 +109,7 @@ Fields: `private readonly Lock _lock = new();`, `private readonly Queue<EventBas
 
 @@member src/Boilerplate.Shared/Domain/EventContext.cs::EventContext::Clear@@
 
-## Sync and async event handler bases
+## Sync and event consumer bases
 
 File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEventHandler<TEvent>`:
 
@@ -129,15 +129,15 @@ File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEve
 
 @@member src/Boilerplate.Shared/Domain/BaseSyncEventHandler.cs::BaseSyncEventHandler::ContextOf@@
 
-File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, one more constraint, and the system user in `ContextOf`:
+File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the system user in `ContextOf`:
 
-@@decl src/Boilerplate.Shared/Domain/BaseAsyncEventHandler.cs::BaseAsyncEventHandler@@
+@@decl src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer@@
 
-@@member src/Boilerplate.Shared/Domain/BaseAsyncEventHandler.cs::BaseAsyncEventHandler::ContextOf@@
+@@member src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer::ContextOf@@
 
 Both files need `using {Name}.Shared.Application;`.
 
-- Handlers run in ascending `Sequence`; equal values keep registration order.
+- Sync handlers run in ascending `Sequence`; equal values keep registration order.
 - A handler's body is one awaited `commandDispatcher.Send(...)` (see `application.md`).
 
 ## EventHandlerExecutor

@@ -302,8 +302,10 @@ protected override Task OnHandle(TEvent @event)
 }
 ```
 
+File `RecordingEventConsumer.cs` holds two consumers of `FakeQueueEvent`; each records its class name:
+
 ```csharp
-public class RecordingAsyncEventHandler<TEvent>(string name, int sequence, List<string> calls, int failures = 0, Exception failure = null) : BaseAsyncEventHandler<TEvent> where TEvent : EventBase, IQueueEvent
+public class RecordingEventConsumer(List<string> calls, int failures = 0, Exception failure = null) : BaseEventConsumer<FakeQueueEvent>
 ```
 
 ```csharp
@@ -311,13 +313,9 @@ private int _failed;
 ```
 
 ```csharp
-public override int Sequence => sequence;
-```
-
-```csharp
-protected override Task OnHandle(TEvent @event)
+protected override Task OnHandle(FakeQueueEvent @event)
 {
-    calls.Add(name);
+    calls.Add(GetType().Name);
 
     if (_failed >= failures) return Task.CompletedTask;
 
@@ -325,6 +323,10 @@ protected override Task OnHandle(TEvent @event)
 
     throw failure;
 }
+```
+
+```csharp
+public class OtherRecordingEventConsumer(List<string> calls) : RecordingEventConsumer(calls);
 ```
 
 ```csharp
@@ -564,6 +566,6 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `test/{Name}.Tests/TestSupport/Shared/Domain/FakeAggregate.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/FakeAuditUser.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/FakeEvent.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
-| `test/{Name}.Tests/TestSupport/Shared/Domain/RecordingAsyncEventHandler.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
+| `test/{Name}.Tests/TestSupport/Shared/Domain/RecordingEventConsumer.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Domain/RecordingEventHandler.cs` | `{Name}.Tests.TestSupport.Shared.Domain` | {Name}.Shared.Domain |
 | `test/{Name}.Tests/TestSupport/Shared/Persistence/UnitOfWorkBuilder.cs` | `{Name}.Tests.TestSupport.Shared.Persistence` | Moq, {Name}.Shared.Persistence |

@@ -51,7 +51,7 @@ CANCEL_LINE_ID="$(body_field "['lines'][0]['id']")"
 expect_equal "api: cancelling the only line answers 200" "200" "$(request PUT "/orders/$CANCEL_ORDER_ID/lines/$CANCEL_LINE_ID/cancel" '{"reason":"changed mind"}')"
 request GET "/orders/$CANCEL_ORDER_ID" >/dev/null
 expect_equal "api: reading it back, the sync handler has cancelled the order" "Cancelled" "$(body_field "['status']")"
-expect_equal "api: and the async handler gave the unit back (100 - 2 - 1 + 1)" "98" "$(eventually "select stock from products where sku = 'S'" "98" 10)"
+expect_equal "api: and the event consumer gave the unit back (100 - 2 - 1 + 1)" "98" "$(eventually "select stock from products where sku = 'S'" "98" 10)"
 
 request POST /products '{"sku":"HOT","name":"Hot item","stock":8}' >/dev/null
 CONCURRENT_PIDS=()

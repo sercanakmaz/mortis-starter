@@ -4,30 +4,34 @@ using Boilerplate.Shared.Domain;
 
 namespace Boilerplate.Infrastructure.Messaging.Outbox;
 
-public class OutboxRepository(AppDbContext context)
+public class OutboxRepository(AppDbContext context, EventConsumerRegistry eventConsumerRegistry)
 {
     public void Add(IEnumerable<EventBase> events)
     {
-        context.Set<OutboxMessage>().AddRange(events.Select(OutboxMessage.From));
+        foreach (var @event in events)
+        {
+            context.Set<OutboxMessage>().AddRange(eventConsumerRegistry.For(@event.GetType()).Select(eventConsumerEndpoint => OutboxMessage.From(@event, eventConsumerEndpoint)));
+        }
     }
 
-    public async Task<OutboxMessage> ClaimNextAsync(int maxAttempts)
+    public async Task<OutboxMessage> ClaimNextAsync()
     {
         var messages = await context.Set<OutboxMessage>()
-            .FromSql($"select * from outbox_messages where attempts < {maxAttempts} and next_attempt_at <= {DateTime.UtcNow} order by occurred_at, id limit 1 for update skip locked")
+            .FromSql($"select * from outbox_messages where attempts < max_attempts and next_attempt_at <= {DateTime.UtcNow} order by occurred_at, id limit 1 for update skip locked")
             .ToListAsync();
 
         return messages.SingleOrDefault();
     }
 
-    public async Task<OutboxMessage> ClaimAsync(Guid id)
+    public async Task<OutboxMessage> ClaimAsync(Guid eventId)
     {
         var messages = await context.Set<OutboxMessage>()
-            .FromSql($"select * from outbox_messages where id = {id} for update skip locked")
+            .FromSql($"select * from outbox_messages where event_id = {eventId} and attempts = 0 order by id limit 1 for update skip locked")
             .ToListAsync();
 
         return messages.SingleOrDefault();
     }
+
     public void Remove(OutboxMessage message)
     {
         context.Set<OutboxMessage>().Remove(message);

@@ -39,7 +39,7 @@ aggregate Product(id: ProductId)
     require stock >= quantity                  else Rule("product_insufficient_stock")
     stock := stock - quantity
     raise StockDecreased(id, sku, quantity, stock)          [queue]
-  concurrency: a row version, because async handlers change stock concurrently
+  concurrency: a row version, because event consumers change stock concurrently
 
 aggregate Order(id: OrderId)
   state: orderNumber (max 64, unique), customerId (references Customer), status: Open | Completed | Cancelled,
@@ -80,7 +80,7 @@ value Money(amount, currency)
   currency := upper-case(trim(currency)), culture-invariant
 ```
 
-`[queue]` marks an event that leaves the transaction (async handlers, outbox). The others are handled only by sync handlers.
+`[queue]` marks an event that leaves the transaction (event consumers, outbox). The others are handled only by sync handlers.
 
 Every operation that changes an aggregate is followed by stamping who changed it (`touch(by)`), so its events carry the actor.
 
@@ -149,7 +149,7 @@ There are no Console scenarios: each flow is a sequence of single commands, run 
 | Flow | Steps | What it proves |
 |---|---|---|
 | order | three products (stock 100), a customer, an order with two lines, add a third, cancel the second ("out of stock"), complete | children inserted and updated in place, a value object in two columns, a sync handler in the same transaction, async stock moves, audit columns |
-| stock | bolt (10) and nut (5), an order of bolt x3 and nut x2, cancel the bolt line, cancel the nut line, then an order of bolt x20 | sync and async handlers on one event; an async handler cannot veto |
+| stock | bolt (10) and nut (5), an order of bolt x3 and nut x2, cancel the bolt line, cancel the nut line, then an order of bolt x20 | sync and event consumers on one event; an event consumer cannot veto |
 | blocked-customer | a product, a customer, an order, block the customer, try to complete | a sync handler vetoes and the whole command rolls back |
 
 Every write runs as the console actor; unique values get a random suffix so a flow can run twice.

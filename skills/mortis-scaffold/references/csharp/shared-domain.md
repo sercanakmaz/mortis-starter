@@ -1,6 +1,6 @@
 # Shared: domain building blocks, C#
 
-Project `{Name}.Shared`, folder `Domain/`, namespace `{Name}.Shared.Domain`. These types know nothing about storage. Layer 1: `building-blocks.md` sections Entity, AggregateRoot, Domain event, Sync and Async event handler, Event dispatcher.
+Project `{Name}.Shared`, folder `Domain/`, namespace `{Name}.Shared.Domain`. These types know nothing about storage. Layer 1: `building-blocks.md` sections Entity, AggregateRoot, Domain event, Sync and Event consumer, Event dispatcher.
 
 Each section gives the file, the contract, the rules, and a snippet for every member with a real body. Write each file as: `using` lines the members need, the file-scoped namespace, then the type with the members in the order shown.
 
@@ -103,7 +103,7 @@ File `Domain/AuditUser.cs`:
 public sealed record AuditUser(string Id, string Email);
 ```
 
-File `Domain/SystemUser.cs`, the actor of async handlers:
+File `Domain/SystemUser.cs`, the actor of event consumers:
 
 ```csharp
 public static class SystemUser
@@ -161,7 +161,7 @@ public string UserEmail { get; init; }
 public interface IQueueEvent;
 ```
 
-- An event that must leave the transaction (async handlers, publishing) also implements `IQueueEvent`. An event without it is handled only by sync handlers.
+- An event that must leave the transaction (event consumers, publishing) also implements `IQueueEvent`. An event without it is handled only by sync handlers.
 
 ## EventContext
 
@@ -249,7 +249,7 @@ public void Clear()
 }
 ```
 
-## Sync and async event handler bases
+## Sync and event consumer bases
 
 File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEventHandler<TEvent>`:
 
@@ -291,10 +291,10 @@ protected static CommandContext ContextOf(EventBase @event)
 }
 ```
 
-File `Domain/BaseAsyncEventHandler.cs` is the same with `IAsyncEventHandler` and `BaseAsyncEventHandler<TEvent>`, one more constraint, and the system user in `ContextOf`:
+File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the system user in `ContextOf`:
 
 ```csharp
-public abstract class BaseAsyncEventHandler<TEvent> : IAsyncEventHandler where TEvent : EventBase, IQueueEvent
+public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : EventBase, IQueueEvent
 ```
 
 ```csharp
@@ -306,7 +306,7 @@ protected static CommandContext ContextOf(EventBase @event)
 
 Both files need `using {Name}.Shared.Application;`.
 
-- Handlers run in ascending `Sequence`; equal values keep registration order.
+- Sync handlers run in ascending `Sequence`; equal values keep registration order.
 - A handler's body is one awaited `commandDispatcher.Send(...)` (see `application.md`).
 
 ## EventHandlerExecutor
@@ -352,7 +352,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 |---|---|---|
 | `src/{Name}.Shared/Domain/AggregateRoot.cs` | `{Name}.Shared.Domain` | System.ComponentModel.DataAnnotations.Schema |
 | `src/{Name}.Shared/Domain/AuditUser.cs` | `{Name}.Shared.Domain` | none |
-| `src/{Name}.Shared/Domain/BaseAsyncEventHandler.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
+| `src/{Name}.Shared/Domain/BaseEventConsumer.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/BaseSyncEventHandler.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/Entity.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Domain/EventBase.cs` | `{Name}.Shared.Domain` | none |

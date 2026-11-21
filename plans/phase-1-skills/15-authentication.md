@@ -12,7 +12,7 @@ The audit user of an Api write is empty today because nothing authenticates. Val
 - **Context.** The context filter reads the subject, email, tenant and permissions claims; the claim names are settings.
 - **Authorization.** A command may implement `IAuthorizedCommand { static string Permission }`. A pipeline middleware compares it with the caller's permissions before validation and throws `ForbiddenException`. Permissions are constants declared next to the commands, one file per aggregate. Rules that depend on data ("only the owner may cancel") stay in the domain, which already receives the user.
 - Every controller requires an authenticated caller unless it says otherwise.
-- The system user (async handlers) and the Console user pass authorization; that is written down as a decision, not left implicit.
+- The system user (event consumers) and the Console user pass authorization; that is written down as a decision, not left implicit.
 
 ## Deliverables
 

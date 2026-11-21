@@ -7,21 +7,27 @@ namespace Boilerplate.Infrastructure.Messaging.Outbox;
 public class OutboxMessage
 {
     public Guid Id { get; private set; }
+    public Guid EventId { get; private set; }
+    public string Consumer { get; private set; }
     public string Type { get; private set; }
     public string Payload { get; private set; }
     public DateTime OccurredAt { get; private set; }
     public int Attempts { get; private set; }
+    public int MaxAttempts { get; private set; }
     public DateTime NextAttemptAt { get; private set; }
     public string LastError { get; private set; }
 
-    public static OutboxMessage From(EventBase @event)
+    public static OutboxMessage From(EventBase @event, EventConsumerEndpoint eventConsumerEndpoint)
     {
         return new OutboxMessage
         {
-            Id = @event.EventId,
+            Id = Guid.CreateVersion7(),
+            EventId = @event.EventId,
+            Consumer = eventConsumerEndpoint.ConsumerType.FullName,
             Type = @event.GetType().FullName,
             Payload = JsonSerializer.Serialize(@event, @event.GetType()),
             OccurredAt = @event.OccurredAt,
+            MaxAttempts = eventConsumerEndpoint.RetryCount + 1,
             NextAttemptAt = @event.OccurredAt
         };
     }

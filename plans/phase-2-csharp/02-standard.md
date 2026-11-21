@@ -16,7 +16,7 @@ The "Behaviour to prove in phase 2" lists of the phase 1 steps for those options
 - the outbox row is written in the same transaction as the change, and a rolled-back command leaves none;
 - a failed publish leaves the row for the sweeper and the request still succeeds;
 - the same event delivered twice changes stock once;
-- correlation and causation ids travel through a sync and an async handler;
+- correlation and causation ids travel through a sync and an event consumer;
 - 401, 403 and the audit user from the token.
 
 ## Acceptance

@@ -1,6 +1,6 @@
-# Application: commands, handlers, views, event handlers, C#
+# Application: commands, handlers, views, event handlers and consumers, C#
 
-Project `{Name}.Application`. References Domain and Shared. Layer 1: `layers.md` "Application", `building-blocks.md` Command, Validator, Command handler, DTO, Sync and Async event handler; the decision cheat sheet in `placement-guide.md`.
+Project `{Name}.Application`. References Domain and Shared. Layer 1: `layers.md` "Application", `building-blocks.md` Command, Validator, Command handler, DTO, Sync and Event consumer; the decision cheat sheet in `placement-guide.md`.
 
 ## The command file
 
@@ -169,13 +169,19 @@ public class CancelOrderWhenOrderLineCancelledEventHandler(ICommandDispatcher co
 
 @@member src/Boilerplate.Application/Orders/CancelOrderWhenOrderLineCancelledEventHandler.cs::CancelOrderWhenOrderLineCancelledEventHandler::OnHandle@@
 
-An async handler (the same line; the base class makes it the system user):
+An event consumer is the same with `BaseEventConsumer<TEvent>`, named `{Action}When{Aggregate}{Event}EventConsumer.cs`; the base class makes it the system user:
 
-@@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs::DecreaseStockWhenOrderLineAddedEventHandler::OnHandle@@
+```csharp
+public class DecreaseStockWhenOrderLineAddedEventConsumer(ICommandDispatcher commandDispatcher) : BaseEventConsumer<LineAdded>
+```
+
+@@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs::DecreaseStockWhenOrderLineAddedEventConsumer::OnHandle@@
+
+A consumer is not registered here: it gets one `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(3))` line in the host that runs it (`event-consumers.md`).
 
 ## Registration
 
-File `ApplicationModule.cs`, namespace `{Name}.Application`. Grouped by aggregate; inside a group, per command: the handler, then its validator; then the group's event handlers. Needs `using FluentValidation;`, `using {Name}.Shared.Application;` and `using {Name}.Shared.Domain;`.
+File `ApplicationModule.cs`, namespace `{Name}.Application`. Grouped by aggregate; inside a group, per command: the handler, then its validator; then the group's sync event handlers. Event consumers are not here (`event-consumers.md`). Needs `using FluentValidation;`, `using {Name}.Shared.Application;` and `using {Name}.Shared.Domain;`.
 
 @@decl src/Boilerplate.Application/ApplicationModule.cs::ApplicationModule@@
 
@@ -183,7 +189,6 @@ File `ApplicationModule.cs`, namespace `{Name}.Application`. Grouped by aggregat
 services.AddCommandHandler<CreateOrderCommand, OrderDto, CreateOrderCommandHandler>();
 services.AddScoped<IValidator<CreateOrderCommand>, CreateOrderCommandValidator>();
 services.AddScoped<BaseSyncEventHandler<LineCancelled>, CancelOrderWhenOrderLineCancelledEventHandler>();
-services.AddScoped<BaseAsyncEventHandler<LineAdded>, DecreaseStockWhenOrderLineAddedEventHandler>();
 ```
 
 Written first with an empty body, and filled as commands arrive:
@@ -197,7 +202,7 @@ public static IServiceCollection AddApplicationModule(this IServiceCollection se
 
 ## Tests
 
-`{Command}HandlerTests` for every handler that writes; `{EventHandler}Tests` for every event handler. Snippets in `worked-slice.md`.
+`{Command}HandlerTests` for every handler that writes; `{EventHandler}Tests` for every sync event handler and `{EventConsumer}Tests` for every event consumer. Snippets in `worked-slice.md`.
 
 ## Namespaces and usings
 

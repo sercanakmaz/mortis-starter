@@ -358,7 +358,7 @@
   },
   {
    "id": "R7",
-   "text": "tenancy.mode = interface with any outbox adds the tenant to outbox and inbox rows. No choice to make; the scaffold applies it (note, never an error).",
+   "text": "tenancy.mode = interface with any outbox adds the tenant to outbox rows. No choice to make; the scaffold applies it (note, never an error).",
    "fix": "Nothing to fix."
   },
   {

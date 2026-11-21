@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value. With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the async handlers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`. With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -117,11 +117,11 @@ Nothing: this is a placement decision.
 
 - Status: accepted; the user properties replaced by one context in 0007
 - Date: <the date the project was generated>
-- Context: An `IUserContext` service was read deep inside services to stamp audit columns. It was an invisible dependency, it had no value inside an async event handler or the Console, and a test had to fake it.
+- Context: An `IUserContext` service was read deep inside services to stamp audit columns. It was an invisible dependency, it had no value inside an event consumer or the Console, and a test had to fake it.
 
 ## Decision
 
-A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleCommandRunner` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an async handler sends it as `SystemUser`.
+A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleCommandRunner` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an event consumer sends it as `SystemUser`.
 
 ## What varies
 
@@ -131,7 +131,7 @@ Who the actor is (a person, the console, the system). The domain must not look i
 
 | Option | Cost | Why it was not chosen |
 |---|---|---|
-| An ambient `IUserContext` | One service, no signature changes | Hidden dependency; wrong or empty in async handlers and the Console |
+| An ambient `IUserContext` | One service, no signature changes | Hidden dependency; wrong or empty in event consumers and the Console |
 | Read the claims in each command handler | Nothing in the kernel | Every handler repeats it and can forget it |
 | **The user as data on the command, stamped on events** | `AuditUser` first argument of write methods, two properties per writing command | n/a |
 
@@ -149,7 +149,7 @@ Who the actor is (a person, the console, the system). The domain must not look i
 ## 0004-event-handlers-live-in-application-and-send-commands.md
 
 ~~~~markdown
-# 0004 — Event handlers live in the Application layer and send commands; sync and async are separate
+# 0004 — Event handlers and event consumers live in the Application layer and send commands
 
 - Status: accepted
 - Date: <the date the project was generated>
@@ -157,7 +157,7 @@ Who the actor is (a person, the console, the system). The domain must not look i
 
 ## Decision
 
-An event handler is in the Application layer, next to the commands, named `<Action>When<Aggregate><Event>EventHandler`. Its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync** handler (`BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. An **async** handler (`BaseAsyncEventHandler<T>`) runs after the commit in a new scope and a new transaction, and is retried on `DbUpdateConcurrencyException` (up to ten attempts). Registration is explicit in `ApplicationModule`.
+A reaction is in the Application layer, next to the commands, and its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync event handler** (`<Action>When<Aggregate><Event>EventHandler : BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. It is registered in `ApplicationModule`. An **event consumer** (`<Action>When<Aggregate><Event>EventConsumer : BaseEventConsumer<T>`) runs after the commit in its own scope and transaction. It is registered with one line in the host that runs it, `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(3))`, and `Retry(n)` is its number of retries in every publishing model. Nothing is found by scanning.
 
 ## What varies
 
@@ -169,17 +169,17 @@ Whether the reaction must succeed together with the change (sync) or may follow 
 |---|---|---|
 | Handlers in Domain calling repositories | None | Skips the command pipeline |
 | Sync handlers only | One mechanism | A slow or failing side effect would block or roll back the main change |
-| **Sync and async, both in Application, both sending commands** | Two base classes and an event publisher | n/a |
+| **Sync handlers and event consumers, both in Application, both sending commands** | Two base classes, an event publisher and one registration line per consumer | n/a |
 
 ## Consequences
 
 - Gained: a reaction gets validation, logging and the transaction like a request does; a sync handler can veto.
-- Lost or owed: there is no outbox, so an async handler is lost if the process dies between the commit and its run; nothing stops two handlers triggering each other forever; an async handler on a contended row needs a concurrency token (`Product` uses `xmin`).
+- Lost or owed: there is no outbox, so an event consumer is lost if the process dies between the commit and its run; a consumer without its line in the host never runs; nothing stops two reactions triggering each other forever; an event consumer on a contended row needs a concurrency token (`Product` uses `xmin`).
 - Cost of going back: moderate.
 
 ## How it is enforced
 
-The conformance checks `stock` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests`.
+The conformance checks `stock` (sync and async on one event) and `blocked-customer` (a sync veto rolls back), and the example's `*EventHandlerTests` and `*EventConsumerTests`.
 ~~~~
 
 ## 0005-the-console-runs-commands-and-does-not-migrate.md
@@ -275,7 +275,7 @@ Which facts about a call travel with it. A new one is a property of `CommandCont
 | Option | Cost | Why it was not chosen |
 |---|---|---|
 | Two properties per concern on every command | A line per concern per command | Grows with every option |
-| An ambient context service | Nothing per command | A hidden dependency, wrong inside async handlers, the problem 0003 removed |
+| An ambient context service | Nothing per command | A hidden dependency, wrong inside event consumers, the problem 0003 removed |
 | **One `Context` property, stamped on events by `EventContext`** | `CommandContext`, a stack in `EventContext` | n/a |
 
 ## Consequences
@@ -404,11 +404,11 @@ How much a failure says, never its shape or its status.
 
 - Status: accepted
 - Date: <the date the project was generated>
-- Context: An async handler runs after the command's transaction has committed (0004). If the process dies in between, the event is lost and the change it should have caused never happens. This project must not lose events.
+- Context: An event consumer runs after the command's transaction has committed (0004). If the process dies in between, the event is lost and the change it should have caused never happens. This project must not lose events.
 
 ## Decision
 
-Every queue event is written to `outbox_messages` by the unit of work, in the command's own transaction, after the sync handlers have run. `OutboxWorker`, a background service, takes the next due row with `for update skip locked`, runs the event's async handlers and deletes the row, all in one transaction. A failure rolls back, counts the attempt and waits `2^attempts` seconds; at `MaxAttempts` the row stays for an operator.
+Every queue event is written to `outbox_messages` by the unit of work, in the command's own transaction, after the sync handlers have run: one row per registered event consumer, because every event consumer is a consumer of its own. `OutboxWorker`, a background service, takes the next due row with `for update skip locked`, runs that row's consumer and deletes the row, all in one transaction. A failure rolls back, counts the attempt and waits `2^attempts` seconds; the row's attempt limit is its consumer's `Retry(n)` + 1, and a row that reaches it stays for an operator.
 
 This project publishes `{outbox}`:
 
@@ -425,10 +425,10 @@ When an event is published after the change that raised it.
 
 | Option | Cost | Why it was not chosen |
 |---|---|---|
-| Publish in process after `COMMIT` (`none`) | Nothing | An event is lost when the process dies before its handlers run |
+| Publish in process after `COMMIT` (`none`) | Nothing | An event is lost when the process dies before its consumers run |
 | Publish in the transaction, before `COMMIT` | Nothing | A rolled-back command would have published its events |
 | An outbox plus an inbox and a separate send step | A second table, a lock column, idempotent handlers | More moving parts than one transaction per row |
-| **One table; the row, its handlers and its deletion in one transaction** | One table, a worker host | n/a |
+| **One table; the row, its consumer and its deletion in one transaction** | One table, a worker host | n/a |
 
 ## Consequences
 
@@ -476,4 +476,44 @@ Nothing per project: every environment logs the same way.
 ## How it is enforced
 
 `JsonLineFormatterTests`, and the log checks of `example-console.sh`.
+~~~~
+
+## 0013-own-bus-compatible-with-masstransit.md
+
+~~~~markdown
+# 0013 — Events leave the service on our own RabbitMQ bus, wire-compatible with MassTransit 8
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Other services must hear of this service's events, and some of them use MassTransit. MassTransit 9 needs a licence and MassTransit 8 leaves maintenance after 2026; the starter uses a fraction of it (publish, consume, retry, error queue).
+
+## Decision
+
+`OutboxWorker` publishes each outbox row to RabbitMQ with `RabbitMQ.Client` and deletes the row only after the broker confirmed it. The message is a MassTransit 8 envelope (`application/vnd.masstransit+json`, camelCase, `messageType` URNs of the type, its base types and its own interfaces) on a durable fanout exchange named `<Namespace>:<TypeName>`.
+
+Every event consumer is a consumer of its own. The Worker declares, in code, one receive endpoint per consumer, one line each (`AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))`): a classic durable queue named after the consumer (`decrease-stock-when-order-line-added`, or `Named(queue)`), an exchange of the same name bound to the consumer's event exchange. Each message runs the consumer in its own transaction; one consumer's failure never touches another's queue. The broker delivers at least once and the bus does not deduplicate: every event consumer must be safe to run twice. After the retries, the message goes to `<queue>_error` with the `MT-Fault-*` headers. A message no consumer wants is acknowledged and logged.
+
+Envelopes written by MassTransit with System.Text.Json or Newtonsoft are read; ours are written in one format. No MassTransit package is referenced by the project.
+
+## What varies
+
+Which broker carries events between services, and what other services must understand.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| MassTransit 9 | A licence | Cannot be assumed for a starter others install |
+| MassTransit 8 | Free | Maintenance ends after 2026; wrong foundation for new services |
+| **Our own bus with the MassTransit 8 wire format** | Nine small classes, the interoperability tests | n/a |
+
+## Consequences
+
+- Gained: MassTransit services and ours exchange events both ways; a Go service can write the same format.
+- Lost or owed: request/response, sagas, scheduling, delayed redelivery and `Fault<T>` events are not provided; an endpoint's configuration lives in code; a redelivered message runs its consumer again, so consumers must be safe to run twice.
+- Cost of going back: medium; the handlers stay, the transport classes are replaced.
+
+## How it is enforced
+
+`MessageNamesTests`, `MessageEnvelopeTests` (including envelopes MassTransit wrote), the conformance checks in `transport-rabbitmq.sh`, and the interoperability tests run against MassTransit 8 while the skills are built.
 ~~~~

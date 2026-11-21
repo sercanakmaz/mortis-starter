@@ -113,6 +113,13 @@ else
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
     run_conformance outbox.sh
+    if [ "$TRANSPORT" = "rabbitmq" ]; then
+      if [ "$DRY_RUN" = 1 ] || (exec 3<>/dev/tcp/localhost/5672) 2>/dev/null; then
+        run_conformance transport-rabbitmq.sh
+      else
+        skip "conformance: transport-rabbitmq.sh" "RabbitMQ is not reachable at localhost:5672"
+      fi
+    fi
   elif [ "$EXAMPLE" = "true" ]; then
     skip "conformance: outbox.sh" "PostgreSQL is not reachable"
   fi

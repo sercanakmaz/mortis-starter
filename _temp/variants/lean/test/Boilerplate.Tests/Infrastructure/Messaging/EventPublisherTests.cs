@@ -1,83 +1,65 @@
 using Boilerplate.Tests.TestSupport.Infrastructure.Messaging;
 using Boilerplate.Tests.TestSupport.Shared.Persistence;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
-using Boilerplate.Infrastructure.Messaging;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Boilerplate.Shared.Domain;
 
 namespace Boilerplate.Tests.Infrastructure.Messaging;
 
 public class EventPublisherTests
 {
     [Fact]
-    public async Task PublishAsync_WithTwoHandlers_Should_RunEachInItsOwnTransactionInSequenceOrder()
+    public async Task PublishAsync_WithTwoConsumers_Should_RunEachInItsOwnTransactionInRegistrationOrder()
     {
         var calls = new List<string>();
         var eventPublisher = EventPublisherBuilder.Create()
             .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("second", 2, calls))
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("first", 1, calls))
+            .WithEventConsumer(new OtherRecordingEventConsumer(calls), 0)
+            .WithEventConsumer(new RecordingEventConsumer(calls), 0)
             .Build();
 
         await eventPublisher.PublishAsync(new FakeQueueEvent("event"));
 
-        Assert.Equal(["BeginTransactionAsync", "first", "CommitTransactionAsync", "BeginTransactionAsync", "second", "CommitTransactionAsync"], calls);
+        Assert.Equal(["BeginTransactionAsync", "OtherRecordingEventConsumer", "CommitTransactionAsync", "BeginTransactionAsync", "RecordingEventConsumer", "CommitTransactionAsync"], calls);
     }
 
     [Fact]
-    public async Task PublishAsync_WhenAHandlerThrows_Should_RollBackLogAndStillRunTheNextHandler()
+    public async Task PublishAsync_WhenAConsumerFails_Should_RetryItInAFreshTransactionUpToItsRetryCount()
     {
         var calls = new List<string>();
         var eventPublisherBuilder = EventPublisherBuilder.Create()
             .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("failing", 1, calls, 1, new InvalidOperationException("boom")))
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("healthy", 2, calls));
-        var eventPublisher = eventPublisherBuilder.Build();
-
-        await eventPublisher.PublishAsync(new FakeQueueEvent("event"));
-
-        Assert.Equal(["BeginTransactionAsync", "failing", "RollbackTransactionAsync", "BeginTransactionAsync", "healthy", "CommitTransactionAsync"], calls);
-        var entry = Assert.Single(eventPublisherBuilder.BuildLogger().Entries, logEntry => logEntry.Level == LogLevel.Error);
-        Assert.IsType<InvalidOperationException>(entry.Exception);
-    }
-
-    [Fact]
-    public async Task PublishAsync_WhenTheHandlerHitsAConcurrencyConflict_Should_RetryInAFreshTransaction()
-    {
-        var calls = new List<string>();
-        var eventPublisherBuilder = EventPublisherBuilder.Create()
-            .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("contended", 0, calls, 2, new DbUpdateConcurrencyException("stale")));
+            .WithEventConsumer(new RecordingEventConsumer(calls, 2, new InvalidOperationException("boom")), 2);
         var eventPublisher = eventPublisherBuilder.Build();
 
         await eventPublisher.PublishAsync(new FakeQueueEvent("event"));
 
         Assert.Equal(
-            ["BeginTransactionAsync", "contended", "RollbackTransactionAsync", "BeginTransactionAsync", "contended", "RollbackTransactionAsync", "BeginTransactionAsync", "contended", "CommitTransactionAsync"],
+            ["BeginTransactionAsync", "RecordingEventConsumer", "RollbackTransactionAsync", "BeginTransactionAsync", "RecordingEventConsumer", "RollbackTransactionAsync", "BeginTransactionAsync", "RecordingEventConsumer", "CommitTransactionAsync"],
             calls);
         Assert.DoesNotContain(eventPublisherBuilder.BuildLogger().Entries, logEntry => logEntry.Level == LogLevel.Error);
     }
 
     [Fact]
-    public async Task PublishAsync_WhenTheConflictNeverEnds_Should_GiveUpAfterTheMaximumAttemptsAndLog()
+    public async Task PublishAsync_WhenAConsumerKeepsFailing_Should_GiveUpAfterItsRetriesLogAndStillRunTheNextConsumer()
     {
         var calls = new List<string>();
         var eventPublisherBuilder = EventPublisherBuilder.Create()
             .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
-            .WithEventHandler(new RecordingAsyncEventHandler<FakeQueueEvent>("contended", 0, calls, int.MaxValue, new DbUpdateConcurrencyException("stale")));
+            .WithEventConsumer(new RecordingEventConsumer(calls, int.MaxValue, new InvalidOperationException("boom")), 1)
+            .WithEventConsumer(new OtherRecordingEventConsumer(calls), 0);
         var eventPublisher = eventPublisherBuilder.Build();
 
         await eventPublisher.PublishAsync(new FakeQueueEvent("event"));
 
-        Assert.Equal(MessagingConstants.MaxAttempts, calls.Count(call => call == "contended"));
-        Assert.Equal(MessagingConstants.MaxAttempts, calls.Count(call => call == "RollbackTransactionAsync"));
-        Assert.Single(eventPublisherBuilder.BuildLogger().Entries, logEntry => logEntry.Level == LogLevel.Error);
+        Assert.Equal(
+            ["BeginTransactionAsync", "RecordingEventConsumer", "RollbackTransactionAsync", "BeginTransactionAsync", "RecordingEventConsumer", "RollbackTransactionAsync", "BeginTransactionAsync", "OtherRecordingEventConsumer", "CommitTransactionAsync"],
+            calls);
+        var entry = Assert.Single(eventPublisherBuilder.BuildLogger().Entries, logEntry => logEntry.Level == LogLevel.Error);
+        Assert.IsType<InvalidOperationException>(entry.Exception);
     }
 
     [Fact]
-    public async Task PublishAsync_WithoutHandlersForTheEvent_Should_NotOpenATransaction()
+    public async Task PublishAsync_WithoutConsumersForTheEvent_Should_NotOpenATransaction()
     {
         var calls = new List<string>();
         var eventPublisher = EventPublisherBuilder.Create()

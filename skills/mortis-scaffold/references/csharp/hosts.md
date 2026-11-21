@@ -14,6 +14,8 @@ Top-level statements, the whole file:
 using {Name}.Api.Middlewares;
 using {Name}.Api.Filters;
 using {Name}.Infrastructure.Logging;
+using {Name}.Infrastructure.Messaging;
+using {Name}.Application.Products;
 using {Name}.Infrastructure;
 using {Name}.Application;
 using {Name}.Domain;
@@ -32,7 +34,9 @@ builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration);
+    .AddInfrastructureModule(builder.Configuration)
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 var app = builder.Build();
 
@@ -44,6 +48,8 @@ app.MapGet("/health", () => Results.Ok());
 
 app.Run();
 ```
+
+The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
 
 ### appsettings.json
 
@@ -234,6 +240,8 @@ using {Name}.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
 using {Name}.Shared.Application;
 using {Name}.Shared.Exceptions;
+using {Name}.Infrastructure.Messaging;
+using {Name}.Application.Products;
 using {Name}.Infrastructure;
 using {Name}.Application;
 using {Name}.Console;
@@ -249,7 +257,9 @@ builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration);
+    .AddInfrastructureModule(builder.Configuration)
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 using var host = builder.Build();
 
@@ -281,6 +291,8 @@ catch (ExceptionBase exception)
     return 2;
 }
 ```
+
+The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
 
 ### appsettings.json
 
@@ -474,7 +486,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Api/Middlewares/ApiConstants.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ErrorResponseModel.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ExceptionHandler.cs` | `{Name}.Api.Middlewares` | Microsoft.AspNetCore.Diagnostics, System.Net, {Name}.Shared.Exceptions |
-| `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Shared |
+| `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Application.Products, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared |
 | `src/{Name}.Console/ConsoleCommandRunner.cs` | `{Name}.Console` | System.Reflection, System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
 | `src/{Name}.Console/ConsoleConstants.cs` | `{Name}.Console` | System.Text.Json |
-| `src/{Name}.Console/Program.cs` | `` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, System.Text.Json, {Name}.Application, {Name}.Console, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Shared, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Console/Program.cs` | `` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, System.Text.Json, {Name}.Application, {Name}.Application.Products, {Name}.Console, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared, {Name}.Shared.Application, {Name}.Shared.Exceptions |

@@ -46,7 +46,7 @@ run CreateProduct "{\"sku\":\"OBX-$S\",\"name\":\"Outbox product\",\"stock\":10}
 ORDER="$(id_of "$(run CreateOrder "{\"orderNumber\":\"OBX-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"OBX-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":3}]}")")"
 
 if [ "$OUTBOX" = "after-command" ]; then
-  expect_equal "latency after-command: the async handler had run when the command returned" "7" "$(sql "select stock from products where sku = 'OBX-$S'")"
+  expect_equal "latency after-command: the event consumer had run when the command returned" "7" "$(sql "select stock from products where sku = 'OBX-$S'")"
   expect_equal "after-command: the published row is deleted" "0" "$(sql "select count(*) from outbox_messages where payload::text like '%OBX-$S%'")"
 else
   expect_equal "background: the command only wrote the row; nothing ran yet" "10|1" "$(sql "select (select stock from products where sku = 'OBX-$S') || '|' || count(*) from outbox_messages where payload::text like '%OBX-$S%'")"
@@ -61,21 +61,19 @@ else
 fi
 
 ROW_LOG="${ROW_LOG:-$WORK/outbox.log}"
-LINE_ADDED="$(log_field "$ROW_LOG" "l.get('Message', '').startswith('Published') and l.get('Event') == 'LineAdded' and l.get('CorrelationId') == '$(log_field "$WORK/outbox.log" "l.get('Message') == 'CreateOrderCommand started' and True" CorrelationId)'" EventId)"
-expect_equal "context: the command the async handler sent carries the row's correlation and is caused by the row" "1" "$(log_count "$ROW_LOG" "l.get('Message') == 'DecreaseProductStockCommand started' and l.get('CausationId') == '$LINE_ADDED'")"
+LINE_ADDED="$(log_field "$ROW_LOG" "l.get('Message', '').startswith('Handled') and l.get('Event') == 'LineAdded' and l.get('CorrelationId') == '$(log_field "$WORK/outbox.log" "l.get('Message') == 'CreateOrderCommand started' and True" CorrelationId)'" EventId)"
+expect_equal "context: the command the event consumer sent carries the row's correlation and is caused by the row" "1" "$(log_count "$ROW_LOG" "l.get('Message') == 'DecreaseProductStockCommand started' and l.get('CausationId') == '$LINE_ADDED'")"
 
 
 stop_relay
 run BlockCustomer "{\"id\":\"$CUSTOMER\"}" >/dev/null
 console_run CompleteOrder "{\"id\":\"$ORDER\"}" >/dev/null 2>>"$WORK/outbox.log"
 expect_equal "atomicity: a command that rolled back left no outbox row (no worker running)" "0|0" "$(sql "select count(*) from outbox_messages where type = '$COMPLETED' and payload->>'Id' = '$ORDER'")|$(log_count "$WORK/outbox.log" "l.get('Event') == 'Completed'")"
-Outbox__MaxAttempts=1 run CreateOrder "{\"orderNumber\":\"OBF-$S\",\"customerId\":\"$(id_of "$(run CreateCustomer "{\"name\":\"Over\",\"email\":\"over-$S@example.com\"}")")\",\"lines\":[{\"sku\":\"OBX-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":50}]}" >/dev/null
-if [ "$OUTBOX" = "background" ]; then
-  export Outbox__MaxAttempts=1
+if [ "${TRANSPORT:-database}" != "rabbitmq" ]; then
+  run CreateOrder "{\"orderNumber\":\"OBF-$S\",\"customerId\":\"$(id_of "$(run CreateCustomer "{\"name\":\"Over\",\"email\":\"over-$S@example.com\"}")")\",\"lines\":[{\"sku\":\"OBX-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":50}]}" >/dev/null
   start_relay
-  unset Outbox__MaxAttempts
+  expect_equal "failure: a consumer that throws leaves its row with the error, and the row stays at the consumer's Retry(3) + 1 attempts" "4|4|yes" "$(eventually "select attempts || '|' || max_attempts || '|' || case when last_error is not null then 'yes' else 'no' end from outbox_messages where payload->>'Sku' = 'OBX-$S' and (payload->>'Quantity')::int = 50" "4|4|yes" 30)"
 fi
-expect_equal "failure: a handler that throws leaves its row with the attempt and the error, and it stays at MaxAttempts" "1|yes" "$(eventually "select attempts || '|' || case when last_error is not null then 'yes' else 'no' end from outbox_messages where payload->>'Sku' = 'OBX-$S' and (payload->>'Quantity')::int = 50" "1|yes")"
 stop_relay
 
 report

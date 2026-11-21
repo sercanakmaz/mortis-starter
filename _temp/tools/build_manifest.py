@@ -19,13 +19,18 @@ OPTION_FILES = {
     "test/Boilerplate.Tests/Infrastructure/Messaging/EventPublisherTests.cs": {"events.outbox": "none"},
     "test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs": {"events.outbox": "none"},
     "docs/adr/0011-outbox-and-publishing-models.md": {"events.outbox": OUTBOX},
+    "docs/adr/0013-own-bus-compatible-with-masstransit.md": {"events.transport": "rabbitmq"},
     "src/Boilerplate.Worker/Boilerplate.Worker.csproj": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/Program.cs": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/appsettings.json": {"hosts.worker": "separate"},
+    "src/Boilerplate.Infrastructure/Messaging/EventConsumerRegistry.cs": {"events.transport": ["in-process", "database"]},
 }
+EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
+RABBITMQ_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/RabbitMq/", "test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/")
 OPTION_PAGES = {"src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": "infrastructure-postgres.md", "docs/adr/0009-correlation-header.md": "project-docs-adr.md",
-                "docs/adr/0011-outbox-and-publishing-models.md": "project-docs-adr.md"}
+                "docs/adr/0011-outbox-and-publishing-models.md": "project-docs-adr.md",
+                "docs/adr/0013-own-bus-compatible-with-masstransit.md": "project-docs-adr.md"}
 KERNEL_PAGES = {"src/Boilerplate.Api/Middlewares/ErrorReference.cs": "failures.md"}
 SKIPPED = ("MORTIS.md",)
 
@@ -83,10 +88,17 @@ for f in files:
         entry["when"] = {"events.outbox": OUTBOX}
         entry["kernel"] = False
         entry["page"] = "outbox.md"
+    if f.startswith(RABBITMQ_PREFIXES):
+        entry["when"] = {"events.transport": "rabbitmq"}
+        entry["kernel"] = False
+        entry["page"] = "rabbitmq.md"
+    if f.startswith(EVENT_CONSUMER_FILES):
+        entry["kernel"] = False
+        entry["page"] = "event-consumers.md"
     if f in OPTION_FILES:
         entry["when"] = OPTION_FILES[f]
         entry["kernel"] = False
-        entry["page"] = OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "outbox.md" if "Worker" in f else "events-inprocess.md" if ("EventPublisher" in f or "MessagingConstants" in f) else "failures.md")
+        entry["page"] = "event-consumers.md" if f.startswith(EVENT_CONSUMER_FILES) else OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "outbox.md" if "Worker" in f else "events-inprocess.md" if ("EventPublisher" in f or "MessagingConstants" in f) else "failures.md")
     in_all = all(f in present[preset] for preset in PRESETS)
     assert in_all or "when" in entry and set(entry["when"]) != {"example"}, f"{f} is in only some variants and has no option"
     out.append(entry)

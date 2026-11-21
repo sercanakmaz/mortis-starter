@@ -2,9 +2,9 @@
 
 Applies when `events.outbox` is `none`. Project `{Name}.Infrastructure`, folder `Messaging/`. Layer 1: `events.md`.
 
-Two classes. After `COMMIT` the unit of work hands each queue event to `EventPublisher`, which logs it and runs its async handlers in a new scope, each in its own transaction, as the system user. Nothing is stored.
+Two classes. After `COMMIT` the unit of work hands each queue event to `EventPublisher`, which logs it and runs the event's registered consumers (`event-consumers.md`), each in its own scope and transaction, as the system user. Nothing is stored.
 
-What can be lost: an event whose async handler had not run when the process died. Say so plainly when it matters; the outbox options remove it.
+What can be lost: an event whose event consumer had not run when the process died. Say so plainly when it matters; the outbox options remove it.
 
 With an outbox, neither class exists in the project (`outbox.md`).
 
@@ -16,18 +16,16 @@ File `Messaging/EventPublisher.cs`, registered as a singleton by `AddInfrastruct
 
 @@member src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs::EventPublisher::PublishAsync@@
 
-- One scope for the event; one transaction per handler, in `Sequence` order.
-- A concurrency conflict is retried in a fresh transaction up to `MaxAttempts`; any other failure is logged and the next handler still runs.
+- Every event consumer is a consumer of its own: a fresh scope and transaction per attempt, in the order of the `AddEventConsumer` lines.
+- A failure, a concurrency conflict included, is retried after a short delay up to the consumer's `Retry(n)`; after the last attempt it is logged as an error and the next consumer still runs.
 - Its log lines carry the event's fields (`LogFields.Of(event)`, `logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.
-- An async handler that writes a contended row needs the `xmin` row version on that aggregate (`infrastructure-postgres.md`).
+- An event consumer that writes a contended row needs the `xmin` row version on that aggregate (`infrastructure-postgres.md`).
 
 ## MessagingConstants
 
-File `Messaging/MessagingConstants.cs`:
+File `Messaging/MessagingConstants.cs`. Only the delay between attempts; how many attempts is each consumer's `Retry(n)`:
 
 @@decl src/Boilerplate.Infrastructure/Messaging/MessagingConstants.cs::MessagingConstants@@
-
-@@member src/Boilerplate.Infrastructure/Messaging/MessagingConstants.cs::MessagingConstants::MaxAttempts@@
 
 @@member src/Boilerplate.Infrastructure/Messaging/MessagingConstants.cs::MessagingConstants::RetryDelayMilliseconds@@
 

@@ -11,7 +11,7 @@ Project `{Name}.Infrastructure`. Applies when `database` is `postgres`. Layer 1:
 - **Value objects** are mapped with `ComplexProperty(...)` and `IsRequired()`.
 - **References to other aggregates** are foreign keys with an explicit delete behaviour, `Restrict` unless the child belongs to the parent.
 - **Uniqueness** is a unique index (or an alternate key). The database refuses the second row and `DatabaseExceptionHandler` turns it into `DuplicateException`. A handler never checks "exists?" first.
-- **Concurrency.** An aggregate whose row is written by concurrent async handlers maps PostgreSQL's `xmin` as its row version.
+- **Concurrency.** An aggregate whose row is written by concurrent event consumers maps PostgreSQL's `xmin` as its row version.
 - **One scope, one unit of work.**
 - **No views, functions or triggers** in the database.
 
@@ -173,7 +173,7 @@ A child entity with a value object:
 
 @@member src/Boilerplate.Infrastructure/Persistence/Orders/OrderConfiguration.cs::OrderLineConfiguration::Configure@@
 
-An aggregate written by concurrent async handlers, with a check constraint:
+An aggregate written by concurrent event consumers, with a check constraint:
 
 @@member src/Boilerplate.Infrastructure/Persistence/Products/ProductConfiguration.cs::ProductConfiguration::Configure@@
 

@@ -41,10 +41,8 @@ public static class ApplicationModule
         services.AddCommandHandler<GetProductCommand, ProductDto, GetProductCommandHandler>();
         services.AddCommandHandler<IncreaseProductStockCommand, ProductDto, IncreaseProductStockCommandHandler>();
         services.AddScoped<IValidator<IncreaseProductStockCommand>, IncreaseProductStockCommandValidator>();
-        services.AddScoped<BaseAsyncEventHandler<LineCancelled>, IncreaseStockWhenOrderLineCancelledEventHandler>();
         services.AddCommandHandler<DecreaseProductStockCommand, ProductDto, DecreaseProductStockCommandHandler>();
         services.AddScoped<IValidator<DecreaseProductStockCommand>, DecreaseProductStockCommandValidator>();
-        services.AddScoped<BaseAsyncEventHandler<LineAdded>, DecreaseStockWhenOrderLineAddedEventHandler>();
 
         return services;
     }

@@ -1,6 +1,8 @@
 using Boilerplate.Api.Middlewares;
 using Boilerplate.Api.Filters;
 using Boilerplate.Infrastructure.Logging;
+using Boilerplate.Infrastructure.Messaging;
+using Boilerplate.Application.Products;
 using Boilerplate.Infrastructure;
 using Boilerplate.Application;
 using Boilerplate.Domain;
@@ -19,7 +21,9 @@ builder.Services
     .AddSharedModule()
     .AddDomainModule()
     .AddApplicationModule()
-    .AddInfrastructureModule(builder.Configuration);
+    .AddInfrastructureModule(builder.Configuration)
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 var app = builder.Build();
 

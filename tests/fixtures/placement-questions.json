@@ -17,7 +17,7 @@
  {
   "question": "Reduce product stock after a line is added, allowed to lag",
   "layer": "Application",
-  "block": "Async event handler"
+  "block": "Event consumer"
  },
  {
   "question": "Move stock from one warehouse to another, where both warehouses must change or neither",
@@ -67,7 +67,7 @@
  {
   "question": "React to a committed event after the commit, in a new scope, as the system actor",
   "layer": "Application",
-  "block": "Async event handler"
+  "block": "Event consumer"
  },
  {
   "question": "Read the tenant of the caller from the credential",

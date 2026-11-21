@@ -49,7 +49,7 @@ The two skills; eval prompts written (at least five each, including a lean and a
 
 
 - [ ] On each fixture, `review.sh` reports the planted violation and nothing else.
-- [ ] With the skill, a fresh model adds an aggregate with a child entity, a command and an async handler to a project generated with the standard preset; the result builds with 0 warnings, its tests pass and `review.sh` is clean. Without the skill, the same prompt fails at least one of those (record both runs).
+- [ ] With the skill, a fresh model adds an aggregate with a child entity, a command and an event consumer to a project generated with the standard preset; the result builds with 0 warnings, its tests pass and `review.sh` is clean. Without the skill, the same prompt fails at least one of those (record both runs).
 - [ ] The same "add an aggregate" prompt on a tenancy-on project produces a tenant-owned aggregate with the index and tests; on a lean project it does not mention tenants.
 
 ## Out of scope

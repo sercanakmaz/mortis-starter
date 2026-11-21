@@ -27,7 +27,7 @@ if [ "${EXAMPLE:-false}" = "true" ]; then
   [ "${WORKER:-none}" = "separate" ] && [ -f "$PROJECT/.mortis/worker.log" ] && cat "$PROJECT/.mortis/worker.log" >> "$LOG"
   expect_equal "correlation: the command of the request logs the caller's id as its CorrelationId" "yes" "$([ "$(log_count "$LOG" "l.get('Message') == 'CreateOrderCommand started' and l.get('CorrelationId') == '$REQUEST_ID'")" -ge 1 ] && echo yes || echo no)"
   expect_equal "correlation: the event the request published carries it" "yes" "$([ "$(log_count "$LOG" "l.get('Event') == 'LineAdded' and l.get('CorrelationId') == '$REQUEST_ID'")" -ge 1 ] && echo yes || echo no)"
-  expect_equal "correlation: the command an async handler sent carries it, caused by that event" "yes" "$([ "$(log_count "$LOG" "l.get('Message') == 'DecreaseProductStockCommand started' and l.get('CorrelationId') == '$REQUEST_ID' and l.get('CausationId') not in (None, '', 'None')")" -ge 1 ] && echo yes || echo no)"
+  expect_equal "correlation: the command an event consumer sent carries it, caused by that event" "yes" "$([ "$(log_count "$LOG" "l.get('Message') == 'DecreaseProductStockCommand started' and l.get('CorrelationId') == '$REQUEST_ID' and l.get('CausationId') not in (None, '', 'None')")" -ge 1 ] && echo yes || echo no)"
 fi
 
 kill "$API_PID" 2>/dev/null

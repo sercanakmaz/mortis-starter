@@ -11,7 +11,7 @@
  "Application/CommandContext.cs": "Command",
  "Domain/AggregateRoot.cs": "AggregateRoot",
  "Domain/AuditUser.cs": "Entity",
- "Domain/BaseAsyncEventHandler.cs": "Async event handler",
+ "Domain/BaseEventConsumer.cs": "Event consumer",
  "Domain/BaseSyncEventHandler.cs": "Sync event handler",
  "Domain/Entity.cs": "Entity",
  "Domain/EventBase.cs": "Domain event",

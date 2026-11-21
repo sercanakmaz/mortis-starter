@@ -29,7 +29,7 @@ Go is added through the language set described in the spec ("Adding a language")
 | Errors | The exception levels become error values: sentinel errors at `minimal`, a typed `Error{Code, Kind, Params}` at `coded`, a catalogue at `catalogued`. One HTTP mapper. No panics for domain errors. |
 | Persistence | `pgx` with hand-written SQL or `sqlc`; pick one and justify it. The unit of work is a function `InTransaction(ctx, func(ctx) error)` that puts the transaction in the context for repositories. |
 | Aggregates and events | An embedded `AggregateRoot` struct collects events; the unit of work drains them. Unexported fields with methods; construction through `New…` functions that validate. |
-| Sync and async handlers | Two registries with the same semantics as C#: sync inside the transaction, async after the commit. |
+| Sync and event consumers | Two registries with the same semantics as C#: sync inside the transaction, async after the commit. |
 | Validation | Plain functions per command returning field errors in the shared error shape. No tag-based validator unless an ADR argues for it. |
 | HTTP | `net/http` with the standard router. |
 | Migrations | SQL files and a small runner or a well-known tool; plain SQL files written by the skill. |

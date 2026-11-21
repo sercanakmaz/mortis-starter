@@ -38,7 +38,7 @@ How an event raised by an aggregate reaches the handlers that run after the comm
 
 | `events.outbox` | What happens | Loses events when | Tier | Built |
 |---|---|---|---|---|
-| `none` | After COMMIT the async handlers run in the same process | the process dies between COMMIT and the handler | L | yes |
+| `none` | After COMMIT the event consumers run in the same process | the process dies between COMMIT and the handler | L | yes |
 | `after-command` | The event row is written in the same transaction; right after COMMIT the same request publishes it and marks it published. A sweeper publishes rows left behind | never (at-least-once) | S | no |
 | `background` | The request only writes the row; a relay job polls and publishes | never (at-least-once); adds a delay of one polling interval | A | no |
 
@@ -92,7 +92,7 @@ Go uses the same rungs with sentinel and typed errors instead of exceptions.
 
 | Option | Kind | Tier | Built | Notes |
 |---|---|---|---|---|
-| Sync and async handlers in Application | core | all | yes | ADR 0004 |
+| Sync and event consumers in Application | core | all | yes | ADR 0004 |
 | Correlation id: request header in, onto the command, onto every event, into logs | add-on | S | no | Also a causation id (which event caused this command). |
 | Inbox / idempotent consumer (processed-message table) | add-on, required by any outbox | S | no | W2, W3 |
 | Retry and dead-letter policy | add-on | S | yes (retry on concurrency only) | |

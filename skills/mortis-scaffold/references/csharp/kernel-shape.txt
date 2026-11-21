@@ -131,14 +131,12 @@ member {Name}.Shared.Domain.AggregateRoot: public void SetUpdatedAudit(AuditUser
 member {Name}.Shared.Domain.AggregateRoot: public void ClearEvents()
 member {Name}.Shared.Domain.AggregateRoot: protected void RaiseEvent(EventBase @event)
 type {Name}.Shared.Domain: public sealed record AuditUser(string Id, string Email)
-type {Name}.Shared.Domain: public interface IAsyncEventHandler
-member {Name}.Shared.Domain.IAsyncEventHandler: int Sequence { get; }
-member {Name}.Shared.Domain.IAsyncEventHandler: Task Handle(EventBase @event)
-type {Name}.Shared.Domain: public abstract class BaseAsyncEventHandler<TEvent> : IAsyncEventHandler where TEvent : EventBase, IQueueEvent
-member {Name}.Shared.Domain.BaseAsyncEventHandler: public virtual int Sequence
-member {Name}.Shared.Domain.BaseAsyncEventHandler: protected abstract Task OnHandle(TEvent @event)
-member {Name}.Shared.Domain.BaseAsyncEventHandler: public Task Handle(EventBase @event)
-member {Name}.Shared.Domain.BaseAsyncEventHandler: protected static CommandContext ContextOf(EventBase @event)
+type {Name}.Shared.Domain: public interface IEventConsumer
+member {Name}.Shared.Domain.IEventConsumer: Task Handle(EventBase @event)
+type {Name}.Shared.Domain: public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : EventBase, IQueueEvent
+member {Name}.Shared.Domain.BaseEventConsumer: protected abstract Task OnHandle(TEvent @event)
+member {Name}.Shared.Domain.BaseEventConsumer: public Task Handle(EventBase @event)
+member {Name}.Shared.Domain.BaseEventConsumer: protected static CommandContext ContextOf(EventBase @event)
 type {Name}.Shared.Domain: public interface ISyncEventHandler
 member {Name}.Shared.Domain.ISyncEventHandler: int Sequence { get; }
 member {Name}.Shared.Domain.ISyncEventHandler: Task Handle(EventBase @event)

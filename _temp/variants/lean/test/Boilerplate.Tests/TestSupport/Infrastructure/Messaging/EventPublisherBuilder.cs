@@ -18,15 +18,10 @@ public class EventPublisherBuilder
         return this;
     }
 
-    public EventPublisherBuilder WithEventHandler<TEvent>(BaseAsyncEventHandler<TEvent> eventHandler) where TEvent : EventBase, IQueueEvent
+    public EventPublisherBuilder WithEventConsumer<TConsumer>(TConsumer eventConsumer, int retryCount) where TConsumer : class, IEventConsumer
     {
-        _services.AddSingleton(eventHandler);
-        return this;
-    }
-
-    public EventPublisherBuilder WithScopedEventHandler<TEvent>(Func<IServiceProvider, BaseAsyncEventHandler<TEvent>> factory) where TEvent : EventBase, IQueueEvent
-    {
-        _services.AddScoped(factory);
+        _services.AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(retryCount));
+        _services.AddSingleton(eventConsumer);
         return this;
     }
 
@@ -34,8 +29,10 @@ public class EventPublisherBuilder
 
     public EventPublisher Build()
     {
+        _services.AddEventConsumerRegistry();
+
         var serviceProvider = _services.BuildServiceProvider();
 
-        return new EventPublisher(serviceProvider.GetRequiredService<IServiceScopeFactory>(), _logger);
+        return new EventPublisher(serviceProvider.GetRequiredService<IServiceScopeFactory>(), serviceProvider.GetRequiredService<EventConsumerRegistry>(), _logger);
     }
 }

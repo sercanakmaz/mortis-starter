@@ -29,7 +29,7 @@ run the after-commit actions
 
 Everything above `COMMIT` is all-or-nothing. Everything below it is allowed to fail without undoing the change.
 
-13. **[Infrastructure]** the event publisher of the project's model takes the committed events: in process it runs the async handlers, each in its own scope and transaction; with an outbox the rows were written before `COMMIT` and its worker runs them (see [events.md](events.md)).
+13. **[Infrastructure]** the event publisher of the project's model takes the committed events: in process it runs the event consumers, each in its own scope and transaction; with an outbox the rows were written before `COMMIT` and its worker runs them (see [events.md](events.md)).
 14. **[Shared]** the pipeline runs the after-middlewares and returns the view.
 15. **[Host]** turns the view into the outside world's response, or a failure into `code, message, errors` with the failure's status.
 
@@ -40,8 +40,8 @@ Everything above `COMMIT` is all-or-nothing. Everything below it is allowed to f
 | Validation | step 4 | nothing written, error returned |
 | Business rule | step 9 | nothing saved, transaction rolled back |
 | Sync handler throws | before `COMMIT` | the whole change is rolled back, the caller gets the error |
-| Async handler throws | after `COMMIT` | logged; the change stays; the next handler still runs |
-| Concurrency conflict in an async handler | after `COMMIT` | retried in a fresh transaction up to a fixed number of attempts |
+| Event consumer throws | after `COMMIT` | logged; the change stays; the next handler still runs |
+| Concurrency conflict in an event consumer | after `COMMIT` | retried in a fresh transaction up to a fixed number of attempts |
 | Write without a transaction | step 10 | fails loudly, never silently loses events |
 
 ## Notes

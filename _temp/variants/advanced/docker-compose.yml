@@ -15,16 +15,30 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=boilerplate;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672/
     ports:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
 volumes:

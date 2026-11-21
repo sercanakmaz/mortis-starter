@@ -1,4 +1,6 @@
 using Boilerplate.Infrastructure.Messaging.Outbox;
+using Boilerplate.Infrastructure.Messaging;
+using Boilerplate.Application.Products;
 using Boilerplate.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
 using Boilerplate.Infrastructure;
@@ -15,7 +17,9 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
-    .AddOutboxWorker();
+    .AddOutboxWorker()
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 using var host = builder.Build();
 

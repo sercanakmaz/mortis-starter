@@ -17,7 +17,7 @@ Which facts about a call travel with it. A new one is a property of `CommandCont
 | Option | Cost | Why it was not chosen |
 |---|---|---|
 | Two properties per concern on every command | A line per concern per command | Grows with every option |
-| An ambient context service | Nothing per command | A hidden dependency, wrong inside async handlers, the problem 0003 removed |
+| An ambient context service | Nothing per command | A hidden dependency, wrong inside event consumers, the problem 0003 removed |
 | **One `Context` property, stamped on events by `EventContext`** | `CommandContext`, a stack in `EventContext` | n/a |
 
 ## Consequences

@@ -7,7 +7,7 @@ Generated when `example` is `true`. Its tests are in `worked-slice-tests.md`. Th
 Event handlers of products and customers react to order events, so the domain comes first for all three, then the rest. Build after each line:
 
 1. Domain of Category, then Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
-2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
+2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers and consumers, registration lines), each followed by its handler, event handler and consumer tests.
 3. Infrastructure of the four (configuration, repository, registration line) and their tests.
 4. The four controllers.
 
@@ -96,11 +96,11 @@ protected override async Task<CommandResult<ProductDto>> OnHandle(DecreaseProduc
 
 @@member src/Boilerplate.Application/Products/DecreaseProductStockCommand.cs::DecreaseProductStockCommandValidator::DecreaseProductStockCommandValidator@@
 
-Event handlers (async, as the system user), in `Products/`:
+Event consumers (after the commit, as the system user), in `Products/`; each gets its `AddEventConsumer` line in the hosts that run it (`event-consumers.md`):
 
-@@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs::DecreaseStockWhenOrderLineAddedEventHandler::OnHandle@@
+@@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs::DecreaseStockWhenOrderLineAddedEventConsumer::OnHandle@@
 
-@@member src/Boilerplate.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs::IncreaseStockWhenOrderLineCancelledEventHandler::OnHandle@@
+@@member src/Boilerplate.Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumer.cs::IncreaseStockWhenOrderLineCancelledEventConsumer::OnHandle@@
 
 ## Customers
 

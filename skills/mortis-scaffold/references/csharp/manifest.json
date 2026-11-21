@@ -173,6 +173,15 @@
    "kernel": false
   },
   {
+   "path": "docs/adr/0013-own-bus-compatible-with-masstransit.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -461,7 +470,7 @@
    "kernel": false
   },
   {
-   "path": "src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs",
+   "path": "src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs",
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
@@ -488,7 +497,7 @@
    "kernel": false
   },
   {
-   "path": "src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs",
+   "path": "src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumer.cs",
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
@@ -842,6 +851,30 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Messaging/EventConsumerEndpoint.cs",
+   "page": "event-consumers.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/EventConsumerModule.cs",
+   "page": "event-consumers.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/EventConsumerRegistry.cs",
+   "page": "event-consumers.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": [
+     "in-process",
+     "database"
+    ]
+   }
+  },
+  {
    "path": "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
    "page": "events-inprocess.md",
    "source": "snippets",
@@ -929,6 +962,69 @@
      "after-command",
      "background"
     ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageNames.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConnection.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConstants.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqModule.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqPublisher.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
    }
   },
   {
@@ -1189,7 +1285,7 @@
    "kernel": true
   },
   {
-   "path": "src/{Name}.Shared/Domain/BaseAsyncEventHandler.cs",
+   "path": "src/{Name}.Shared/Domain/BaseEventConsumer.cs",
    "page": "shared-domain.md",
    "source": "snippets",
    "kernel": true
@@ -1474,7 +1570,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs",
+   "path": "test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventConsumerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
@@ -1492,7 +1588,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs",
+   "path": "test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
@@ -1567,6 +1663,12 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs",
+   "page": "event-consumers.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Messaging/EventPublisherTests.cs",
    "page": "events-inprocess.md",
    "source": "snippets",
@@ -1585,6 +1687,24 @@
      "after-command",
      "background"
     ]
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageEnvelopeTests.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageNamesTests.cs",
+   "page": "rabbitmq.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "events.transport": "rabbitmq"
    }
   },
   {
@@ -1840,7 +1960,7 @@
    "kernel": false
   },
   {
-   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/RecordingAsyncEventHandler.cs",
+   "path": "test/{Name}.Tests/TestSupport/Shared/Domain/RecordingEventConsumer.cs",
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
@@ -1880,7 +2000,8 @@
    "src/{Name}.Application/{Plural}": [
     "{Aggregate}Dto.cs",
     "*Command.cs",
-    "*When*EventHandler.cs"
+    "*When*EventHandler.cs",
+    "*When*EventConsumer.cs"
    ],
    "src/{Name}.Infrastructure/Persistence/{Plural}": [
     "{Aggregate}Configuration.cs",
@@ -1894,7 +2015,8 @@
    ],
    "test/{Name}.Tests/Application/{Plural}": [
     "*CommandHandlerTests.cs",
-    "*EventHandlerTests.cs"
+    "*EventHandlerTests.cs",
+    "*EventConsumerTests.cs"
    ],
    "test/{Name}.Tests/Infrastructure/Persistence/{Plural}": [
     "{Aggregate}ConfigurationTests.cs",

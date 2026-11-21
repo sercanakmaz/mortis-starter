@@ -1459,14 +1459,14 @@ public async Task Handle_WithAnActiveLine_Should_ReturnTheOrderWithoutWriting()
 }
 ```
 
-## Event handler tests
+## Event handler and consumer tests
 
 One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders.
 
-`DecreaseStockWhenOrderLineAddedEventHandlerTests`:
+`DecreaseStockWhenOrderLineAddedEventConsumerTests`:
 
 ```csharp
-public class DecreaseStockWhenOrderLineAddedEventHandlerTests
+public class DecreaseStockWhenOrderLineAddedEventConsumerTests
 ```
 
 ```csharp
@@ -1480,9 +1480,9 @@ public async Task Handle_Should_DecreaseTheStockOfTheProductWithTheSkuAndQuantit
         .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
     var productRepository = productRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
-    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+    var eventConsumer = new DecreaseStockWhenOrderLineAddedEventConsumer(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
 
-    await eventHandler.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3));
+    await eventConsumer.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3));
 
     productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.FindBySkuTrackingAsync("SKU-1"), Times.Once);
     Assert.Equal(7, writtenProduct.Stock);
@@ -1499,18 +1499,18 @@ public async Task Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTh
         .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
     var productRepository = productRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<DecreaseProductStockCommand>.Create().WithValidator(new DecreaseProductStockCommandValidator()).Build();
-    var eventHandler = new DecreaseStockWhenOrderLineAddedEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+    var eventConsumer = new DecreaseStockWhenOrderLineAddedEventConsumer(CommandDispatcherBuilder.Create().WithCommandHandler(new DecreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
 
-    await eventHandler.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3) { UserId = "user-7", UserEmail = "user-7@localhost" });
+    await eventConsumer.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3) { UserId = "user-7", UserEmail = "user-7@localhost" });
 
     Assert.Equal([SystemUser.Id, SystemUser.Email], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
 }
 ```
 
-`IncreaseStockWhenOrderLineCancelledEventHandlerTests`:
+`IncreaseStockWhenOrderLineCancelledEventConsumerTests`:
 
 ```csharp
-public class IncreaseStockWhenOrderLineCancelledEventHandlerTests
+public class IncreaseStockWhenOrderLineCancelledEventConsumerTests
 ```
 
 ```csharp
@@ -1524,9 +1524,9 @@ public async Task Handle_Should_IncreaseTheStockOfTheProductWithTheSkuAndQuantit
         .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
     var productRepository = productRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create().WithValidator(new IncreaseProductStockCommandValidator()).Build();
-    var eventHandler = new IncreaseStockWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+    var eventConsumer = new IncreaseStockWhenOrderLineCancelledEventConsumer(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
 
-    await eventHandler.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind"));
+    await eventConsumer.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind"));
 
     productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.FindBySkuTrackingAsync("SKU-1"), Times.Once);
     Assert.Equal(10, writtenProduct.Stock);
@@ -1543,9 +1543,9 @@ public async Task Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTh
         .WithUpdateAsync(updatedProduct => writtenProduct = updatedProduct);
     var productRepository = productRepositoryBuilder.Build();
     var commandPipeline = CommandPipelineBuilder<IncreaseProductStockCommand>.Create().WithValidator(new IncreaseProductStockCommandValidator()).Build();
-    var eventHandler = new IncreaseStockWhenOrderLineCancelledEventHandler(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
+    var eventConsumer = new IncreaseStockWhenOrderLineCancelledEventConsumer(CommandDispatcherBuilder.Create().WithCommandHandler(new IncreaseProductStockCommandHandler(productRepository, commandPipeline)).Build());
 
-    await eventHandler.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind") { UserId = "user-7", UserEmail = "user-7@localhost" });
+    await eventConsumer.Handle(new LineCancelled(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3, "changed mind") { UserId = "user-7", UserEmail = "user-7@localhost" });
 
     Assert.Equal([SystemUser.Id, SystemUser.Email], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
 }
@@ -1941,9 +1941,9 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | `test/{Name}.Tests/Application/Orders/CreateOrderCommandHandlerTests.cs` | `{Name}.Tests.Application.Orders` | Moq, {Name}.Application.Orders, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Orders, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Products/CreateProductCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
 | `test/{Name}.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
-| `test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventConsumerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Shared.Persistence, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application, {Name}.Tests.TestSupport.Shared.Persistence |
-| `test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumerTests.cs` | `{Name}.Tests.Application.Products` | Moq, {Name}.Application.Products, {Name}.Domain.Aggregates.Orders.Events, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Domain.Products, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Domain/Categories/CategoryTests.cs` | `{Name}.Tests.Domain.Categories` | {Name}.Domain.Aggregates.Categories.Events, {Name}.Tests.TestSupport.Domain.Categories |
 | `test/{Name}.Tests/Domain/Customers/CustomerTests.cs` | `{Name}.Tests.Domain.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Domain/Orders/MoneyTests.cs` | `{Name}.Tests.Domain.Orders` | System.Globalization, {Name}.Domain.Aggregates.Orders, {Name}.Shared.Exceptions |

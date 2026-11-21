@@ -14,7 +14,7 @@ The largest project: the background outbox, a separate Worker, the RabbitMQ bus,
 
 - **MassTransit interoperability**: the five C# checks of `docs/specs/messaging-wire-format.md`, against a real broker with real MassTransit 8 in the test project. Every *(verify)* mark in that spec is settled here and the spec corrected.
 - Two relays against one outbox table; the broker stopped and restarted.
-- Tenancy: tenant A cannot reach tenant B through any path, including an async handler in a mixed relay batch; the same key in two tenants.
+- Tenancy: tenant A cannot reach tenant B through any path, including an event consumer in a mixed relay batch; the same key in two tenants.
 - One trace across the request, the outbox, the bus and the handler.
 
 ## Acceptance

@@ -40,7 +40,7 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 - [ ] `PATCH` with `{"name": null}` clears the name and `{}` leaves it (tests).
 - [ ] Repeating a `POST` with the same idempotency key returns the first response and creates one row.
 - [ ] `/health/ready` turns unhealthy when PostgreSQL is stopped and when the outbox has rows older than the threshold.
-- [ ] One trace id links the HTTP request span, the command span, the outbox publish span and the async handler span (integration test with an in-memory exporter), with every transport.
+- [ ] One trace id links the HTTP request span, the command span, the outbox publish span and the event consumer span (integration test with an in-memory exporter), with every transport.
 
 ## Out of scope
 

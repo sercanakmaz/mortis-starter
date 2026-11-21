@@ -104,17 +104,17 @@ One class per command handler that writes, in `test/{Name}.Tests/Application/{Pl
 
 @@members test/Boilerplate.Tests/Application/Orders/CancelOrderWhenAllLinesCancelledCommandHandlerTests.cs::CancelOrderWhenAllLinesCancelledCommandHandlerTests@@
 
-## Event handler tests
+## Event handler and consumer tests
 
 One class per event handler. The event handler is built with a `CommandDispatcherBuilder` holding the real command handler of the command it sends, built from repository builders.
 
-`DecreaseStockWhenOrderLineAddedEventHandlerTests`:
+`DecreaseStockWhenOrderLineAddedEventConsumerTests`:
 
-@@members test/Boilerplate.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventHandlerTests.cs::DecreaseStockWhenOrderLineAddedEventHandlerTests@@
+@@members test/Boilerplate.Tests/Application/Products/DecreaseStockWhenOrderLineAddedEventConsumerTests.cs::DecreaseStockWhenOrderLineAddedEventConsumerTests@@
 
-`IncreaseStockWhenOrderLineCancelledEventHandlerTests`:
+`IncreaseStockWhenOrderLineCancelledEventConsumerTests`:
 
-@@members test/Boilerplate.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventHandlerTests.cs::IncreaseStockWhenOrderLineCancelledEventHandlerTests@@
+@@members test/Boilerplate.Tests/Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumerTests.cs::IncreaseStockWhenOrderLineCancelledEventConsumerTests@@
 
 `RegisterCompletedOrderWhenOrderCompletedEventHandlerTests`:
 

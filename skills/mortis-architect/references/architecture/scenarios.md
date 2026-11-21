@@ -20,8 +20,8 @@ Each scenario walks one situation block by block. Every numbered step starts wit
 2. [Application] the handler loads the order and calls its operation.
 3. [Domain] the order adds the line and raises `LineAdded`.
 4. [Shared] the pipeline commits the order.
-5. [Infrastructure] after `COMMIT` the event publisher runs the async handler in a new scope (with an outbox, the worker does).
-6. [Application] the async handler sends `ReserveStock`.
+5. [Infrastructure] after `COMMIT` the event publisher runs the event consumer in a new scope (with an outbox, the worker does).
+6. [Application] the event consumer sends `ReserveStock`.
 7. [Domain] the product reduces its stock.
 
 **Wrong placement:** reducing stock inside the order operation. A stock failure would then undo a line the customer already added, and the order would know about products.
@@ -45,7 +45,7 @@ Each scenario walks one situation block by block. Every numbered step starts wit
 3. [Infrastructure] the repository detects that the row changed since it was read, via the concurrency token, and raises a conflict.
 4. [Infrastructure] the async-handler runner retries the losing attempt in a fresh transaction.
 5. [Domain] on the retry the product sees stock 0 and refuses with `stock.insufficient`.
-6. [Application] the failure is logged for an async handler, or returned for a sync one.
+6. [Application] the failure is logged for an event consumer, or returned for a sync one.
 
 **Wrong placement:** a lock in the handler or an in-memory counter. Storage detects conflicts; the aggregate decides what a conflict means.
 
@@ -78,7 +78,7 @@ When the rule reads only a value that changes rarely (a customer's tier), a copy
 
 1. [Domain] the aggregate raises `Shipped`.
 2. [Shared] the pipeline commits.
-3. [Infrastructure] the dispatcher runs the async handler.
+3. [Infrastructure] the dispatcher runs the event consumer.
 4. [Application] the handler sends `NotifyCustomer`.
 5. [Infrastructure] the notification adapter calls the outside service.
 6. [Infrastructure] if the call fails, the retry policy tries again; the shipment stays committed.
@@ -120,8 +120,8 @@ When the rule reads only a value that changes rarely (a customer's tier), a copy
 3. [Application] the handler loads the order and calls `complete`.
 4. [Domain] the order operation changes its state and raises two events: `Completed` and `DiscountApplied`.
 5. [Application] a sync handler of `Completed` sends `CountCompletedOrder`; a second handler of `Completed`, in the stock folder, sends `ReleaseReservation`.
-6. [Application] an async handler of `DiscountApplied` sends `RecordLoyaltyPoints`.
-7. [Shared] the pipeline commits; the async handler then runs, and the outbox row for each queue event is written with the same correlation id.
+6. [Application] an event consumer of `DiscountApplied` sends `RecordLoyaltyPoints`.
+7. [Shared] the pipeline commits; the event consumer then runs, and the outbox row for each queue event is written with the same correlation id.
 
 **Wrong placement:** recording loyalty points in the complete-order handler. The order is completed without them, so they are a consequence: an event handler.
 
@@ -138,7 +138,7 @@ Stock moves from one warehouse to another.
 
 The second aggregate belongs in the command handler here: without the receiving side the command is not a transfer, a rule spans both, both are known up front and live in the same database.
 
-**Wrong placement:** an async handler that receives the stock after `Released`. If it fails, stock has left one warehouse and arrived nowhere.
+**Wrong placement:** an event consumer that receives the stock after `Released`. If it fails, stock has left one warehouse and arrived nowhere.
 
 ## 13. A decision that needs another system
 

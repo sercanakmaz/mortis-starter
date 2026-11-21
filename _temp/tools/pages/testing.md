@@ -65,7 +65,11 @@ File `RecordingEventHandler.cs` holds two handlers:
 
 @@members test/Boilerplate.Tests/TestSupport/Shared/Domain/RecordingEventHandler.cs::ThrowingEventHandler@@
 
-@@members test/Boilerplate.Tests/TestSupport/Shared/Domain/RecordingAsyncEventHandler.cs::RecordingAsyncEventHandler@@
+File `RecordingEventConsumer.cs` holds two consumers of `FakeQueueEvent`; each records its class name:
+
+@@members test/Boilerplate.Tests/TestSupport/Shared/Domain/RecordingEventConsumer.cs::RecordingEventConsumer@@
+
+@@decl test/Boilerplate.Tests/TestSupport/Shared/Domain/RecordingEventConsumer.cs::OtherRecordingEventConsumer@@
 
 @@members test/Boilerplate.Tests/TestSupport/Shared/Domain/EventHandlerExecutorBuilder.cs::EventHandlerExecutorBuilder@@
 

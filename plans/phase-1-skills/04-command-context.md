@@ -51,7 +51,7 @@ Knowledge only. Nothing here is compiled or run in this phase.
 Each item becomes a conformance check or a test snippet now. None is run in this phase; phase 2 runs them on the generated project.
 
 - [ ] A request body containing `"context": {...}` or `"userId"` does not change the context (test).
-- [ ] An event raised by a command carries the command's correlation id; a command sent from that event's handler carries the same correlation id and the event's id as causation id; this holds across a sync and an async handler (tests, and one conformance check that reads both from the log of `stock-flow`).
+- [ ] An event raised by a command carries the command's correlation id; a command sent from that event's handler carries the same correlation id and the event's id as causation id; this holds across a sync and an event consumer (tests, and one conformance check that reads both from the log of `stock-flow`).
 - [ ] No writing command declares more than one context line (`grep` in `verify.sh`).
 - [ ] 0 warnings; all earlier conformance checks pass.
 

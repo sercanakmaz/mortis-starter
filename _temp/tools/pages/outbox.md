@@ -9,7 +9,7 @@ Generate only the chosen mode. The files below are the `background` code; a box 
 ```
 command -> unitOfWork.CommitTransactionAsync
   save -> sync handlers -> collect the queue events
-  outboxRepository.Add(events)          one row per event, in the SAME transaction
+  outboxRepository.Add(events)          one row per event and registered consumer, in the SAME transaction
   save, COMMIT
   after-command only: outboxWorker.PublishAsync(id) for each of its rows
 
@@ -17,71 +17,76 @@ OutboxWorker (hosted, every PollingIntervalMilliseconds)
   repeat until nothing is due:
     new scope, BEGIN
     claim the next due row ("for update skip locked")
-    run the event's async handlers in this transaction
+    run the row's consumer in this transaction
     delete the row, COMMIT
     on failure: ROLLBACK, count the attempt, wait 2^attempts seconds
 ```
 
-- One row, its handlers and its deletion are one transaction: a row is either fully handled and gone, or untouched and retried. No inbox is needed.
+- Every event consumer is a consumer of its own: it gets its own row, transaction, retries and failure. A failing consumer never blocks or repeats another consumer of the same event.
+- One row, its consumer and its deletion are one transaction: a row is either fully handled and gone, or untouched and retried. No inbox is needed.
+- An event without a registered consumer gets no row. Consumers are registered in the hosts (`event-consumers.md`).
 - `skip locked` lets two workers, or a request and a worker, run side by side; each row goes to one of them.
-- A row that reaches `MaxAttempts` stays in the table for an operator. To retry it: `update outbox_messages set attempts = 0, next_attempt_at = now() where id = '<id>'`.
+- Each row carries `max_attempts`, its consumer's `Retry(n)` + 1. A row that reaches it stays in the table for an operator. To retry it: `update outbox_messages set attempts = 0, next_attempt_at = now() where id = '<id>'`.
 - Rows are taken in `occurred_at, id` order; a retried row can come after a later one.
 
 ## The files
 
 | File | Job |
 |---|---|
-| `OutboxMessage.cs` | The row: the event as JSON, its attempts, when to try next, the last error |
+| `OutboxMessage.cs` | The row: the event as JSON, the consumer that takes it, its attempts and attempt limit, when to try next, the last error |
 | `OutboxMessageConfiguration.cs` | Its table, `outbox_messages` |
-| `OutboxRepository.cs` | Add rows, claim the next due row, delete it, record a failure |
+| `OutboxRepository.cs` | Add a row per event and registered consumer, claim the next due row, delete it, record a failure |
 | `OutboxWorker.cs` | The background loop that publishes, sweeps and retries |
-| `OutboxSettings.cs` | Polling interval and maximum attempts |
+| `OutboxSettings.cs` | The polling interval (and, with `rabbitmq`, the longest wait between publish attempts) |
 | `OutboxModule.cs` | The registrations |
 
 ## OutboxMessage
 
 File `Messaging/Outbox/OutboxMessage.cs`:
 
-@@decl src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessage.cs::OutboxMessage@@
+@@decl variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessage.cs::OutboxMessage@@
 
-@@members src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessage.cs::OutboxMessage@@
+@@members variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessage.cs::OutboxMessage@@
 
-- The row's id is the event id. The correlation, causation, tenant and user travel inside the payload, as they do on the event.
+- `EventId` is the event's id, `Consumer` the full name of the consumer that takes this row, `MaxAttempts` its `Retry(n)` + 1. The correlation, causation, tenant and user travel inside the payload, as they do on the event.
+- With `events.transport` = `rabbitmq` the row has no `EventId`, `Consumer` or `MaxAttempts`: there is one row per event, its id is the event id, the broker fans it out to one queue per consumer, and publishing is retried until the broker takes it (`rabbitmq.md`).
 - `Type` is the event's full type name, read back against the Domain assembly. Renaming or moving an event type strands its pending rows: publish them first.
 
 File `Messaging/Outbox/OutboxMessageConfiguration.cs` (picked up by `ApplyConfigurationsFromAssembly`):
 
-@@decl src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs::OutboxMessageConfiguration@@
+@@decl variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs::OutboxMessageConfiguration@@
 
-@@member src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs::OutboxMessageConfiguration::Configure@@
+@@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs::OutboxMessageConfiguration::Configure@@
 
 ## OutboxRepository
 
 File `Messaging/Outbox/OutboxRepository.cs`, scoped, on the request's `AppDbContext`:
 
-@@decl src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository@@
+@@decl variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository@@
 
-@@members src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository@@
+@@members variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository@@
 
 - `Add` only tracks the rows; the unit of work saves them before `COMMIT`.
 - The raw SQL uses the snake_case names of `naming.database`.
 
-**after-command** adds one member, to claim a row by its id:
+**after-command** adds one member, to claim the event's next fresh row (a row that already failed is left to the worker's backoff):
 
 @@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxRepository.cs::OutboxRepository::ClaimAsync@@
 
 ## OutboxWorker
 
-File `Messaging/Outbox/OutboxWorker.cs`:
+File `Messaging/Outbox/OutboxWorker.cs`. This is the `database` transport, which runs the consumers itself; with `events.transport` = `rabbitmq` the worker publishes the row instead (`rabbitmq.md`).
 
-@@decl src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker@@
+@@decl variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker@@
 
-@@members src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker@@
+@@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker::ExecuteAsync@@
+
+@@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker::PublishAsync#2@@
 
 - Its log lines carry the event's fields (`logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.
-- The handlers' commands join the worker's transaction; events they raise become rows in it.
+- The consumers' commands join the worker's transaction; events they raise become rows in it.
 
-**after-command** adds one member, which the unit of work calls right after `COMMIT`:
+**after-command** adds one member, which the unit of work calls right after `COMMIT`; it handles the event's rows one consumer at a time:
 
 @@member variant:standard/src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxWorker.cs::OutboxWorker::PublishAsync@@
 
@@ -137,11 +142,11 @@ File `src/{Name}.Worker/{Name}.Worker.csproj`:
 
 @@data src/Boilerplate.Worker/Boilerplate.Worker.csproj xml@@
 
-File `src/{Name}.Worker/Program.cs`. `.AddOutboxWorker()` is there only with an outbox; a Worker for another add-on starts without it:
+File `src/{Name}.Worker/Program.cs`. `.AddOutboxWorker()` is there only with an outbox, and the `.AddEventConsumer<...>(...)` lines with `database` or `rabbitmq` (`event-consumers.md`):
 
 @@data src/Boilerplate.Worker/Program.cs csharp@@
 
-File `src/{Name}.Worker/appsettings.json`:
+File `src/{Name}.Worker/appsettings.json`; the `RabbitMq` connection string only with `events.transport` = `rabbitmq`:
 
 @@data src/Boilerplate.Worker/appsettings.json json@@
 

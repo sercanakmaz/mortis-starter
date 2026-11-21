@@ -35,6 +35,18 @@ def mask(text):
                 out[k] = " "
             i = j + 1
             continue
+        if text.startswith('"""', i):
+            q = i
+            while q < n and text[q] == '"':
+                q += 1
+            fence = text[i:q]
+            j = text.find(fence, q)
+            j = n if j < 0 else j
+            for k in range(q, j):
+                if out[k] != "\n":
+                    out[k] = "x"
+            i = j + len(fence)
+            continue
         if c == '"':
             verbatim = i > 0 and text[i - 1] == "@" or (i > 1 and text[i - 2:i] in ("$@", "@$"))
             j = i + 1

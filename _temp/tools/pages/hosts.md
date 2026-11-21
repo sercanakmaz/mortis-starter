@@ -12,6 +12,8 @@ Top-level statements, the whole file:
 
 @@data src/Boilerplate.Api/Program.cs csharp@@
 
+The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
+
 ### appsettings.json
 
 @@data src/Boilerplate.Api/appsettings.json json@@
@@ -99,6 +101,8 @@ Project `{Name}.Console`. A host that runs one command and exits: `dotnet run --
 ### Program.cs
 
 @@data src/Boilerplate.Console/Program.cs csharp@@
+
+The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
 
 ### appsettings.json
 

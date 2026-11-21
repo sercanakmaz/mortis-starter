@@ -40,15 +40,19 @@ Layer 1 names roles (see `mortis-architect/references/architecture/glossary.md`)
 | validator | `{Command}Validator` | in the command's file |
 | command handler | `{Command}Handler` | in the command's file |
 | view (DTO) | `{Aggregate}Dto`, `{Child}Dto` | `src/{Name}.Application/{Plural}/{Aggregate}Dto.cs` |
-| event handler | `{Action}When{Aggregate}{Event}EventHandler` | `src/{Name}.Application/{ReactingPlural}/{Handler}.cs` |
+| sync event handler | `{Action}When{Aggregate}{Event}EventHandler` | `src/{Name}.Application/{ReactingPlural}/{Handler}.cs` |
+| event consumer | `{Action}When{Aggregate}{Event}EventConsumer`; its queue is the name in kebab case without `EventConsumer` | `src/{Name}.Application/{ReactingPlural}/{Consumer}.cs` |
+| registering event consumers | `EventConsumerEndpoint`, `EventConsumerModule` with `AddEventConsumer<TConsumer>`, and `EventConsumerRegistry` without a broker (`event-consumers.md`) | `src/{Name}.Infrastructure/Messaging/` |
 | repository | `{Aggregate}Repository` | `src/{Name}.Infrastructure/Persistence/{Plural}/{Aggregate}Repository.cs` |
 | storage mapping | `{Aggregate}Configuration`, `{Child}Configuration` | `src/{Name}.Infrastructure/Persistence/{Plural}/{Aggregate}Configuration.cs` |
 | anti-corruption adapter | the outside system plus the port, e.g. `HttpTaxRates` | `src/{Name}.Infrastructure/Integrations/{Type}.cs` |
 | controller | `{Plural}Controller` | `src/{Name}.Api/Controllers/{Plural}Controller.cs` |
 | registration of a layer | `{Layer}Module` with `Add{Layer}Module` | the layer's project root |
-| publishing committed events | `EventPublisher` (`none`) or `OutboxRepository` + `OutboxWorker` (an outbox) | `src/{Name}.Infrastructure/Messaging/` or its `Outbox/` folder |
+| publishing committed events | `EventPublisher` (`none`) or `OutboxRepository` + `OutboxWorker` (an outbox), and with RabbitMQ the types on `rabbitmq.md` | `src/{Name}.Infrastructure/Messaging/`, its `Outbox/` or its `RabbitMq/` folder |
 | outbox types | the fixed names on `outbox.md` | `src/{Name}.Infrastructure/Messaging/Outbox/` |
 | worker host | `{Name}.Worker` | `src/{Name}.Worker/` |
+| receive endpoint | `{database}-worker`; its error queue `{database}-worker_error` | `AddReceiveEndpoint` in the Worker's `Program.cs` |
+| message exchange | `<Namespace>:<TypeName>` of the event | declared by `RabbitMqPublisher` and `ReceiveEndpointService` |
 | console command runner | `ConsoleCommandRunner`, `ConsoleConstants` | `src/{Name}.Console/` |
 | log formatting | `JsonLineFormatter`, `LogFields`, `LoggingModule` | `src/{Name}.Infrastructure/Logging/` |
 | test class | `{Type}Tests` | mirrors the type's path under `test/{Name}.Tests/` |

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Persistence;
+using Boilerplate.Infrastructure.Messaging;
 using Microsoft.Extensions.Configuration;
 using Boilerplate.Infrastructure.Messaging.Outbox;
 using Boilerplate.Infrastructure.Logging;
@@ -21,6 +22,7 @@ public static class InfrastructureModule
         services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
         services.AddOutboxModule(configuration);
         services.AddPersistenceModule();
+        services.AddEventConsumerRegistry();
 
         return services;
     }

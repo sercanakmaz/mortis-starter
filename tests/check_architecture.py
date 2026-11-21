@@ -14,7 +14,7 @@ FILES = ["layers.md", "building-blocks.md", "request-lifecycle.md", "events.md",
 
 BLOCKS = ["Entity", "AggregateRoot", "Child entity", "Value object", "Domain event",
           "Repository interface", "Domain service", "Command", "Validator", "Command handler",
-          "Command pipeline", "Dispatcher", "DTO", "Sync event handler", "Async event handler",
+          "Command pipeline", "Dispatcher", "DTO", "Sync event handler", "Event consumer",
           "Unit of work", "Event publisher", "Host adapter", "Anti-corruption layer", "Failure"]
 
 LANGUAGE_TERMS = [

@@ -13,5 +13,7 @@ What phase 1 has not proven. Since decision 37 every page's code is compiled, te
 | 03 | `scripts/conformance/*.sh` | Pass on the three variants; no deliberate break has been shown to turn each check red |
 | 08 | Two workers on one table; a crash mid-transaction | No check; safe by construction (`skip locked`, one transaction per row), unproven |
 | 08 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only; no variant uses `as-code` |
+| 09 | MassTransit's Newtonsoft serializer reading what we publish, and enums or nested types in a message | Checks 1 to 4 pass against MassTransit 8.5.12; our example events have no enum or nested type |
+| 09 | `events.transport` = `rabbitmq` with `hosts.worker` = `in-api` | No variant builds it; the Api would then host the receive endpoint |
 | 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
 | 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

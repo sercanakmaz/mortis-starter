@@ -17,7 +17,7 @@ How a request moves through this solution, and why each piece is where it is. Th
 
 | Project | Holds | May reference |
 |---|---|---|
-| `Shared` | Building blocks with no database library: `Entity`, `AggregateRoot`, `EventBase`, `EventContext`, `BaseSyncEventHandler`, `BaseAsyncEventHandler`, `ICommand<TContent>`, `IContextCommand`, `CommandContext`, `ITransactionalCommand`, `BaseCommandHandler`, `ICommandDispatcher`, `CommandPipeline`, `IRepository`, `IUnitOfWork`, exceptions | nothing of ours |
+| `Shared` | Building blocks with no database library: `Entity`, `AggregateRoot`, `EventBase`, `EventContext`, `BaseSyncEventHandler`, `BaseEventConsumer`, `ICommand<TContent>`, `IContextCommand`, `CommandContext`, `ITransactionalCommand`, `BaseCommandHandler`, `ICommandDispatcher`, `CommandPipeline`, `IRepository`, `IUnitOfWork`, exceptions | nothing of ours |
 | `Domain` | `Aggregates/<Plural>/`: aggregate root, child entities, value objects, `Events/`, repository **interface**, constants; `Services/` and `Ports/` when needed | `Shared` |
 | `Application` | `<Plural>/`: commands and DTOs | `Domain`, `Shared` |
 | `Infrastructure` | Everything that implements a Domain or Shared interface: `AppDbContext`, `EfRepository`, `UnitOfWork`, repositories, EF configurations, migrations, logging, outbound event dispatcher | `Domain`, `Shared` |
@@ -61,13 +61,13 @@ commit, before COMMIT   EventHandlerExecutor runs every BaseSyncEventHandler<TEv
                         a handler may write and may raise more events; those are handled too
 COMMIT
 commit, after COMMIT    each event marked IQueueEvent goes to EventPublisher, which runs every
-                        BaseAsyncEventHandler<TEvent> in a new scope, each in its own transaction, as `SystemUser`
+                        consumer registered for it with AddEventConsumer, each in its own scope and transaction, as `SystemUser`
                         then the OnCommitted actions run
 ```
 
-| | Sync handler | Async handler |
+| | Sync handler | Event consumer |
 |---|---|---|
-| Base class | `BaseSyncEventHandler<TEvent>` | `BaseAsyncEventHandler<TEvent>` (event must be `IQueueEvent`) |
+| Base class | `BaseSyncEventHandler<TEvent>` | `BaseEventConsumer<TEvent>` (event must be `IQueueEvent`) |
 | Runs | before COMMIT, in the transaction of the command | after COMMIT, in a new scope and its own transaction |
 | If it throws | the whole command rolls back and the caller gets the error | logged, the original change stays committed |
 | Can veto | yes | no |
@@ -75,10 +75,10 @@ commit, after COMMIT    each event marked IQueueEvent goes to EventPublisher, wh
 | Typical use | a rule that must hold together with the change: cancel the order when its last line is cancelled, count a completed order on the customer | stock, read models, notifications |
 
 - **Inside the transaction** means all-or-nothing. If a sync handler throws, the command that raised the event is rolled back with it.
-- **Where they live.** An event handler is in the Application layer, next to the commands, and sends a command. The command runs through the same pipeline as a request (validation, logging) and joins the transaction that is already open: inside a sync handler that is the command's own transaction, in an async handler it is the one the dispatcher began. If the inner command throws, the transaction is rolled back and the error reaches whoever began it.
-- **After the commit** is for anything that may lag behind or fail on its own. An async handler that hits a `DbUpdateConcurrencyException` is retried in a fresh transaction up to `MessagingConstants.MaxAttempts` times; any other failure is logged and the next handler still runs. Register other after-commit work with `IUnitOfWork.OnCommitted`.
+- **Where they live.** An event handler is in the Application layer, next to the commands, and sends a command. The command runs through the same pipeline as a request (validation, logging) and joins the transaction that is already open: inside a sync handler that is the command's own transaction, in an event consumer it is the one the dispatcher began. If the inner command throws, the transaction is rolled back and the error reaches whoever began it.
+- **After the commit** is for anything that may lag behind or fail on its own. An event consumer that fails, a `DbUpdateConcurrencyException` included, is retried in a fresh transaction up to the `Retry(n)` of its `AddEventConsumer` line; after the last attempt the failure is logged and the next consumer still runs. Register other after-commit work with `IUnitOfWork.OnCommitted`.
 - **A command result is built before COMMIT**, so it does not show what a sync handler changed afterwards. Read the aggregate again to see it.
-- An async handler that writes to a contended row needs a concurrency token on that aggregate (`Product` uses PostgreSQL's `xmin`); without one, two handlers read the same stock and one update is lost.
+- An event consumer that writes to a contended row needs a concurrency token on that aggregate (`Product` uses PostgreSQL's `xmin`); without one, two consumers read the same stock and one update is lost.
 - An event is raised **before** the repository write, inside the aggregate. The repository drains events at the start of `CreateAsync`, `UpdateAsync` and `DeleteAsync`; an event raised after that call would stay on the aggregate and never be handled. `RaiseEvent` is `protected` so that a service cannot do this by accident.
 - A reaction in another aggregate is a handler in **that** aggregate's folder which sends that aggregate's own command. A command handler changes a second aggregate itself only when the action is about both (a transfer); a consequence is always an event handler.
 - The exchange name of a queue event is `Namespace:Type`, for example `Boilerplate.Domain.Aggregates.Orders.Events:Completed`. This is why event records keep bare names in their aggregate's own `Events` namespace.
@@ -132,7 +132,7 @@ The decisions behind this layout are written down in [adr/](adr/): [0001](adr/00
 
 ## 8. Known gaps
 
-- Queue events are published in process after the commit. There is no outbox, so a crash between the commit and an async handler loses that handler's work.
+- Queue events are published in process after the commit. There is no outbox, so a crash between the commit and an event consumer loses that handler's work.
 - There is no guard against two event handlers that trigger each other forever.
 - Error messages are English only.
 - Authentication is not configured. `ContextCommandFilter` reads the standard claims once it is; until then the audit user of an Api write is empty.

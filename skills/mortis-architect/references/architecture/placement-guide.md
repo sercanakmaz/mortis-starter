@@ -11,7 +11,7 @@ Host ──► Command ──► Pipeline ──► Command handler (use case) �
                                           │
                                        COMMIT
                                           ├─ before it: sync handlers ──► send Command ──► another aggregate (may veto)
-                                          └─ after it:  async handlers ──► send Command ──► another aggregate, email, stock
+                                          └─ after it:  event consumers ──► send Command ──► another aggregate, email, stock
                                                         event publisher ──► outbox ──► worker ──► handlers
 ```
 
@@ -29,7 +29,7 @@ Ask these questions in order and stop at the first yes.
 4. **Is it running one user action** (load, call the domain, save, map the result)? → command handler; the pipeline gives the transaction.
 5. **Does the action change a second aggregate?** Decide between the command handler and an event handler with the test below.
 6. **Should it happen because something else happened, without the originator knowing?** → event handler. It sends one command; it holds no rule of its own.
-7. **Must it succeed or fail together with the change?** → sync handler (inside the transaction, can veto). **May it lag or fail alone?** → async handler. **Must it leave the process?** → the event publisher with the outbox model chosen for the project.
+7. **Must it succeed or fail together with the change?** → sync handler (inside the transaction, can veto). **May it lag or fail alone?** → event consumer. **Must it leave the process?** → the event publisher with the outbox model chosen for the project.
 8. **Does it touch storage, a broker, the clock, ids or a third party?** → infrastructure, behind something declared in Shared or Domain.
 9. **Is it a read for a screen or report?** → a query, not an aggregate.
 
@@ -69,7 +69,7 @@ A sync event handler and a multi-aggregate command handler are both one transact
 
 - **Fat handlers.** A command handler with `if` statements full of business rules is the commonest smell. The rule belongs on an aggregate, or in a domain service when it needs several entities.
 - **Consequences inside the command handler.** A handler that counts the order on the customer, updates a report and sends an email has hidden three reactions in one place. They are events and event handlers; the handler keeps only what its name promises.
-- **Events hiding a synchronous requirement.** If the business says "must happen together", an async handler that can fail alone is the wrong tool; use the command handler (if it is the intent) or a sync handler (if it is a consequence).
+- **Events hiding a synchronous requirement.** If the business says "must happen together", an event consumer that can fail alone is the wrong tool; use the command handler (if it is the intent) or a sync handler (if it is a consequence).
 - **Wide transactions.** Loading and changing many aggregates in one command ("close every open order of the customer") locks a lot and conflicts often. One command per aggregate, sent from a loop or an event handler.
 - **Event handlers with business logic inline.** An event handler sends a command and nothing more. The rule is in the aggregate or the domain service the command reaches.
 - **One event, one reaction assumed.** Several handlers may react to the same event, in several aggregates' folders. None may depend on the order of the others unless an order is declared.
@@ -98,10 +98,10 @@ Look up "I need to …" and read across: the layer, the block, and why. Roles ar
 | save what a domain service changed or created | Application | Command handler | all writes and the commit live in the use case |
 | ask another system something the domain needs to decide | Domain / Infrastructure | Anti-corruption layer, called by a domain service | the outside model stays out of Domain |
 | make another aggregate change succeed or fail together with this one | Application | Sync event handler | runs inside the transaction and can veto |
-| update stock after a line is added | Application | Async event handler | may lag, must not undo the line |
-| send an email after a change | Application | Async event handler | slow and allowed to fail |
-| send a push notification | Application | Async event handler | slow and allowed to fail |
-| call a third-party web service that changes something | Infrastructure | An adapter declared in Domain or Shared, called from an async handler's command | a slow outside write never sits inside the transaction |
+| update stock after a line is added | Application | Event consumer | may lag, must not undo the line |
+| send an email after a change | Application | Event consumer | slow and allowed to fail |
+| send a push notification | Application | Event consumer | slow and allowed to fail |
+| call a third-party web service that changes something | Infrastructure | An adapter declared in Domain or Shared, called from an event consumer's command | a slow outside write never sits inside the transaction |
 | read the current user | Host | Fill context.actor from the credential | there is no ambient user |
 | read the correlation id | Host | Fill context.correlation from headers or generate one | hosts own the outside world |
 | read the tenant | Host | Fill context.tenant from the credential or a header | hosts own the outside world |

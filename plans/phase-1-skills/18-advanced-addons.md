@@ -14,8 +14,8 @@ Needs: phase 1 step 08 for most. Optional: each add-on is its own small knowledg
 | `events-project` | Event contracts in their own project or module so another service can reference them | a second sample consumer service builds against the contracts only |
 | `ordered-handlers` | An explicit order among sync handlers of one event | handlers run in the declared order |
 | `feature-flags` | A flag port read by pipeline middleware and handlers | a flagged command is refused when the flag is off |
-| `email` | A mail port with an SMTP adapter and a development catcher in compose | an async handler sends a message the catcher receives |
-| `realtime` | Push to connected clients from async handlers | a client receives an event after the command commits |
+| `email` | A mail port with an SMTP adapter and a development catcher in compose | an event consumer sends a message the catcher receives |
+| `realtime` | Push to connected clients from event consumers | a client receives an event after the command commits |
 | `sagas` | A process manager: state in a table, advanced by events, with timeouts from the scheduler | a three-step process survives a restart between steps |
 
 Process practices that are documents, not code, and can be added to the core's `docs/` at any time: an incident log, a "where else must this change" checklist, a runbook template, a performance guide ("measure first"), agent-rule files for other assistants generated from `AGENTS.md`.

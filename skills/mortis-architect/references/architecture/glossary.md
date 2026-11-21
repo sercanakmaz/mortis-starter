@@ -8,7 +8,7 @@
 | After-commit action | work registered to run once the commit has succeeded |
 | Aggregate | a cluster of entities changed only through its root |
 | Aggregate root | the one entity of an aggregate that is loaded, saved and referenced |
-| Async handler | an event handler that runs after the commit, in its own transaction |
+| Event consumer | a reaction to a queue event that runs after the commit, in its own transaction, registered by hand in the host that runs it with its own retry count |
 | At-least-once | delivery guarantee: a message may arrive more than once, never zero times |
 | Background | delivery model: a relay loop publishes outbox rows later |
 | Before/after middleware | a step the pipeline runs around a command (logging, timing) |

@@ -111,7 +111,7 @@ interface ConsumeContext<TMessage>   { Message, MessageId, CorrelationId, Conver
 interface IEventBus                  { Publish(event), PublishRange(events) }
 ```
 
-Inside a scaffolded solution an application event handler does not implement `IConsumer` itself. The consumer host has one generic consumer per event type that restores the context (tenant, user, correlation), checks the inbox, and runs the `BaseAsyncEventHandler<T>` implementations, so a handler is written once and works with every transport. `IConsumer<T>` is for messages that are not our own events.
+Inside a scaffolded solution an application event handler does not implement `IConsumer` itself. The consumer host has one generic consumer per event type that restores the context (tenant, user, correlation), checks the inbox, and runs the `BaseEventConsumer<T>` implementations, so a handler is written once and works with every transport. `IConsumer<T>` is for messages that are not our own events.
 
 Registration is explicit, one line per endpoint and consumer, as everywhere else.
 

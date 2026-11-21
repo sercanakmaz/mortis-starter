@@ -345,9 +345,23 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("attempts");
 
+                    b.Property<string>("Consumer")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("consumer");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
                     b.Property<string>("LastError")
                         .HasColumnType("text")
                         .HasColumnName("last_error");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_attempts");
 
                     b.Property<DateTime>("NextAttemptAt")
                         .HasColumnType("timestamp with time zone")
@@ -370,6 +384,9 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_outbox_messages");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("ix_outbox_messages_event_id");
 
                     b.HasIndex("NextAttemptAt")
                         .HasDatabaseName("ix_outbox_messages_next_attempt_at");

@@ -47,7 +47,7 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 - [ ] Tenant A cannot read, update or delete tenant B's product through any repository method (tests and a conformance check over HTTP with two tenants).
 - [ ] The same SKU can exist in two tenants; twice in one tenant is a duplicate error.
 - [ ] A write to a tenant-owned aggregate with no tenant on the context fails with `TenantRequiredException` before any SQL.
-- [ ] An async handler triggered by tenant A's event reads and writes only tenant A's rows, with every transport, including when two tenants' events are interleaved in one relay batch.
+- [ ] An event consumer triggered by tenant A's event reads and writes only tenant A's rows, with every transport, including when two tenants' events are interleaved in one relay batch.
 - [ ] An order line cannot reference another tenant's product (foreign key test against PostgreSQL).
 - [ ] A global aggregate is readable from every tenant and from none.
 - [ ] An architecture test (when that level is on): every `IMultiTenant` table has `tenant_id` first in each unique index.

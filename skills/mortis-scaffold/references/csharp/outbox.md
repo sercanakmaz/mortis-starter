@@ -9,7 +9,7 @@ Generate only the chosen mode. The files below are the `background` code; a box 
 ```
 command -> unitOfWork.CommitTransactionAsync
   save -> sync handlers -> collect the queue events
-  outboxRepository.Add(events)          one row per event, in the SAME transaction
+  outboxRepository.Add(events)          one row per event and registered consumer, in the SAME transaction
   save, COMMIT
   after-command only: outboxWorker.PublishAsync(id) for each of its rows
 
@@ -17,25 +17,27 @@ OutboxWorker (hosted, every PollingIntervalMilliseconds)
   repeat until nothing is due:
     new scope, BEGIN
     claim the next due row ("for update skip locked")
-    run the event's async handlers in this transaction
+    run the row's consumer in this transaction
     delete the row, COMMIT
     on failure: ROLLBACK, count the attempt, wait 2^attempts seconds
 ```
 
-- One row, its handlers and its deletion are one transaction: a row is either fully handled and gone, or untouched and retried. No inbox is needed.
+- Every event consumer is a consumer of its own: it gets its own row, transaction, retries and failure. A failing consumer never blocks or repeats another consumer of the same event.
+- One row, its consumer and its deletion are one transaction: a row is either fully handled and gone, or untouched and retried. No inbox is needed.
+- An event without a registered consumer gets no row. Consumers are registered in the hosts (`event-consumers.md`).
 - `skip locked` lets two workers, or a request and a worker, run side by side; each row goes to one of them.
-- A row that reaches `MaxAttempts` stays in the table for an operator. To retry it: `update outbox_messages set attempts = 0, next_attempt_at = now() where id = '<id>'`.
+- Each row carries `max_attempts`, its consumer's `Retry(n)` + 1. A row that reaches it stays in the table for an operator. To retry it: `update outbox_messages set attempts = 0, next_attempt_at = now() where id = '<id>'`.
 - Rows are taken in `occurred_at, id` order; a retried row can come after a later one.
 
 ## The files
 
 | File | Job |
 |---|---|
-| `OutboxMessage.cs` | The row: the event as JSON, its attempts, when to try next, the last error |
+| `OutboxMessage.cs` | The row: the event as JSON, the consumer that takes it, its attempts and attempt limit, when to try next, the last error |
 | `OutboxMessageConfiguration.cs` | Its table, `outbox_messages` |
-| `OutboxRepository.cs` | Add rows, claim the next due row, delete it, record a failure |
+| `OutboxRepository.cs` | Add a row per event and registered consumer, claim the next due row, delete it, record a failure |
 | `OutboxWorker.cs` | The background loop that publishes, sweeps and retries |
-| `OutboxSettings.cs` | Polling interval and maximum attempts |
+| `OutboxSettings.cs` | The polling interval (and, with `rabbitmq`, the longest wait between publish attempts) |
 | `OutboxModule.cs` | The registrations |
 
 ## OutboxMessage
@@ -55,6 +57,14 @@ public Guid Id { get; private set; }
 ```
 
 ```csharp
+public Guid EventId { get; private set; }
+```
+
+```csharp
+public string Consumer { get; private set; }
+```
+
+```csharp
 public string Type { get; private set; }
 ```
 
@@ -71,6 +81,10 @@ public int Attempts { get; private set; }
 ```
 
 ```csharp
+public int MaxAttempts { get; private set; }
+```
+
+```csharp
 public DateTime NextAttemptAt { get; private set; }
 ```
 
@@ -79,14 +93,17 @@ public string LastError { get; private set; }
 ```
 
 ```csharp
-public static OutboxMessage From(EventBase @event)
+public static OutboxMessage From(EventBase @event, EventConsumerEndpoint eventConsumerEndpoint)
 {
     return new OutboxMessage
     {
-        Id = @event.EventId,
+        Id = Guid.CreateVersion7(),
+        EventId = @event.EventId,
+        Consumer = eventConsumerEndpoint.ConsumerType.FullName,
         Type = @event.GetType().FullName,
         Payload = JsonSerializer.Serialize(@event, @event.GetType()),
         OccurredAt = @event.OccurredAt,
+        MaxAttempts = eventConsumerEndpoint.RetryCount + 1,
         NextAttemptAt = @event.OccurredAt
     };
 }
@@ -99,7 +116,8 @@ public EventBase ToEvent(Assembly eventAssembly)
 }
 ```
 
-- The row's id is the event id. The correlation, causation, tenant and user travel inside the payload, as they do on the event.
+- `EventId` is the event's id, `Consumer` the full name of the consumer that takes this row, `MaxAttempts` its `Retry(n)` + 1. The correlation, causation, tenant and user travel inside the payload, as they do on the event.
+- With `events.transport` = `rabbitmq` the row has no `EventId`, `Consumer` or `MaxAttempts`: there is one row per event, its id is the event id, the broker fans it out to one queue per consumer, and publishing is retried until the broker takes it (`rabbitmq.md`).
 - `Type` is the event's full type name, read back against the Domain assembly. Renaming or moving an event type strands its pending rows: publish them first.
 
 File `Messaging/Outbox/OutboxMessageConfiguration.cs` (picked up by `ApplyConfigurationsFromAssembly`):
@@ -113,10 +131,12 @@ public void Configure(EntityTypeBuilder<OutboxMessage> builder)
 {
     builder.HasKey(message => message.Id);
     builder.Property(message => message.Id).ValueGeneratedNever();
+    builder.Property(message => message.Consumer).HasMaxLength(300).IsRequired();
     builder.Property(message => message.Type).HasMaxLength(300).IsRequired();
     builder.Property(message => message.Payload).HasColumnType("jsonb").IsRequired();
 
     builder.HasIndex(message => message.NextAttemptAt);
+    builder.HasIndex(message => message.EventId);
 
     builder.ToTable("outbox_messages");
 }
@@ -127,25 +147,39 @@ public void Configure(EntityTypeBuilder<OutboxMessage> builder)
 File `Messaging/Outbox/OutboxRepository.cs`, scoped, on the request's `AppDbContext`:
 
 ```csharp
-public class OutboxRepository(AppDbContext context)
+public class OutboxRepository(AppDbContext context, EventConsumerRegistry eventConsumerRegistry)
 ```
 
 ```csharp
-public class OutboxRepository(AppDbContext context)
+public class OutboxRepository(AppDbContext context, EventConsumerRegistry eventConsumerRegistry)
 ```
 
 ```csharp
 public void Add(IEnumerable<EventBase> events)
 {
-    context.Set<OutboxMessage>().AddRange(events.Select(OutboxMessage.From));
+    foreach (var @event in events)
+    {
+        context.Set<OutboxMessage>().AddRange(eventConsumerRegistry.For(@event.GetType()).Select(eventConsumerEndpoint => OutboxMessage.From(@event, eventConsumerEndpoint)));
+    }
 }
 ```
 
 ```csharp
-public async Task<OutboxMessage> ClaimNextAsync(int maxAttempts)
+public async Task<OutboxMessage> ClaimNextAsync()
 {
     var messages = await context.Set<OutboxMessage>()
-        .FromSql($"select * from outbox_messages where attempts < {maxAttempts} and next_attempt_at <= {DateTime.UtcNow} order by occurred_at, id limit 1 for update skip locked")
+        .FromSql($"select * from outbox_messages where attempts < max_attempts and next_attempt_at <= {DateTime.UtcNow} order by occurred_at, id limit 1 for update skip locked")
+        .ToListAsync();
+
+    return messages.SingleOrDefault();
+}
+```
+
+```csharp
+public async Task<OutboxMessage> ClaimAsync(Guid eventId)
+{
+    var messages = await context.Set<OutboxMessage>()
+        .FromSql($"select * from outbox_messages where event_id = {eventId} and attempts = 0 order by id limit 1 for update skip locked")
         .ToListAsync();
 
     return messages.SingleOrDefault();
@@ -174,13 +208,13 @@ public async Task RecordFailureAsync(OutboxMessage message, Exception exception)
 - `Add` only tracks the rows; the unit of work saves them before `COMMIT`.
 - The raw SQL uses the snake_case names of `naming.database`.
 
-**after-command** adds one member, to claim a row by its id:
+**after-command** adds one member, to claim the event's next fresh row (a row that already failed is left to the worker's backoff):
 
 ```csharp
-public async Task<OutboxMessage> ClaimAsync(Guid id)
+public async Task<OutboxMessage> ClaimAsync(Guid eventId)
 {
     var messages = await context.Set<OutboxMessage>()
-        .FromSql($"select * from outbox_messages where id = {id} for update skip locked")
+        .FromSql($"select * from outbox_messages where event_id = {eventId} and attempts = 0 order by id limit 1 for update skip locked")
         .ToListAsync();
 
     return messages.SingleOrDefault();
@@ -189,14 +223,10 @@ public async Task<OutboxMessage> ClaimAsync(Guid id)
 
 ## OutboxWorker
 
-File `Messaging/Outbox/OutboxWorker.cs`:
+File `Messaging/Outbox/OutboxWorker.cs`. This is the `database` transport, which runs the consumers itself; with `events.transport` = `rabbitmq` the worker publishes the row instead (`rabbitmq.md`).
 
 ```csharp
-public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<OutboxSettings> settings, ILogger<OutboxWorker> logger) : BackgroundService
-```
-
-```csharp
-public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, IOptions<OutboxSettings> settings, ILogger<OutboxWorker> logger) : BackgroundService
+public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, EventConsumerRegistry eventConsumerRegistry, IOptions<OutboxSettings> settings, ILogger<OutboxWorker> logger) : BackgroundService
 ```
 
 ```csharp
@@ -206,7 +236,7 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
-            while (await PublishAsync(outboxRepository => outboxRepository.ClaimNextAsync(settings.Value.MaxAttempts)))
+            while (await PublishAsync(outboxRepository => outboxRepository.ClaimNextAsync()))
             {
             }
         }
@@ -244,28 +274,22 @@ private async Task<bool> PublishAsync(Func<OutboxRepository, Task<OutboxMessage>
 
     try
     {
-        var eventHandlers = scope.ServiceProvider
-            .GetServices(typeof(BaseAsyncEventHandler<>).MakeGenericType(@event.GetType()))
-            .Cast<IAsyncEventHandler>()
-            .OrderBy(eventHandler => eventHandler.Sequence);
+        var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerRegistry.ByConsumer(message.Consumer).ConsumerType);
 
-        foreach (var eventHandler in eventHandlers)
-        {
-            await eventHandler.Handle(@event);
-        }
+        await eventConsumer.Handle(@event);
 
         outboxRepository.Remove(message);
 
         await unitOfWork.CommitTransactionAsync(nameof(OutboxWorker));
 
-        logger.LogInformation("Published {Event} {EventId}", @event.GetType().Name, @event.EventId);
+        logger.LogInformation("Handled {Event} {EventId} by {EventConsumer}", @event.GetType().Name, @event.EventId, message.Consumer);
     }
     catch (Exception exception)
     {
         await unitOfWork.RollbackTransactionAsync();
         await outboxRepository.RecordFailureAsync(message, exception);
 
-        logger.LogWarning(exception, "Async handler failed for {Event} {EventId}, attempt {Attempt}", @event.GetType().Name, @event.EventId, message.Attempts + 1);
+        logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", message.Consumer, @event.GetType().Name, @event.EventId, message.Attempts + 1);
     }
 
     return true;
@@ -273,14 +297,16 @@ private async Task<bool> PublishAsync(Func<OutboxRepository, Task<OutboxMessage>
 ```
 
 - Its log lines carry the event's fields (`logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.
-- The handlers' commands join the worker's transaction; events they raise become rows in it.
+- The consumers' commands join the worker's transaction; events they raise become rows in it.
 
-**after-command** adds one member, which the unit of work calls right after `COMMIT`:
+**after-command** adds one member, which the unit of work calls right after `COMMIT`; it handles the event's rows one consumer at a time:
 
 ```csharp
-public Task PublishAsync(Guid id)
+public async Task PublishAsync(Guid eventId)
 {
-    return PublishAsync(outboxRepository => outboxRepository.ClaimAsync(id));
+    while (await PublishAsync(outboxRepository => outboxRepository.ClaimAsync(eventId)))
+    {
+    }
 }
 ```
 
@@ -305,7 +331,7 @@ public int PollingIntervalMilliseconds { get; set; } = 1000;
 ```
 
 ```csharp
-public int MaxAttempts { get; set; } = 10;
+public int MaxBackoffSeconds { get; set; } = 60;
 ```
 
 ## OutboxModule
@@ -378,6 +404,7 @@ public static IServiceCollection AddInfrastructureModule(this IServiceCollection
     services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
     services.AddOutboxModule(configuration);
     services.AddPersistenceModule();
+    services.AddEventConsumerRegistry();
 
     return services;
 }
@@ -494,10 +521,12 @@ File `src/{Name}.Worker/{Name}.Worker.csproj`:
 </Project>
 ```
 
-File `src/{Name}.Worker/Program.cs`. `.AddOutboxWorker()` is there only with an outbox; a Worker for another add-on starts without it:
+File `src/{Name}.Worker/Program.cs`. `.AddOutboxWorker()` is there only with an outbox, and the `.AddEventConsumer<...>(...)` lines with `database` or `rabbitmq` (`event-consumers.md`):
 
 ```csharp
 using {Name}.Infrastructure.Messaging.Outbox;
+using {Name}.Infrastructure.Messaging;
+using {Name}.Application.Products;
 using {Name}.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
 using {Name}.Infrastructure;
@@ -514,19 +543,22 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
-    .AddOutboxWorker();
+    .AddOutboxWorker()
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
 
 using var host = builder.Build();
 
 await host.RunAsync();
 ```
 
-File `src/{Name}.Worker/appsettings.json`:
+File `src/{Name}.Worker/appsettings.json`; the `RabbitMq` connection string only with `events.transport` = `rabbitmq`:
 
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Host=localhost;Port=5432;Database={database};Username=postgres;Password=postgres"
+    "Default": "Host=localhost;Port=5432;Database={database};Username=postgres;Password=postgres",
+    "RabbitMq": "amqp://guest:guest@localhost:5672/"
   },
   "Logging": {
     "LogLevel": {
@@ -593,6 +625,6 @@ The `UnitOfWork` variants use `{Name}.Infrastructure.Messaging.Outbox` instead o
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxModule.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxRepository.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.EntityFrameworkCore, {Name}.Infrastructure.Persistence, {Name}.Shared.Domain |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs` | `{Name}.Infrastructure.Messaging.Outbox` | none |
-| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, Microsoft.Extensions.Options, {Name}.Domain, {Name}.Infrastructure.Logging, {Name}.Shared.Domain, {Name}.Shared.Persistence |
-| `src/{Name}.Worker/Program.cs` | `` | Microsoft.Extensions.Hosting, {Name}.Application, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging.Outbox, {Name}.Shared |
+| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, Microsoft.Extensions.Options, {Name}.Domain, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging.RabbitMq, {Name}.Shared.Persistence |
+| `src/{Name}.Worker/Program.cs` | `` | Microsoft.Extensions.Hosting, {Name}.Application, {Name}.Application.Products, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Messaging.Outbox, {Name}.Shared |
 | `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs` | `{Name}.Tests.Infrastructure.Messaging.Outbox` | {Name}.Infrastructure.Messaging.Outbox, {Name}.Tests.TestSupport.Shared.Domain |

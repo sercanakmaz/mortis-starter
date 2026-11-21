@@ -2,11 +2,11 @@
 
 - Status: accepted
 - Date: 2026-11-20
-- Context: An async handler runs after the command's transaction has committed (0004). If the process dies in between, the event is lost and the change it should have caused never happens. This project must not lose events.
+- Context: An event consumer runs after the command's transaction has committed (0004). If the process dies in between, the event is lost and the change it should have caused never happens. This project must not lose events.
 
 ## Decision
 
-Every queue event is written to `outbox_messages` by the unit of work, in the command's own transaction, after the sync handlers have run. `OutboxWorker`, a background service, takes the next due row with `for update skip locked`, runs the event's async handlers and deletes the row, all in one transaction. A failure rolls back, counts the attempt and waits `2^attempts` seconds; at `MaxAttempts` the row stays for an operator.
+Every queue event is written to `outbox_messages` by the unit of work, in the command's own transaction, after the sync handlers have run: one row per registered event consumer, because every event consumer is a consumer of its own. `OutboxWorker`, a background service, takes the next due row with `for update skip locked`, runs that row's consumer and deletes the row, all in one transaction. A failure rolls back, counts the attempt and waits `2^attempts` seconds; the row's attempt limit is its consumer's `Retry(n)` + 1, and a row that reaches it stays for an operator.
 
 This project publishes `after-command`:
 
@@ -23,10 +23,10 @@ When an event is published after the change that raised it.
 
 | Option | Cost | Why it was not chosen |
 |---|---|---|
-| Publish in process after `COMMIT` (`none`) | Nothing | An event is lost when the process dies before its handlers run |
+| Publish in process after `COMMIT` (`none`) | Nothing | An event is lost when the process dies before its consumers run |
 | Publish in the transaction, before `COMMIT` | Nothing | A rolled-back command would have published its events |
 | An outbox plus an inbox and a separate send step | A second table, a lock column, idempotent handlers | More moving parts than one transaction per row |
-| **One table; the row, its handlers and its deletion in one transaction** | One table, a worker host | n/a |
+| **One table; the row, its consumer and its deletion in one transaction** | One table, a worker host | n/a |
 
 ## Consequences
 

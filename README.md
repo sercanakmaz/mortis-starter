@@ -31,10 +31,10 @@ Requirements for a scaffolded solution: .NET SDK 10, and PostgreSQL (the generat
 ## What a scaffolded solution looks like
 
 ```
-src/<Name>.Shared          Entity, AggregateRoot, EventBase, EventContext, BaseSyncEventHandler, BaseAsyncEventHandler, ICommand / IUserCommand, ICommandDispatcher, command pipeline, exceptions
+src/<Name>.Shared          Entity, AggregateRoot, EventBase, EventContext, BaseSyncEventHandler, BaseEventConsumer, ICommand / IUserCommand, ICommandDispatcher, command pipeline, exceptions
 src/<Name>.Domain          Aggregates/<Plural>/ : aggregate, children, value objects, Events/, repository interface; Services/ when needed
 src/<Name>.Application     commands (record + validator + handler), DTOs, event handlers that send commands
-src/<Name>.Infrastructure  EF Core + PostgreSQL: repositories, mappings, unit of work, async handler dispatcher, migrations
+src/<Name>.Infrastructure  EF Core + PostgreSQL: repositories, mappings, unit of work, event consumer dispatcher, migrations
 src/<Name>.Api             HTTP host
 src/<Name>.Console         runs any registered command by name, plus scenarios: dotnet run --project src/<Name>.Console -- <Command> '<json>'
 test/<Name>.Tests          fakes, builders, tests
@@ -58,8 +58,9 @@ python3 -I tests/check_docs.py                  # pages, manifest, kernel shape 
 python3 -I tests/check_architecture.py          # the language-neutral layer
 python3 -I tests/test_validate_decisions.py     # the MORTIS.md validator
 python3 -I tests/check_variants.py              # the three reference solutions agree with each other and the manifest
+bash tests/check_interop.sh                     # the RabbitMQ bus against MassTransit 8 (needs RabbitMQ)
 for p in lean standard advanced; do bash skills/mortis-scaffold/scripts/verify.sh _temp/variants/$p; done   # each passes verify.sh
 PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres bash tests/smoke.sh
 ```
 
-`smoke.sh` belongs to the old copied template and is deleted with it. It checks that the reference docs match, then scaffolds three solutions and checks them against a real PostgreSQL: build, unit tests, the banned-API guard, migrations, a committed flow, sync and async handlers on one event, a rolled-back flow, concurrent stock updates, the Api's status codes, and kernel-only mode. It needs the .NET SDK 10, `psql`, `curl` and `python3`.
+`smoke.sh` belongs to the old copied template and is deleted with it. It checks that the reference docs match, then scaffolds three solutions and checks them against a real PostgreSQL: build, unit tests, the banned-API guard, migrations, a committed flow, sync and event consumers on one event, a rolled-back flow, concurrent stock updates, the Api's status codes, and kernel-only mode. It needs the .NET SDK 10, `psql`, `curl` and `python3`.

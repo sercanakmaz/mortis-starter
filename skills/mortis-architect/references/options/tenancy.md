@@ -18,7 +18,7 @@ Whether rows belong to a tenant.
 
 **Choose when:** a product sold to many customers in one database.
 
-**Costs:** every query is filtered and every write stamped; a background job must set the tenant before it touches data; outbox and inbox rows carry the tenant.
+**Costs:** every query is filtered and every write stamped; a background job must set the tenant before it touches data; outbox rows carry the tenant.
 
 **Rules:** R7.
 

@@ -7,7 +7,7 @@ Generated when `example` is `true`. Its tests are in `worked-slice-tests.md`. Th
 Event handlers of products and customers react to order events, so the domain comes first for all three, then the rest. Build after each line:
 
 1. Domain of Category, then Product, then Customer, then Order (constants, value objects, child entities, the root, events, repository interface), with each one's test support (`Fake{Aggregate}`, `{Aggregate}RepositoryBuilder`) and domain tests.
-2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers, registration lines), each followed by its handler and event handler tests.
+2. Application of Category, then Order, then Customer, then Product (view, commands, event handlers and consumers, registration lines), each followed by its handler, event handler and consumer tests.
 3. Infrastructure of the four (configuration, repository, registration line) and their tests.
 4. The four controllers.
 
@@ -329,7 +329,7 @@ public DecreaseProductStockCommandValidator()
 }
 ```
 
-Event handlers (async, as the system user), in `Products/`:
+Event consumers (after the commit, as the system user), in `Products/`; each gets its `AddEventConsumer` line in the hosts that run it (`event-consumers.md`):
 
 ```csharp
 protected override async Task OnHandle(LineAdded @event)
@@ -975,10 +975,8 @@ public static IServiceCollection AddApplicationModule(this IServiceCollection se
     services.AddCommandHandler<GetProductCommand, ProductDto, GetProductCommandHandler>();
     services.AddCommandHandler<IncreaseProductStockCommand, ProductDto, IncreaseProductStockCommandHandler>();
     services.AddScoped<IValidator<IncreaseProductStockCommand>, IncreaseProductStockCommandValidator>();
-    services.AddScoped<BaseAsyncEventHandler<LineCancelled>, IncreaseStockWhenOrderLineCancelledEventHandler>();
     services.AddCommandHandler<DecreaseProductStockCommand, ProductDto, DecreaseProductStockCommandHandler>();
     services.AddScoped<IValidator<DecreaseProductStockCommand>, DecreaseProductStockCommandValidator>();
-    services.AddScoped<BaseAsyncEventHandler<LineAdded>, DecreaseStockWhenOrderLineAddedEventHandler>();
 
     return services;
 }
@@ -1236,10 +1234,10 @@ A handler written to `application.md`'s shapes also needs `{Name}.Shared.Excepti
 | `src/{Name}.Application/Orders/OrderDto.cs` | `{Name}.Application.Orders` | {Name}.Domain.Aggregates.Orders |
 | `src/{Name}.Application/Products/CreateProductCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
 | `src/{Name}.Application/Products/DecreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
-| `src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventHandler.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
+| `src/{Name}.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Application/Products/GetProductCommand.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Application/Products/IncreaseProductStockCommand.cs` | `{Name}.Application.Products` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application, {Name}.Shared.Exceptions |
-| `src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventHandler.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
+| `src/{Name}.Application/Products/IncreaseStockWhenOrderLineCancelledEventConsumer.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Shared.Application, {Name}.Shared.Domain |
 | `src/{Name}.Application/Products/ProductDto.cs` | `{Name}.Application.Products` | {Name}.Domain.Aggregates.Products |
 | `src/{Name}.Domain/Aggregates/Categories/Category.cs` | `{Name}.Domain.Aggregates.Categories` | System.Diagnostics, {Name}.Domain.Aggregates.Categories.Events, {Name}.Shared.Domain |
 | `src/{Name}.Domain/Aggregates/Categories/CategoryConstants.cs` | `{Name}.Domain.Aggregates.Categories` | none |
