@@ -47,6 +47,7 @@ Every row you change from the preset's value gets a reason in the `Why` column a
 |---|---|---|
 | lean, but events must not be lost | `events.outbox` to `after-command`, `events.transport` to `database` | `hosts.worker` other than `none` (R1, R3) |
 | standard, plus a broker | `events.transport` to `rabbitmq`, `hosts.worker` to `separate` | an outbox (R2, R4) |
-| standard, plus tenants | `tenancy.mode` to `interface` | nothing; the tenant is added to outbox rows (R7) |
+| standard, plus tenants | `tenancy.mode` to `interface` | nothing more: standard already has `auth` = `jwt` (R13); the tenant is added to outbox rows (R7) |
+| lean, plus tenants | `tenancy.mode` to `interface`, `auth` to `jwt` | signed-in callers, because the tenant is their claim (R13) |
 | standard, plus translated messages | `languages.mode` to `messages` | `exceptions` other than `minimal` (R5) |
 | any preset on MongoDB | `database` to `mongo` | `keys.default` of `guid` (R12); a replica set when an outbox is used (R8) |

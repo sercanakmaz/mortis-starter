@@ -1,6 +1,5 @@
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Exceptions;
-using Boilerplate.Shared.Domain;
 using System.Reflection;
 using System.Text.Json;
 
@@ -8,7 +7,7 @@ namespace Boilerplate.Console;
 
 public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
 {
-    public async Task<object> RunAsync(string name, string argument)
+    public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
     {
         var commandType = commandAssembly.GetTypes()
             .FirstOrDefault(type => !type.IsAbstract && type.Name.Equals(name + ConsoleConstants.CommandSuffix, StringComparison.OrdinalIgnoreCase));
@@ -40,7 +39,7 @@ public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly
 
         if (command is IContextCommand contextCommand)
         {
-            contextCommand.Context = new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail) };
+            contextCommand.Context = commandContext;
         }
 
         var send = typeof(ICommandDispatcher).GetMethod(nameof(ICommandDispatcher.Send)).MakeGenericMethod(contentType);

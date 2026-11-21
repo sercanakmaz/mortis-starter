@@ -197,7 +197,7 @@ Domain and Application never reference Infrastructure. Nothing references a host
 </Project>
 ```
 
-`Directory.Packages.props` pins every package. These are the versions the examples were verified against; do not change one without regenerating the examples.
+`Directory.Packages.props` pins every package. These are the versions the examples were verified against; do not change one without regenerating the examples. Generate only the lines of the chosen options: `RabbitMQ.Client` with `events.transport` = `rabbitmq`; with `auth` = `jwt`, `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.15, referenced by the Api) and `Microsoft.IdentityModel.Protocols.OpenIdConnect` (8.19.2, referenced by Infrastructure).
 
 ```xml
 <Project>

@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Boilerplate.Infrastructure.Messaging.Outbox;
 using Boilerplate.Infrastructure.Messaging.RabbitMq;
 using Boilerplate.Infrastructure.Logging;
+using Boilerplate.Infrastructure.Authentication;
+using Boilerplate.Infrastructure.Tenancy;
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +22,9 @@ public static class InfrastructureModule
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
+        services.AddScoped<ICommandHandlerMiddleware, TenantCommandHandlerMiddleware>();
+        services.AddScoped<TenantScope>();
+        services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.Section));
         services.AddOutboxModule(configuration);
         services.AddRabbitMqModule();
         services.AddPersistenceModule();

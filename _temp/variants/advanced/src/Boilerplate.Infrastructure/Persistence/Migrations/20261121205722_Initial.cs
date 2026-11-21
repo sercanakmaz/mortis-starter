@@ -36,6 +36,7 @@ public partial class Initial : Migration
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
+                tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
                 name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                 email = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
                 is_blocked = table.Column<bool>(type: "boolean", nullable: false),
@@ -50,6 +51,7 @@ public partial class Initial : Migration
             constraints: table =>
             {
                 table.PrimaryKey("pk_customers", x => x.id);
+                table.UniqueConstraint("ak_customer_tenant_id_id", x => new { x.tenant_id, x.id });
             });
 
         migrationBuilder.CreateTable(
@@ -57,6 +59,7 @@ public partial class Initial : Migration
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
+                tenant_id = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                 type = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                 payload = table.Column<string>(type: "jsonb", nullable: false),
                 occurred_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -74,6 +77,7 @@ public partial class Initial : Migration
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
+                tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
                 sku = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                 name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                 stock = table.Column<int>(type: "integer", nullable: false),
@@ -89,7 +93,7 @@ public partial class Initial : Migration
             constraints: table =>
             {
                 table.PrimaryKey("pk_products", x => x.id);
-                table.UniqueConstraint("ak_product_sku", x => x.sku);
+                table.UniqueConstraint("ak_product_tenant_id_sku", x => new { x.tenant_id, x.sku });
                 table.CheckConstraint("ck_products_stock_not_negative", "stock >= 0");
                 table.ForeignKey(
                     name: "fk_products_categories_category_id",
@@ -104,6 +108,7 @@ public partial class Initial : Migration
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
+                tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
                 order_number = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                 customer_id = table.Column<Guid>(type: "uuid", nullable: false),
                 status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
@@ -118,10 +123,10 @@ public partial class Initial : Migration
             {
                 table.PrimaryKey("pk_orders", x => x.id);
                 table.ForeignKey(
-                    name: "fk_orders_customers_customer_id",
-                    column: x => x.customer_id,
+                    name: "fk_orders_customers_tenant_id_customer_id",
+                    columns: x => new { x.tenant_id, x.customer_id },
                     principalTable: "customers",
-                    principalColumn: "id",
+                    principalColumns: new[] { "tenant_id", "id" },
                     onDelete: ReferentialAction.Restrict);
             });
 
@@ -130,6 +135,7 @@ public partial class Initial : Migration
             columns: table => new
             {
                 id = table.Column<Guid>(type: "uuid", nullable: false),
+                tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
                 order_id = table.Column<Guid>(type: "uuid", nullable: false),
                 sku = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                 quantity = table.Column<int>(type: "integer", nullable: false),
@@ -148,10 +154,10 @@ public partial class Initial : Migration
                     principalColumn: "id",
                     onDelete: ReferentialAction.Cascade);
                 table.ForeignKey(
-                    name: "fk_order_lines_product_sku",
-                    column: x => x.sku,
+                    name: "fk_order_lines_product_tenant_id_sku",
+                    columns: x => new { x.tenant_id, x.sku },
                     principalTable: "products",
-                    principalColumn: "sku",
+                    principalColumns: new[] { "tenant_id", "sku" },
                     onDelete: ReferentialAction.Restrict);
             });
 
@@ -162,9 +168,9 @@ public partial class Initial : Migration
             unique: true);
 
         migrationBuilder.CreateIndex(
-            name: "ix_customers_email",
+            name: "ix_customers_tenant_id_email",
             table: "customers",
-            column: "email",
+            columns: new[] { "tenant_id", "email" },
             unique: true);
 
         migrationBuilder.CreateIndex(
@@ -173,19 +179,19 @@ public partial class Initial : Migration
             column: "order_id");
 
         migrationBuilder.CreateIndex(
-            name: "ix_order_lines_sku",
+            name: "ix_order_lines_tenant_id_sku",
             table: "order_lines",
-            column: "sku");
+            columns: new[] { "tenant_id", "sku" });
 
         migrationBuilder.CreateIndex(
-            name: "ix_orders_customer_id",
+            name: "ix_orders_tenant_id_customer_id",
             table: "orders",
-            column: "customer_id");
+            columns: new[] { "tenant_id", "customer_id" });
 
         migrationBuilder.CreateIndex(
-            name: "ix_orders_order_number",
+            name: "ix_orders_tenant_id_order_number",
             table: "orders",
-            column: "order_number",
+            columns: new[] { "tenant_id", "order_number" },
             unique: true);
 
         migrationBuilder.CreateIndex(

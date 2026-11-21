@@ -14,6 +14,7 @@ public static class ErrorCatalogue
         ["invalid_parameter"] = "A value is not valid.",
         ["reference_violation"] = "A reference points at a missing record, or the record is still referenced.",
         ["transaction_required"] = "A write ran outside a transaction.",
+        ["tenant_required"] = "The record belongs to a tenant, and the caller has none.",
         ["validation_failed"] = "The request is not valid.",
         [CustomerConstants.BlockedCode] = "A blocked customer cannot complete orders.",
         [ProductConstants.InsufficientStockCode] = "The product does not have enough stock.",

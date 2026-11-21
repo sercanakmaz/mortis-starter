@@ -16,7 +16,7 @@ fi
 API_PID="$("$LANG_SH" api-start "$PROJECT" "$NAME" "$API_PORT")"
 for _ in $(seq 1 60); do curl -fs "http://localhost:$API_PORT/health" >/dev/null 2>&1 && break; sleep 0.5; done
 
-request() { curl -s -o "$WORK/body.json" -w "%{http_code}" -X "$1" "http://localhost:$API_PORT$2" -H "Content-Type: application/json" ${3:+-d "$3"}; }
+request() { api_curl -s -o "$WORK/body.json" -w "%{http_code}" -X "$1" "http://localhost:$API_PORT$2" -H "Content-Type: application/json" ${3:+-d "$3"}; }
 body_field() { python3 -c "import json,sys; d=json.load(open('$WORK/body.json')); print(d$1)"; }
 
 expect_equal "api: POST /categories creates a category" "201" "$(request POST /categories '{"name":"Tools"}')"
@@ -56,7 +56,7 @@ expect_equal "api: and the event consumer gave the unit back (100 - 2 - 1 + 1)" 
 request POST /products '{"sku":"HOT","name":"Hot item","stock":8}' >/dev/null
 CONCURRENT_PIDS=()
 for index in $(seq 1 8); do
-  curl -s -o /dev/null -X POST "http://localhost:$API_PORT/orders" -H "Content-Type: application/json" \
+  api_curl -s -o /dev/null -X POST "http://localhost:$API_PORT/orders" -H "Content-Type: application/json" \
     -d "{\"orderNumber\":\"CON-$index\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[{\"sku\":\"HOT\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" &
   CONCURRENT_PIDS+=($!)
 done

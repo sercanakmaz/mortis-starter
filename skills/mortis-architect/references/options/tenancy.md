@@ -18,9 +18,11 @@ Whether rows belong to a tenant.
 
 **Choose when:** a product sold to many customers in one database.
 
-**Costs:** every query is filtered and every write stamped; a background job must set the tenant before it touches data; outbox rows carry the tenant.
+**Costs:** every query is filtered and every write stamped; a background job must set the tenant before it touches data; outbox rows carry the tenant; every unique rule starts with the tenant.
 
-**Rules:** R7.
+**Needs:** `auth` = `jwt`: the tenant is the signed-in caller's claim (`architecture/tenancy.md`).
+
+**Rules:** R7, R13.
 
 Example:
 
@@ -71,6 +73,8 @@ Where the host reads the tenant from. Only when `tenancy.mode` is `interface`.
 **Choose when:** users sign in and belong to a tenant.
 
 **Costs:** the credential must carry the claim.
+
+The only resolver built so far; `header` and `subdomain` are not generated yet.
 
 ### subdomain
 

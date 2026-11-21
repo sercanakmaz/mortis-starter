@@ -7,6 +7,7 @@ namespace Boilerplate.Infrastructure.Messaging.Outbox;
 public class OutboxMessage
 {
     public Guid Id { get; private set; }
+    public string TenantId { get; private set; }
     public string Type { get; private set; }
     public string Payload { get; private set; }
     public DateTime OccurredAt { get; private set; }
@@ -19,6 +20,7 @@ public class OutboxMessage
         return new OutboxMessage
         {
             Id = @event.EventId,
+            TenantId = @event.TenantId,
             Type = @event.GetType().FullName,
             Payload = JsonSerializer.Serialize(@event, @event.GetType()),
             OccurredAt = @event.OccurredAt,

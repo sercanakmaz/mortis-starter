@@ -23,7 +23,7 @@ This project was started with mortis-starter. The table below records what was c
 | tenancy.mode | none |  |
 | languages.mode | none |  |
 | testing | unit | not built yet in phase 1; this variant holds only built options |
-| auth | none | not built yet in phase 1; this variant holds only built options |
+| auth | jwt |  |
 | hosts.worker | in-api |  |
 | addons | correlation | not built yet in phase 1; this variant holds only built options |
 | example | true |  |

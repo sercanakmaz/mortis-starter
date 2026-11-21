@@ -1,11 +1,21 @@
+using Boilerplate.Tests.TestSupport.Infrastructure.Tenancy;
 using Boilerplate.Infrastructure.Persistence;
+using Boilerplate.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace Boilerplate.Tests.TestSupport.Infrastructure.Persistence;
 
 public class AppDbContextBuilder
 {
+    private TenantScope _tenantScope = TenantScopeBuilder.Create().Build();
+
     public static AppDbContextBuilder Create() => new();
+
+    public AppDbContextBuilder WithTenantScope(TenantScope tenantScope)
+    {
+        _tenantScope = tenantScope;
+        return this;
+    }
 
     public AppDbContext Build()
     {
@@ -14,6 +24,6 @@ public class AppDbContextBuilder
             .UseSnakeCaseNamingConvention()
             .Options;
 
-        return new AppDbContext(options);
+        return new AppDbContext(options, _tenantScope);
     }
 }

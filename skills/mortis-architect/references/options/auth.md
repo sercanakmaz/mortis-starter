@@ -18,7 +18,7 @@ Whether the Api authenticates callers.
 
 **Choose when:** callers sign in elsewhere and present a bearer token.
 
-**Costs:** key or authority settings to manage; the claims fill the command's context.
+**Costs:** key or authority settings to manage; the claims fill the command's context; every endpoint but health needs a token. The Console takes the same token, and prints a development token in the development environment only. Permissions per command are not generated yet.
 
 Example:
 

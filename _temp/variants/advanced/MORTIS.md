@@ -20,10 +20,12 @@ This project was started with mortis-starter. The table below records what was c
 | naming.events | bare |  |
 | exceptions | catalogued |  |
 | queries | commands | not built yet in phase 1; this variant holds only built options |
-| tenancy.mode | none | not built yet in phase 1; this variant holds only built options |
+| tenancy.mode | interface |  |
+| tenancy.key | guid |  |
+| tenancy.resolver | claim |  |
 | languages.mode | none | not built yet in phase 1; this variant holds only built options |
 | testing | unit | not built yet in phase 1; this variant holds only built options |
-| auth | none | not built yet in phase 1; this variant holds only built options |
+| auth | jwt |  |
 | hosts.worker | separate |  |
 | addons | correlation | not built yet in phase 1; this variant holds only built options |
 | example | true | the reference variants all carry the example domain |

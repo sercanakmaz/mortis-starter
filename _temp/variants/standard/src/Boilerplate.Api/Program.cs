@@ -1,4 +1,6 @@
+using Boilerplate.Api.Authentication;
 using Boilerplate.Api.Middlewares;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Boilerplate.Api.Filters;
 using Boilerplate.Infrastructure.Logging;
 using Boilerplate.Infrastructure.Messaging.Outbox;
@@ -13,7 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddJsonLogging();
 
-builder.Services.AddControllers(options => options.Filters.Add<ContextCommandFilter>());
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add(new AuthorizeFilter());
+    options.Filters.Add<ContextCommandFilter>();
+});
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ExceptionHandler>();
@@ -31,6 +38,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapOpenApi();
 app.MapControllers();

@@ -153,3 +153,12 @@ There are no Console scenarios: each flow is a sequence of single commands, run 
 | blocked-customer | a product, a customer, an order, block the customer, try to complete | a sync handler vetoes and the whole command rolls back |
 
 Every write runs as the console actor; unique values get a random suffix so a flow can run twice.
+
+## When tenancy is on
+
+`Product`, `Customer`, `Order` and its `OrderLine` are tenant-owned; `Category` stays global. A sku is unique within a tenant, so two tenants may sell the same sku; an order line references the product with that sku in its own tenant, and an order its tenant's customer. Every flow above runs as one tenant's signed-in user.
+
+| Flow | Steps | What it proves |
+|---|---|---|
+| tenants | the same sku in tenants A and B; A reads B's product; a caller without a tenant writes a product; both read a category; A orders B's only sku; orders of A and B interleaved | isolation (not found), 403 without a tenant, global data for all, the tenant-first foreign key, consumers that keep their event's tenant |
+

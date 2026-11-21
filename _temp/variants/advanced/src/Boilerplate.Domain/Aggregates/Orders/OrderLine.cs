@@ -4,8 +4,9 @@ using System.Diagnostics;
 
 namespace Boilerplate.Domain.Aggregates.Orders;
 
-public class OrderLine : Entity<Guid>
+public class OrderLine : Entity<Guid>, IMultiTenant
 {
+    public Guid TenantId { get; private set; }
     public Guid OrderId { get; private init; }
     public string Sku { get; protected set; }
     public Money Price { get; protected set; }

@@ -20,17 +20,26 @@ OPTION_FILES = {
     "test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs": {"events.outbox": "none"},
     "docs/adr/0011-outbox-and-publishing-models.md": {"events.outbox": OUTBOX},
     "docs/adr/0013-own-bus-compatible-with-masstransit.md": {"events.transport": "rabbitmq"},
+    "docs/adr/0014-bearer-tokens-fill-the-context.md": {"auth": "jwt"},
+    "docs/adr/0015-multi-tenancy-by-interface.md": {"tenancy.mode": "interface"},
     "src/Boilerplate.Worker/Boilerplate.Worker.csproj": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/Program.cs": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/appsettings.json": {"hosts.worker": "separate"},
     "src/Boilerplate.Infrastructure/Messaging/EventConsumerRegistry.cs": {"events.transport": ["in-process", "database"]},
 }
+AUTH_PREFIXES = ("src/Boilerplate.Infrastructure/Authentication/", "src/Boilerplate.Api/Authentication/", "src/Boilerplate.Console/ConsoleTokens.cs",
+                 "src/Boilerplate.Api/appsettings.Development.json", "src/Boilerplate.Console/appsettings.Development.json",
+                 "test/Boilerplate.Tests/Infrastructure/Authentication/", "test/Boilerplate.Tests/TestSupport/Infrastructure/Authentication/", "test/Boilerplate.Tests/Console/ConsoleTokensTests.cs")
+TENANCY_PREFIXES = ("src/Boilerplate.Shared/Domain/IMultiTenant.cs", "src/Boilerplate.Shared/Exceptions/TenantRequiredException.cs", "src/Boilerplate.Infrastructure/Tenancy/",
+                    "test/Boilerplate.Tests/Infrastructure/Tenancy/", "test/Boilerplate.Tests/TestSupport/Infrastructure/Tenancy/", "test/Boilerplate.Tests/Infrastructure/Persistence/AppDbContextTests.cs")
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
 RABBITMQ_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/RabbitMq/", "test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/")
 OPTION_PAGES = {"src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHandler.cs": "infrastructure-postgres.md", "docs/adr/0009-correlation-header.md": "project-docs-adr.md",
                 "docs/adr/0011-outbox-and-publishing-models.md": "project-docs-adr.md",
-                "docs/adr/0013-own-bus-compatible-with-masstransit.md": "project-docs-adr.md"}
+                "docs/adr/0013-own-bus-compatible-with-masstransit.md": "project-docs-adr.md",
+                "docs/adr/0014-bearer-tokens-fill-the-context.md": "project-docs-adr.md",
+                "docs/adr/0015-multi-tenancy-by-interface.md": "project-docs-adr.md"}
 KERNEL_PAGES = {"src/Boilerplate.Api/Middlewares/ErrorReference.cs": "failures.md"}
 SKIPPED = ("MORTIS.md",)
 
@@ -92,6 +101,14 @@ for f in files:
         entry["when"] = {"events.transport": "rabbitmq"}
         entry["kernel"] = False
         entry["page"] = "rabbitmq.md"
+    if f.startswith(AUTH_PREFIXES):
+        entry["when"] = {"auth": "jwt"}
+        entry["kernel"] = False
+        entry["page"] = "authentication.md"
+    if f.startswith(TENANCY_PREFIXES):
+        entry["when"] = {"tenancy.mode": "interface"}
+        entry["kernel"] = False
+        entry["page"] = "tenancy.md"
     if f.startswith(EVENT_CONSUMER_FILES):
         entry["kernel"] = False
         entry["page"] = "event-consumers.md"

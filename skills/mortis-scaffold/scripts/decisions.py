@@ -156,6 +156,8 @@ def check_rules(schema, values, lines):
         errors.append(rule_error(schema, "R11", at("language"), "language", f"language '{language}' has no references yet"))
     if values.get("database") == "mongo" and values.get("keys.default") in ("int", "long"):
         errors.append(rule_error(schema, "R12", at("keys.default"), "keys.default", "mongo does not support integer keys"))
+    if values.get("tenancy.mode") == "interface" and values.get("auth") != "jwt":
+        errors.append(rule_error(schema, "R13", at("tenancy.mode"), "tenancy.mode", "tenancy needs auth = jwt: the tenant is a claim of the signed-in caller"))
     return errors, notes
 
 

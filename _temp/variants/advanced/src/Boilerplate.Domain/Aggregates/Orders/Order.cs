@@ -5,8 +5,9 @@ using System.Diagnostics;
 
 namespace Boilerplate.Domain.Aggregates.Orders;
 
-public class Order : AggregateRoot<Guid>
+public class Order : AggregateRoot<Guid>, IMultiTenant
 {
+    public Guid TenantId { get; private set; }
     private readonly List<OrderLine> _lines = [];
 
     public string OrderNumber { get; protected set; }

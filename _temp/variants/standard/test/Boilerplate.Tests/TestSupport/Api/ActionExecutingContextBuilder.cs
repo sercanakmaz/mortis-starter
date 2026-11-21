@@ -15,11 +15,14 @@ public class ActionExecutingContextBuilder
 
     public static ActionExecutingContextBuilder Create() => new();
 
+    private readonly List<Claim> _claims = [];
+
     public ActionExecutingContextBuilder WithUser(string id, string email)
     {
-        _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, id), new Claim(ClaimTypes.Email, email)], "test"));
+        _claims.AddRange([new Claim("sub", id), new Claim("email", email)]);
         return this;
     }
+
 
     public ActionExecutingContextBuilder WithCorrelationId(Guid correlationId)
     {
@@ -36,6 +39,8 @@ public class ActionExecutingContextBuilder
 
     public ActionExecutingContext Build()
     {
+        if (_claims.Count > 0) _httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(_claims, "test"));
+
         var actionContext = new ActionContext(_httpContext, new RouteData(), new ActionDescriptor());
 
         return new ActionExecutingContext(actionContext, [], _arguments, new object());

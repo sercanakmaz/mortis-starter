@@ -327,6 +327,10 @@ public const string Section = "Outbox";
 ```
 
 ```csharp
+public const int TenantIdMaxLength = 64;
+```
+
+```csharp
 public int PollingIntervalMilliseconds { get; set; } = 1000;
 ```
 
@@ -402,6 +406,7 @@ public static IServiceCollection AddInfrastructureModule(this IServiceCollection
 
     services.AddScoped<IUnitOfWork, UnitOfWork>();
     services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
+    services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.Section));
     services.AddOutboxModule(configuration);
     services.AddPersistenceModule();
     services.AddEventConsumerRegistry();
@@ -584,13 +589,14 @@ public class OutboxMessageTests
 
 ```csharp
 [Fact]
-public void From_Should_KeepTheEventIdAndMakeTheRowDueAtOnce()
+public void From_Should_KeepTheEventIdAndTheTenantAndMakeTheRowDueAtOnce()
 {
-    var fakeQueueEvent = new FakeQueueEvent("first");
+    var fakeQueueEvent = new FakeQueueEvent("first") { TenantId = "tenant-1" };
 
     var outboxMessage = OutboxMessage.From(fakeQueueEvent);
 
     Assert.Equal(fakeQueueEvent.EventId, outboxMessage.Id);
+    Assert.Equal("tenant-1", outboxMessage.TenantId);
     Assert.Equal(fakeQueueEvent.OccurredAt, outboxMessage.NextAttemptAt);
     Assert.Equal(0, outboxMessage.Attempts);
 }

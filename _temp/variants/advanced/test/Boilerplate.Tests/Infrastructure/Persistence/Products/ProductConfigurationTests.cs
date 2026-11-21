@@ -20,13 +20,13 @@ public class ProductConfigurationTests
     }
 
     [Fact]
-    public void Model_Should_MakeTheSkuAnAlternateKeySoOrderLinesCanReferenceIt()
+    public void Model_Should_MakeTheTenantAndTheSkuAnAlternateKeySoOrderLinesCanReferenceIt()
     {
         var entityType = AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(Product));
 
         var key = Assert.Single(entityType.GetKeys(), candidate => !candidate.IsPrimaryKey());
 
-        Assert.Equal(nameof(Product.Sku), Assert.Single(key.Properties).Name);
+        Assert.Equal([nameof(Product.TenantId), nameof(Product.Sku)], key.Properties.Select(property => property.Name));
     }
 
     [Fact]
@@ -39,14 +39,14 @@ public class ProductConfigurationTests
     }
 
     [Fact]
-    public void Model_Should_LetOrderLinesReferenceTheProductSkuThroughARestrictingForeignKey()
+    public void Model_Should_LetOrderLinesReferenceTheProductSkuOfTheSameTenantThroughARestrictingForeignKey()
     {
         var entityType = AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(OrderLine));
 
         var foreignKey = Assert.Single(entityType.GetForeignKeys(), candidate => candidate.PrincipalEntityType.ClrType == typeof(Product));
 
-        Assert.Equal(nameof(OrderLine.Sku), Assert.Single(foreignKey.Properties).Name);
-        Assert.Equal(nameof(Product.Sku), Assert.Single(foreignKey.PrincipalKey.Properties).Name);
+        Assert.Equal([nameof(OrderLine.TenantId), nameof(OrderLine.Sku)], foreignKey.Properties.Select(property => property.Name));
+        Assert.Equal([nameof(Product.TenantId), nameof(Product.Sku)], foreignKey.PrincipalKey.Properties.Select(property => property.Name));
         Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 }

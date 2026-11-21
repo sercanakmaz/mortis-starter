@@ -38,3 +38,7 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 User management, roles stored in our database, refresh tokens, API keys.
+
+## Notes
+
+The sign-in part of this step was built in step 11 (decision 42): token validation, the claims in the context, the Console token and the development token command, with `auth.sh`. What remains here: permissions (`IAuthorizedCommand`, the pipeline check, `ForbiddenException`), the architecture test and the allow-list, and the decision on the system and Console users passing authorization.

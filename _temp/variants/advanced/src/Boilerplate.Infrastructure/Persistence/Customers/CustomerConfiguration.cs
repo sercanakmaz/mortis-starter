@@ -13,7 +13,8 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(customer => customer.Name).HasMaxLength(CustomerConstants.NameMaxLength).IsRequired();
         builder.Property(customer => customer.Email).HasMaxLength(CustomerConstants.EmailMaxLength).IsRequired();
 
-        builder.HasIndex(customer => customer.Email).IsUnique();
+        builder.HasIndex(customer => new { customer.TenantId, customer.Email }).IsUnique();
+        builder.HasAlternateKey(customer => new { customer.TenantId, customer.Id });
 
         builder.ToTable("customers");
     }

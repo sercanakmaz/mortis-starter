@@ -50,6 +50,8 @@ Layer 1 names roles (see `mortis-architect/references/architecture/glossary.md`)
 | registration of a layer | `{Layer}Module` with `Add{Layer}Module` | the layer's project root |
 | publishing committed events | `EventPublisher` (`none`) or `OutboxRepository` + `OutboxWorker` (an outbox), and with RabbitMQ the types on `rabbitmq.md` | `src/{Name}.Infrastructure/Messaging/`, its `Outbox/` or its `RabbitMq/` folder |
 | outbox types | the fixed names on `outbox.md` | `src/{Name}.Infrastructure/Messaging/Outbox/` |
+| authentication types | `AuthSettings`; `JwtAuthenticationModule` with `AddJwtAuthentication`; `ConsoleTokens` (`authentication.md`) | `src/{Name}.Infrastructure/Authentication/`, `src/{Name}.Api/Authentication/`, `src/{Name}.Console/` |
+| tenancy types | `IMultiTenant`, `TenantRequiredException`, `TenantScope`, `TenantCommandHandlerMiddleware` (`tenancy.md`) | `src/{Name}.Shared/Domain/`, `src/{Name}.Shared/Exceptions/`, `src/{Name}.Infrastructure/Tenancy/` |
 | worker host | `{Name}.Worker` | `src/{Name}.Worker/` |
 | receive endpoint | `{database}-worker`; its error queue `{database}-worker_error` | `AddReceiveEndpoint` in the Worker's `Program.cs` |
 | message exchange | `<Namespace>:<TypeName>` of the event | declared by `RabbitMqPublisher` and `ReceiveEndpointService` |

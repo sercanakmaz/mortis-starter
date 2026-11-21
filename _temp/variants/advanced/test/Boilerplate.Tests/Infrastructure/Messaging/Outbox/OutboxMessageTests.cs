@@ -6,13 +6,14 @@ namespace Boilerplate.Tests.Infrastructure.Messaging.Outbox;
 public class OutboxMessageTests
 {
     [Fact]
-    public void From_Should_KeepTheEventIdAndMakeTheRowDueAtOnce()
+    public void From_Should_KeepTheEventIdAndTheTenantAndMakeTheRowDueAtOnce()
     {
-        var fakeQueueEvent = new FakeQueueEvent("first");
+        var fakeQueueEvent = new FakeQueueEvent("first") { TenantId = "tenant-1" };
 
         var outboxMessage = OutboxMessage.From(fakeQueueEvent);
 
         Assert.Equal(fakeQueueEvent.EventId, outboxMessage.Id);
+        Assert.Equal("tenant-1", outboxMessage.TenantId);
         Assert.Equal(fakeQueueEvent.OccurredAt, outboxMessage.NextAttemptAt);
         Assert.Equal(0, outboxMessage.Attempts);
     }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Boilerplate.Infrastructure.Logging;
+using Boilerplate.Infrastructure.Tenancy;
 using RabbitMQ.Client.Events;
 using System.Globalization;
 using Boilerplate.Shared.Persistence;
@@ -119,6 +120,7 @@ public class ReceiveEndpointService(EventConsumerEndpoint eventConsumerEndpoint,
     private async Task ConsumeAsync(EventBase @event)
     {
         using var scope = serviceScopeFactory.CreateScope();
+        scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(@event.TenantId);
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerEndpoint.ConsumerType);
 

@@ -8,10 +8,37 @@ sys.path.insert(0, str(ROOT / "skills" / "mortis-scaffold" / "scripts" / "lang")
 from csharp_shape import shape_of_file  # noqa: E402
 
 VARIANTS = ROOT / "_temp" / "variants"
-PRESETS = {"lean": {"events.outbox": "none", "exceptions": "minimal"},
-           "standard": {"events.outbox": "after-command", "exceptions": "coded"},
-           "advanced": {"events.outbox": "background", "exceptions": "catalogued"}}
-KEY_OF_MEMBER = {"SaveChangesAsync": "exceptions"}
+PRESETS = {"lean": {"events.outbox": "none", "exceptions": "minimal", "auth": "none", "tenancy.mode": "none"},
+           "standard": {"events.outbox": "after-command", "exceptions": "coded", "auth": "jwt", "tenancy.mode": "none"},
+           "advanced": {"events.outbox": "background", "exceptions": "catalogued", "auth": "jwt", "tenancy.mode": "interface"}}
+KEY_OF_MEMBER = {"SaveChangesAsync(bool": "tenancy.mode", "SaveChangesAsync": "exceptions"}
+KEY_OF_FILE = {"Console/": "auth", "Aggregates/": "tenancy.mode", "AppDbContext": "tenancy.mode", "PersistenceConstants": "tenancy.mode", "ContextCommandFilter": "auth", "Filters/ContextCommandFilter": "tenancy.mode"}
+
+
+def merged(shapes):
+    out = []
+    for preset, shape in shapes.items():
+        position = 0
+        for line in shape:
+            found = next((i for i in range(position, len(out)) if out[i][0] == line and preset not in out[i][1]), None)
+            if found is None:
+                out.insert(position, (line, {preset}))
+                position += 1
+            else:
+                out[found][1].add(preset)
+                position = found + 1
+    return out
+
+
+def condition(relative, line, presets):
+    specific = [k for member, k in KEY_OF_MEMBER.items() if member in line][:1] + [k for part, k in KEY_OF_FILE.items() if part in relative]
+    for keys in (specific, specific + ["events.outbox", "exceptions", "auth", "tenancy.mode"]):
+        for combination in [[key] for key in keys] + [[first, second] for first in keys for second in keys if first < second]:
+            matching = {preset for preset in PRESETS if all(PRESETS[preset][k] in {PRESETS[p][k] for p in presets} for k in combination)}
+            if matching == presets:
+                return "[" + ",".join(f"{k}={'|'.join(dict.fromkeys(PRESETS[p][k] for p in PRESETS if p in presets))}" for k in combination) + "] "
+    raise AssertionError(f"no option explains {line} in {relative}")
+
 
 target = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp" / "kernel-shape.txt"
 manifest = json.loads((target.parent / "manifest.json").read_text())
@@ -21,16 +48,8 @@ for entry in manifest["files"]:
         continue
     relative = entry["path"].replace("{Name}", "Boilerplate")
     by_preset = {preset: shape_of_file(VARIANTS / preset / relative, "Boilerplate") for preset in PRESETS}
-    assert len({len(shape) for shape in by_preset.values()}) == 1, relative
-    for position, line in enumerate(by_preset["lean"]):
-        values = {preset: shape[position] for preset, shape in by_preset.items()}
-        if len(set(values.values())) == 1:
-            lines.append(line)
-            continue
-        key = next((k for member, k in KEY_OF_MEMBER.items() if member in line), "events.outbox")
-        for text in dict.fromkeys(values.values()):
-            options = "|".join(PRESETS[preset][key] for preset, value in values.items() if value == text)
-            lines.append(f"[{key}={options}] {text}")
+    for line, presets in merged(by_preset):
+        lines.append(line if len(presets) == len(PRESETS) else condition(relative, line, presets) + line)
 header = [l for l in target.read_text().splitlines() if l.startswith("#")]
 target.write_text("\n".join(header) + "\n" + "\n".join(lines) + "\n")
 print(len(lines), "shape lines")

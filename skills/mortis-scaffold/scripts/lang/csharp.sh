@@ -6,6 +6,8 @@ ACTION="${1:?action}"
 PROJECT="${2:?project dir}"
 NAME="${3:-}"
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+# The hosts run as Development unless the caller says otherwise: the development signing key lives in appsettings.Development.json.
+export DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}" ASPNETCORE_ENVIRONMENT="${ASPNETCORE_ENVIRONMENT:-${DOTNET_ENVIRONMENT:-Development}}"
 
 case "$ACTION" in
   tools)

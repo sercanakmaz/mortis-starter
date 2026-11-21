@@ -5,8 +5,9 @@ using System.Diagnostics;
 
 namespace Boilerplate.Domain.Aggregates.Products;
 
-public class Product : AggregateRoot<Guid>
+public class Product : AggregateRoot<Guid>, IMultiTenant
 {
+    public Guid TenantId { get; private set; }
     public string Sku { get; protected set; }
     public string Name { get; protected set; }
     public int Stock { get; protected set; }

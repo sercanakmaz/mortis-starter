@@ -8,4 +8,5 @@ public static class PersistenceConstants
     public const int UserIdMaxLength = 64;
     public const int UserNameMaxLength = 256;
     public const string RowVersionColumn = "xmin";
+    public const string TenantOwnedData = "Tenant-owned data";
 }

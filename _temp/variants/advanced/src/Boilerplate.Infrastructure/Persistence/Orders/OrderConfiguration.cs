@@ -15,11 +15,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(order => order.OrderNumber).HasMaxLength(OrderConstants.OrderNumberMaxLength).IsRequired();
         builder.Property(order => order.Status).HasConversion<string>().HasMaxLength(32);
 
-        builder.HasIndex(order => order.OrderNumber).IsUnique();
+        builder.HasIndex(order => new { order.TenantId, order.OrderNumber }).IsUnique();
 
         builder.HasOne<Customer>()
             .WithMany()
-            .HasForeignKey(order => order.CustomerId)
+            .HasForeignKey(order => new { order.TenantId, order.CustomerId })
+            .HasPrincipalKey(customer => new { customer.TenantId, customer.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(order => order.Lines)
@@ -44,8 +45,8 @@ public class OrderLineConfiguration : IEntityTypeConfiguration<OrderLine>
 
         builder.HasOne<Product>()
             .WithMany()
-            .HasForeignKey(orderLine => orderLine.Sku)
-            .HasPrincipalKey(product => product.Sku)
+            .HasForeignKey(orderLine => new { orderLine.TenantId, orderLine.Sku })
+            .HasPrincipalKey(product => new { product.TenantId, product.Sku })
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.ComplexProperty(orderLine => orderLine.Price, price =>

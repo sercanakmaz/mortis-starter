@@ -15,5 +15,9 @@ What phase 1 has not proven. Since decision 37 every page's code is compiled, te
 | 08 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only; no variant uses `as-code` |
 | 09 | MassTransit's Newtonsoft serializer reading what we publish, and enums or nested types in a message | Checks 1 to 4 pass against MassTransit 8.5.12; our example events have no enum or nested type |
 | 09 | `events.transport` = `rabbitmq` with `hosts.worker` = `in-api` | No variant builds it; the Api would then host the receive endpoint |
+| 11 | `Auth:Authority` (keys from an OpenID Connect authority's metadata) | Only the development signing key is exercised; no identity server runs in the checks |
+| 11 | Tenancy with `events.transport` = `in-process` or `database` | The pages say where `EventPublisher` and `OutboxWorker` enter the tenant; no variant builds it |
+| 11 | `tenancy.key` = `text`; `tenancy.resolver` = `header` or `subdomain` | Page notes only; no variant builds them |
+| 11 | `TenantScope.Bypass` used by a real job | Unit-tested; no example job crosses tenants |
 | 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
 | 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

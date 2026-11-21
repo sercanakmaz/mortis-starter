@@ -112,6 +112,7 @@ The validator refuses a file that breaks one; the interview never offers a combi
 | R10 | `queries` = `read-models` requires `events.outbox` other than `none`, because the projection is fed asynchronously. |
 | R11 | `language` must be available: the schema lists which languages have references. `go` is listed as not available until it has. |
 | R12 | `database` = `mongo` does not support `keys.default` = `int` or `long`. |
+| R13 | `tenancy.mode` = `interface` requires `auth` = `jwt`: the tenant is a claim of the signed-in caller. |
 
 ## Interview order
 

@@ -19,14 +19,14 @@ public class OrderConfigurationTests
     }
 
     [Fact]
-    public void Model_Should_ReferenceTheCustomerThroughARestrictingForeignKey()
+    public void Model_Should_ReferenceTheCustomerOfTheSameTenantThroughARestrictingForeignKey()
     {
         var model = AppDbContextBuilder.Create().Build().Model;
 
         var foreignKey = Assert.Single(model.FindEntityType(typeof(Order)).GetForeignKeys());
 
         Assert.Equal(typeof(Customer), foreignKey.PrincipalEntityType.ClrType);
-        Assert.Equal(nameof(Order.CustomerId), Assert.Single(foreignKey.Properties).Name);
+        Assert.Equal([nameof(Order.TenantId), nameof(Order.CustomerId)], foreignKey.Properties.Select(property => property.Name));
         Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 

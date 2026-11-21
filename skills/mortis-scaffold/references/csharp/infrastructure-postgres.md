@@ -30,6 +30,8 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 }
 ```
 
+With `tenancy.mode` = `interface` it also takes `TenantScope`, filters every tenant-owned type and stamps new rows (`tenancy.md`).
+
 ## PersistenceConstants
 
 File `Persistence/PersistenceConstants.cs`. `{database}` is `{Name}` in lower case with dots removed.

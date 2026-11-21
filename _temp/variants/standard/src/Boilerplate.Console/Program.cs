@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Boilerplate.Infrastructure.Authentication;
+using Microsoft.Extensions.Options;
 using Boilerplate.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
 using Boilerplate.Shared.Application;
@@ -26,20 +28,39 @@ builder.Services
 
 using var host = builder.Build();
 
-if (args.Length == 0)
+var arguments = args.ToList();
+var token = Environment.GetEnvironmentVariable(ConsoleConstants.TokenVariable);
+
+if (arguments.Count >= 2 && arguments[0] == ConsoleConstants.TokenOption)
 {
-    System.Console.Error.WriteLine("Usage: dotnet run -- <Command> [json | @file.json]");
+    token = arguments[1];
+    arguments.RemoveRange(0, 2);
+}
+
+if (arguments.Count == 0)
+{
+    System.Console.Error.WriteLine("Usage: dotnet run -- [--token <jwt>] <Command> [json | @file.json]   or   dotnet run -- dev-token [json]");
 
     return 1;
 }
 
 using var scope = host.Services.CreateScope();
 
+var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
 var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
 
 try
 {
-    var content = await consoleCommandRunner.RunAsync(args[0], args.ElementAtOrDefault(1));
+    if (arguments[0] == ConsoleConstants.DevelopmentTokenCommand)
+    {
+        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(arguments.ElementAtOrDefault(1)));
+
+        return 0;
+    }
+
+    var commandContext = await consoleTokens.ContextOfAsync(token);
+
+    var content = await consoleCommandRunner.RunAsync(arguments[0], arguments.ElementAtOrDefault(1), commandContext);
 
     System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
 

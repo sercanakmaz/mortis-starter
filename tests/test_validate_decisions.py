@@ -102,6 +102,9 @@ class RuleTests(unittest.TestCase):
     def test_r12_mongo_has_no_integer_keys(self):
         self.assert_rule("R12", make("standard", database="mongo", keys__default="int"))
 
+    def test_r13_tenancy_needs_signed_in_callers(self):
+        self.assert_rule("R13", make("advanced", auth="none"))
+
     def test_every_rule_in_the_schema_has_a_test(self):
         ids = {rule["id"] for rule in decisions.load_schema()["rules"]}
         source = Path(__file__).read_text(encoding="utf-8")

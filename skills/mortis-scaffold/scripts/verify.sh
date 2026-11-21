@@ -86,7 +86,17 @@ else
     PASSED=$before_passed; FAILED=$before_failed
     if [ "$result" = 0 ]; then pass "conformance: $1"; else fail "conformance: $1" "see the lines above"; fi
   }
-  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)"
+  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)"
+  # With auth = jwt the checks call the API with a development token; with tenancy that token, and every Console run, belongs to TENANT_A.
+  if [ "$DRY_RUN" = 0 ] && [ "$AUTH" = "jwt" ]; then
+    export TENANT_A="$(new_id)" TENANT_B="$(new_id)"
+    if [ "$TENANCY" = "interface" ]; then
+      export TOKEN="$(dev_token "{\"subject\":\"conformance\",\"email\":\"conformance@example.com\",\"tenant\":\"$TENANT_A\"}")"
+      export CONSOLE_TOKEN="$TOKEN" CONSOLE_USER="conformance"
+    else
+      export TOKEN="$(dev_token '{"subject":"conformance","email":"conformance@example.com"}')"
+    fi
+  fi
   run_conformance kernel.sh
 
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
@@ -110,6 +120,10 @@ else
   ADDONS=",$(get addons),"
   export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
   case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac
+  if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
+    [ "$AUTH" = "jwt" ] && run_conformance auth.sh
+    [ "$TENANCY" = "interface" ] && run_conformance tenancy.sh
+  fi
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
     run_conformance outbox.sh

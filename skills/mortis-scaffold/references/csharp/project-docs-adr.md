@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`. With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`. With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -516,4 +516,78 @@ Which broker carries events between services, and what other services must under
 ## How it is enforced
 
 `MessageNamesTests`, `MessageEnvelopeTests` (including envelopes MassTransit wrote), the conformance checks in `transport-rabbitmq.sh`, and the interoperability tests run against MassTransit 8 while the skills are built.
+~~~~
+
+## 0014-bearer-tokens-fill-the-context.md
+
+~~~~markdown
+# 0014 — Callers present bearer tokens; their claims fill the command's context
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Every write records who made it, and with tenancy every row records whose it is. Before this, nothing authenticated the Api, so the audit user of a write was empty. The project must not become an identity provider.
+
+## Decision
+
+The Api validates JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`) and every controller needs an authenticated caller; `/health` stays open. Keys come from an OpenID Connect authority (`Auth:Authority`) or, in Development only, a symmetric key (`Auth:SigningKey` in `appsettings.Development.json`). `ContextCommandFilter` fills `CommandContext.User` from the subject and email claims, and the tenant from the tenant claim when tenancy is on; the claim names are settings. The Console accepts the same token (`--token` or `MORTIS_TOKEN`) and otherwise runs as the console user. `dotnet run -- dev-token` prints a development token and refuses outside Development. Event consumers run as the system user.
+
+## What varies
+
+Which identity provider issues the tokens, and what it names the claims.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| No authentication | Nothing | Writes have no audit user; tenants cannot be told apart |
+| Issue our own tokens | A user store, passwords, refresh tokens | Not this service's job |
+| An API key per caller | A key table and rotation | Does not identify the user behind a call |
+| **Validate tokens from an authority; claims fill the context** | One package, settings, a development key | n/a |
+
+## Consequences
+
+- Gained: every write records the real user; the Console and the Api read tokens the same way; local work needs no identity server.
+- Lost or owed: permissions per command are not checked yet; the development key must never reach another environment.
+- Cost of going back: low.
+
+## How it is enforced
+
+`AuthSettingsTests`, `ConsoleTokensTests`, `ContextCommandFilterTests`, and `auth.sh` (401 without or with a forged token, audit columns from the token, `dev-token` refused outside Development).
+~~~~
+
+## 0015-multi-tenancy-by-interface.md
+
+~~~~markdown
+# 0015 — Tenants share one database; a type is tenant-owned by implementing IMultiTenant
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: The service is sold to many customers, and one customer must never see another's data. A database or schema per tenant multiplies migrations and connections, which is too much for a starter.
+
+## Decision
+
+One database for every tenant. A type that implements `IMultiTenant` has a `tenant_id` column; everything else is global. The tenant is the signed-in user's tenant claim (`0014`); the host enters it in a scoped `TenantScope`, the consumers enter the event's tenant before resolving any service, and the command pipeline checks the command's context against it. `AppDbContext` filters every tenant-owned query by the scope's tenant and stamps new rows with it; with no tenant, a tenant-owned read or write fails with 403 `tenant_required` before any SQL. Every unique index and foreign key between tenant-owned tables starts with `tenant_id`. `TenantScope.Bypass` is the only way past the filter, for system jobs, and it is logged.
+
+## What varies
+
+Which types belong to a tenant.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| A database or schema per tenant | Migrations and connections per tenant | Too exceptional for a starter |
+| A tenant condition written in every query | Nothing up front | One forgotten condition leaks data |
+| PostgreSQL row-level security only | Policies per table and a session variable | Harder to test; kept as optional hardening |
+| **One interface, a query filter and a scoped tenant** | `TenantScope`, a middleware, tenant-first keys | n/a |
+
+## Consequences
+
+- Gained: a type becomes tenant-owned by one interface; a missing tenant fails loudly; keys stop cross-tenant references in the database.
+- Lost or owed: raw SQL and bulk updates skip the filter and need the condition by hand; the scope is ambient, so a job must enter the tenant before it resolves a repository.
+- Cost of going back: high, because the data is already mixed in one database.
+
+## How it is enforced
+
+`TenantScopeTests`, `TenantCommandHandlerMiddlewareTests`, `AppDbContextTests`, the configuration tests, and `tenancy.sh` (isolation over HTTP with two tenants, interleaved consumers, the cross-tenant foreign key, tenant-first unique indexes).
 ~~~~

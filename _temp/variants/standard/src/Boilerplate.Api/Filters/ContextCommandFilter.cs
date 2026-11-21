@@ -1,18 +1,19 @@
+using Boilerplate.Infrastructure.Authentication;
 using Boilerplate.Shared.Application;
 using Boilerplate.Api.Middlewares;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Boilerplate.Shared.Domain;
-using System.Security.Claims;
+using Microsoft.Extensions.Options;
 
 namespace Boilerplate.Api.Filters;
 
-public class ContextCommandFilter : IAsyncActionFilter
+public class ContextCommandFilter(IOptions<AuthSettings> authSettings) : IAsyncActionFilter
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        var principal = context.HttpContext.User;
         var commandContext = new CommandContext
         {
-            User = new AuditUser(context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), context.HttpContext.User.FindFirstValue(ClaimTypes.Email)),
+            User = authSettings.Value.UserOf(principal),
             CorrelationId = context.HttpContext.Items[ApiConstants.CorrelationIdItem] is Guid correlationId ? correlationId : Guid.CreateVersion7()
         };
 

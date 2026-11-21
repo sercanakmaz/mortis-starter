@@ -28,6 +28,8 @@ File `Filters/ContextCommandFilter.cs`. Builds one context for the request, from
 
 @@member src/Boilerplate.Api/Filters/ContextCommandFilter.cs::ContextCommandFilter::OnActionExecutionAsync@@
 
+With `auth` = `jwt` the claim names come from `AuthSettings`, every controller requires a signed-in caller and `Program.cs` adds the authentication lines; with tenancy the filter also sets the tenant (`authentication.md`, `tenancy.md`).
+
 ### Errors
 
 File `Middlewares/ErrorResponseModel.cs`, the one error body:
@@ -117,6 +119,7 @@ File `ConsoleCommandRunner.cs`, namespace `{Name}.Console`:
 @@member src/Boilerplate.Console/ConsoleCommandRunner.cs::ConsoleCommandRunner::RunAsync@@
 
 - A new command needs nothing in the Console: the runner finds it.
+- With `auth` = `jwt` the run takes a token (`--token <jwt>` or `MORTIS_TOKEN`) and `RunAsync` takes the context it yields; `dev-token` prints a development token (`authentication.md`).
 
 File `ConsoleConstants.cs`:
 

@@ -5,8 +5,9 @@ using System.Diagnostics;
 
 namespace Boilerplate.Domain.Aggregates.Customers;
 
-public class Customer : AggregateRoot<Guid>
+public class Customer : AggregateRoot<Guid>, IMultiTenant
 {
+    public Guid TenantId { get; private set; }
     public string Name { get; protected set; }
     public string Email { get; protected set; }
     public bool IsBlocked { get; protected set; }

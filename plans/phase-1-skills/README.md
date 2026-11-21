@@ -25,7 +25,7 @@ Cheap checks that do run in this phase (no generation, no build):
 | 07 | [07-exception-levels.md](07-exception-levels.md) | 03 | small |
 | 08 | [08-outbox.md](08-outbox.md) | 04, 06 | large |
 | 09 | [09-rabbitmq-bus.md](09-rabbitmq-bus.md) | 08 | large |
-| 10 | [10-testing-levels.md](10-testing-levels.md) | 08 | medium |
+| 10 | [10-testing-levels.md](10-testing-levels.md) | 08 | medium (skipped for now, decision 42) |
 | 11 | [11-multi-tenancy.md](11-multi-tenancy.md) | 04, 08 | medium |
 | 12 | [12-multi-language.md](12-multi-language.md) | 04, 07 | medium |
 | 13 | [13-mongodb.md](13-mongodb.md) | 08, 11 | large |

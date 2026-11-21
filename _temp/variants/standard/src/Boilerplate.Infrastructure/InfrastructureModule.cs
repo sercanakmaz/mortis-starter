@@ -4,6 +4,7 @@ using Boilerplate.Infrastructure.Messaging;
 using Microsoft.Extensions.Configuration;
 using Boilerplate.Infrastructure.Messaging.Outbox;
 using Boilerplate.Infrastructure.Logging;
+using Boilerplate.Infrastructure.Authentication;
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ public static class InfrastructureModule
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>();
+        services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.Section));
         services.AddOutboxModule(configuration);
         services.AddPersistenceModule();
         services.AddEventConsumerRegistry();

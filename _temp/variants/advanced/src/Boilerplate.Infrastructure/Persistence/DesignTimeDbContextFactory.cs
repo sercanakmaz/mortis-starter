@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Boilerplate.Infrastructure.Tenancy;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Boilerplate.Infrastructure.Persistence;
@@ -14,6 +16,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             .UseSnakeCaseNamingConvention()
             .Options;
 
-        return new AppDbContext(options);
+        return new AppDbContext(options, new TenantScope(NullLogger<TenantScope>.Instance));
     }
 }

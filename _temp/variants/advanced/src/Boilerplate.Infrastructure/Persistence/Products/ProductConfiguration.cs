@@ -15,7 +15,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.Name).HasMaxLength(ProductConstants.NameMaxLength).IsRequired();
         builder.Property(product => product.Stock).IsRequired();
 
-        builder.HasAlternateKey(product => product.Sku);
+        builder.HasAlternateKey(product => new { product.TenantId, product.Sku });
 
         builder.HasOne<Category>()
             .WithMany()

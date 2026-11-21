@@ -61,3 +61,16 @@ Tenant provisioning and management screens; per-tenant settings; schema or datab
 - `IgnoreQueryFilters()` anywhere outside `TenantScope.Bypass()` is a leak. Ban it in `BannedSymbols.txt` and allow it in one place.
 - A relay batch holds rows of many tenants. Open a new dependency-injection scope per message; never reuse a `DbContext` across tenants.
 - Raw SQL and bulk updates bypass the filter.
+
+## Notes (done)
+
+Built and verified in the advanced variant, not knowledge only (decision 37); scope by the maintainer's answers (decisions 42, 43). Step 10 was skipped for now.
+
+- The tenant is the signed-in user's claim, so step 15's sign-in was built here, in standard and advanced: `AuthSettings`, `JwtAuthenticationModule`, `ContextCommandFilter` from configured claims, `ConsoleTokens` (`--token`, `MORTIS_TOKEN`, `dev-token` in Development only). Rule R13: tenancy needs `auth` = `jwt`.
+- Files: `IMultiTenant`, `TenantRequiredException` (403), `TenantScope`, `TenantCommandHandlerMiddleware`; `AppDbContext` filters and stamps; tenant-first keys and composite foreign keys in the example's configurations; `tenant_id` on the advanced outbox row. The plan's `TenantId` value type and `ITenantResolver` were not needed: the chosen key's type is used directly and the claim is the only resolver built.
+- A missing tenant answers 403 `tenant_required` (the maintainer chose 403 over 400); another tenant's row is a 404.
+- Queries carry no context, so the host enters the tenant scope for every request, not only the pipeline.
+- The ADR numbers in the plan (0009, 0011) were taken: `0014-bearer-tokens-fill-the-context.md` and `0015-multi-tenancy-by-interface.md`.
+- `build_shape.py` now merges the variants' shapes and finds the option (or pair of options) that explains each difference; `shape_for.py` reads `[k1=v1,k2=v2]` conditions.
+- Proven: `auth.sh` (6) and `tenancy.sh` (12) on PostgreSQL and RabbitMQ; lean 13, standard 15, advanced 17 checks of `verify.sh`.
+

@@ -385,6 +385,11 @@
    "id": "R12",
    "text": "database = mongo does not support keys.default = int or long.",
    "fix": "Set keys.default to guid."
+  },
+  {
+   "id": "R13",
+   "text": "tenancy.mode = interface requires auth = jwt, because the tenant is a claim of the signed-in caller.",
+   "fix": "Set auth to jwt, or tenancy.mode to none."
   }
  ]
 }

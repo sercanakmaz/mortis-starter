@@ -18,9 +18,9 @@ expect_equal "correlation: a malformed header gets a new id, not an error" "200|
 
 if [ "${EXAMPLE:-false}" = "true" ]; then
   REQUEST_ID="$(python3 -I -c 'import uuid; print(uuid.uuid4())')"
-  curl -s -o /dev/null -X POST "http://localhost:$PORT/products" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d '{"sku":"COR-1","name":"Correlated","stock":5}'
-  CUSTOMER="$(curl -s -X POST "http://localhost:$PORT/customers" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d '{"name":"Cor","email":"cor@example.com"}' | python3 -I -c 'import sys, json; print(json.load(sys.stdin)["id"])')"
-  curl -s -o /dev/null -X POST "http://localhost:$PORT/orders" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d "{\"orderNumber\":\"COR-1\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"COR-1\",\"price\":1,\"currency\":\"EUR\",\"quantity\":2}]}"
+  api_curl -s -o /dev/null -X POST "http://localhost:$PORT/products" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d '{"sku":"COR-1","name":"Correlated","stock":5}'
+  CUSTOMER="$(api_curl -s -X POST "http://localhost:$PORT/customers" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d '{"name":"Cor","email":"cor@example.com"}' | python3 -I -c 'import sys, json; print(json.load(sys.stdin)["id"])')"
+  api_curl -s -o /dev/null -X POST "http://localhost:$PORT/orders" -H "Content-Type: application/json" -H "X-Correlation-Id: $REQUEST_ID" -d "{\"orderNumber\":\"COR-1\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"COR-1\",\"price\":1,\"currency\":\"EUR\",\"quantity\":2}]}"
   sleep 3
   LOG="$WORK/correlation.log"
   cat "$PROJECT/.mortis/api.log" > "$LOG"

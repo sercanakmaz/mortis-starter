@@ -182,6 +182,24 @@
    }
   },
   {
+   "path": "docs/adr/0014-bearer-tokens-fill-the-context.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
+  },
+  {
+   "path": "docs/adr/0015-multi-tenancy-by-interface.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -198,6 +216,15 @@
    "page": "project-docs.md",
    "source": "data",
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Api/Authentication/JwtAuthenticationModule.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
   },
   {
    "path": "src/{Name}.Api/Controllers/CategoriesController.cs",
@@ -279,6 +306,15 @@
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/appsettings.Development.json",
+   "page": "authentication.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
   },
   {
    "path": "src/{Name}.Api/appsettings.json",
@@ -533,10 +569,28 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Console/ConsoleTokens.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
+  },
+  {
    "path": "src/{Name}.Console/Program.cs",
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Console/appsettings.Development.json",
+   "page": "authentication.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
   },
   {
    "path": "src/{Name}.Console/appsettings.json",
@@ -813,6 +867,15 @@
    "page": "solution.md",
    "source": "data",
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Authentication/AuthSettings.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/InfrastructureModule.cs",
@@ -1207,6 +1270,24 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Tenancy/TenantScope.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
+  },
+  {
    "path": "src/{Name}.Infrastructure/{Name}.Infrastructure.csproj",
    "page": "solution.md",
    "source": "data",
@@ -1321,6 +1402,15 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Shared/Domain/IMultiTenant.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
+  },
+  {
    "path": "src/{Name}.Shared/Domain/SystemUser.cs",
    "page": "shared-domain.md",
    "source": "snippets",
@@ -1367,6 +1457,15 @@
    "page": "shared-other.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/TenantRequiredException.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
   },
   {
    "path": "src/{Name}.Shared/Exceptions/TransactionRequiredException.cs",
@@ -1603,6 +1702,15 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Console/ConsoleTokensTests.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Domain/Categories/CategoryTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1657,6 +1765,15 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Logging/JsonLineFormatterTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
@@ -1708,6 +1825,15 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/AppDbContextTests.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "when": {
+    "tenancy.mode": "interface"
+   },
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Categories/CategoryConfigurationTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1751,6 +1877,24 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Tenancy/TenantCommandHandlerMiddlewareTests.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Tenancy/TenantScopeTests.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
   },
   {
    "path": "test/{Name}.Tests/Shared/Application/CommandContextTests.cs",
@@ -1873,6 +2017,15 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Authentication/FakeAuthSettings.cs",
+   "page": "authentication.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "auth": "jwt"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/EventPublisherBuilder.cs",
    "page": "events-inprocess.md",
    "source": "snippets",
@@ -1892,6 +2045,15 @@
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Tenancy/TenantScopeBuilder.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "tenancy.mode": "interface"
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs",

@@ -1,0 +1,29 @@
+using Boilerplate.Tests.TestSupport.Infrastructure.Tenancy;
+using Boilerplate.Tests.TestSupport.Shared.Application;
+using Boilerplate.Infrastructure.Tenancy;
+using Boilerplate.Shared.Application;
+using Boilerplate.Shared.Exceptions;
+
+namespace Boilerplate.Tests.Infrastructure.Tenancy;
+
+public class TenantCommandHandlerMiddlewareTests
+{
+    [Fact]
+    public void Before_WithAContextCommand_Should_EnterTheTenantOfItsContext()
+    {
+        var tenantId = Guid.CreateVersion7();
+        var tenantScope = TenantScopeBuilder.Create().Build();
+
+        new TenantCommandHandlerMiddleware(tenantScope).Before(new FakeContextCommand { Context = new CommandContext { TenantId = tenantId.ToString() } });
+
+        Assert.Equal(tenantId, tenantScope.TenantId);
+    }
+
+    [Fact]
+    public void Before_WithAnotherTenantThanTheScope_Should_ThrowForbidden()
+    {
+        var tenantScope = TenantScopeBuilder.Create().WithTenant(Guid.CreateVersion7()).Build();
+
+        Assert.Throws<ForbiddenException>(() => new TenantCommandHandlerMiddleware(tenantScope).Before(new FakeContextCommand { Context = new CommandContext { TenantId = Guid.CreateVersion7().ToString() } }));
+    }
+}

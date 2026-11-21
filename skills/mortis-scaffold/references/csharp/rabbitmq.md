@@ -531,6 +531,7 @@ The member continues:
 private async Task ConsumeAsync(EventBase @event)
 {
     using var scope = serviceScopeFactory.CreateScope();
+    scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(@event.TenantId);
     var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
     var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerEndpoint.ConsumerType);
 
@@ -707,6 +708,6 @@ The broker behaviour is proven by the conformance suite (`scripts/conformance/tr
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConstants.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | none |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqModule.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqPublisher.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | RabbitMQ.Client, {Name}.Shared.Domain |
-| `src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, RabbitMQ.Client, RabbitMQ.Client.Events, System.Globalization, {Name}.Infrastructure.Logging, {Name}.Shared.Domain, {Name}.Shared.Persistence |
+| `src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, RabbitMQ.Client, RabbitMQ.Client.Events, System.Globalization, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Tenancy, {Name}.Shared.Domain, {Name}.Shared.Persistence |
 | `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageEnvelopeTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | System.Text, {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq |
 | `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageNamesTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq |

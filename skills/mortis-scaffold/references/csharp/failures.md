@@ -9,6 +9,9 @@
 | business rule | 409 | the rule's own code |
 | duplicate (a unique index) | 409 at `coded` and `catalogued`; 500 at `minimal` | `duplicate`; `unexpected_error` at `minimal` |
 | reference (a foreign key) | 400 at `coded` and `catalogued`; 500 at `minimal` | `reference_violation`; `unexpected_error` at `minimal` |
+| not allowed | 403 | `forbidden` |
+| tenant-owned data without a tenant (tenancy only) | 403 | `tenant_required` |
+| no valid bearer token (`auth` = `jwt`) | 401, no body | none: the framework answers before a command runs |
 | anything else | 500 | `unexpected_error`, with a reference in the message |
 
 Body: `{ "code": "...", "message": "...", "errors": { "<field>": ["..."] } }`; `errors` only for `validation_failed`.
@@ -72,6 +75,7 @@ public static readonly IReadOnlyDictionary<string, string> Messages = new Dictio
     ["invalid_parameter"] = "A value is not valid.",
     ["reference_violation"] = "A reference points at a missing record, or the record is still referenced.",
     ["transaction_required"] = "A write ran outside a transaction.",
+    ["tenant_required"] = "The record belongs to a tenant, and the caller has none.",
     ["validation_failed"] = "The request is not valid.",
     [CustomerConstants.BlockedCode] = "A blocked customer cannot complete orders.",
     [ProductConstants.InsufficientStockCode] = "The product does not have enough stock.",

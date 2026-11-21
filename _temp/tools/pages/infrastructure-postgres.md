@@ -23,6 +23,8 @@ File `Persistence/AppDbContext.cs`:
 
 @@member src/Boilerplate.Infrastructure/Persistence/AppDbContext.cs::AppDbContext::OnModelCreating@@
 
+With `tenancy.mode` = `interface` it also takes `TenantScope`, filters every tenant-owned type and stamps new rows (`tenancy.md`).
+
 ## PersistenceConstants
 
 File `Persistence/PersistenceConstants.cs`. `{database}` is `{Name}` in lower case with dots removed.

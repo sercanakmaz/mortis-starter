@@ -116,6 +116,10 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -133,9 +137,12 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_customers");
 
-                    b.HasIndex("Email")
+                    b.HasAlternateKey("TenantId", "Id")
+                        .HasName("ak_customer_tenant_id_id");
+
+                    b.HasIndex("TenantId", "Email")
                         .IsUnique()
-                        .HasDatabaseName("ix_customers_email");
+                        .HasDatabaseName("ix_customers_tenant_id_email");
 
                     b.ToTable("customers", (string)null);
                 });
@@ -176,6 +183,10 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("status");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -193,12 +204,12 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_orders");
 
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("ix_orders_customer_id");
+                    b.HasIndex("TenantId", "CustomerId")
+                        .HasDatabaseName("ix_orders_tenant_id_customer_id");
 
-                    b.HasIndex("OrderNumber")
+                    b.HasIndex("TenantId", "OrderNumber")
                         .IsUnique()
-                        .HasDatabaseName("ix_orders_order_number");
+                        .HasDatabaseName("ix_orders_tenant_id_order_number");
 
                     b.ToTable("orders", (string)null);
                 });
@@ -232,6 +243,10 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("sku");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Price", "Boilerplate.Domain.Aggregates.Orders.OrderLine.Price#Money", b1 =>
                         {
                             b1.IsRequired();
@@ -254,8 +269,8 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrderId")
                         .HasDatabaseName("ix_order_lines_order_id");
 
-                    b.HasIndex("Sku")
-                        .HasDatabaseName("ix_order_lines_sku");
+                    b.HasIndex("TenantId", "Sku")
+                        .HasDatabaseName("ix_order_lines_tenant_id_sku");
 
                     b.ToTable("order_lines", (string)null);
                 });
@@ -300,6 +315,10 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("stock");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -323,8 +342,8 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_products");
 
-                    b.HasAlternateKey("Sku")
-                        .HasName("ak_product_sku");
+                    b.HasAlternateKey("TenantId", "Sku")
+                        .HasName("ak_product_tenant_id_sku");
 
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_products_category_id");
@@ -362,6 +381,11 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("payload");
 
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("tenant_id");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -381,10 +405,11 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Boilerplate.Domain.Aggregates.Customers.Customer", null)
                         .WithMany()
-                        .HasForeignKey("CustomerId")
+                        .HasForeignKey("TenantId", "CustomerId")
+                        .HasPrincipalKey("TenantId", "Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_orders_customers_customer_id");
+                        .HasConstraintName("fk_orders_customers_tenant_id_customer_id");
                 });
 
             modelBuilder.Entity("Boilerplate.Domain.Aggregates.Orders.OrderLine", b =>
@@ -398,11 +423,11 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Boilerplate.Domain.Aggregates.Products.Product", null)
                         .WithMany()
-                        .HasForeignKey("Sku")
-                        .HasPrincipalKey("Sku")
+                        .HasForeignKey("TenantId", "Sku")
+                        .HasPrincipalKey("TenantId", "Sku")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_order_lines_product_sku");
+                        .HasConstraintName("fk_order_lines_product_tenant_id_sku");
                 });
 
             modelBuilder.Entity("Boilerplate.Domain.Aggregates.Products.Product", b =>

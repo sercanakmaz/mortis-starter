@@ -1,7 +1,9 @@
 # Kernel shape, C#. One line per public type and member of every kernel file in manifest.json.
 # Produced by scripts/lang/csharp_shape.py; verify.sh extracts the same list from a generated project and compares.
 # {Name} is the project name from MORTIS.md; {database} is that name in lower case without dots.
-type {Name}.Api.Filters: public class ContextCommandFilter : IAsyncActionFilter
+[tenancy.mode=interface] type {Name}.Api.Filters: public class ContextCommandFilter(IOptions<AuthSettings> authSettings, TenantScope tenantScope) : IAsyncActionFilter
+[auth=jwt,tenancy.mode=none] type {Name}.Api.Filters: public class ContextCommandFilter(IOptions<AuthSettings> authSettings) : IAsyncActionFilter
+[auth=none] type {Name}.Api.Filters: public class ContextCommandFilter : IAsyncActionFilter
 member {Name}.Api.Filters.ContextCommandFilter: public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 type {Name}.Api.Middlewares: public static class ApiConstants
 member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdHeader = "X-Correlation-Id"
@@ -16,12 +18,17 @@ member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> Try
 type {Name}.Application: public static class ApplicationModule
 member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
 type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
-member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument)
+[auth=jwt] member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
+[auth=none] member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument)
 type {Name}.Console: public static class ConsoleConstants
 member {Name}.Console.ConsoleConstants: public const string UserId = "console"
 member {Name}.Console.ConsoleConstants: public const string UserEmail = "console@localhost"
 member {Name}.Console.ConsoleConstants: public const string CommandSuffix = "Command"
 member {Name}.Console.ConsoleConstants: public const string FilePrefix = "@"
+[auth=jwt] member {Name}.Console.ConsoleConstants: public const string TokenOption = "--token"
+[auth=jwt] member {Name}.Console.ConsoleConstants: public const string TokenVariable = "MORTIS_TOKEN"
+[auth=jwt] member {Name}.Console.ConsoleConstants: public const string DevelopmentTokenCommand = "dev-token"
+[auth=jwt] member {Name}.Console.ConsoleConstants: public const int DevelopmentTokenHours = 8
 member {Name}.Console.ConsoleConstants: public static readonly JsonSerializerOptions OutputOptions = new()
 member {Name}.Console.ConsoleConstants: public static readonly JsonSerializerOptions InputOptions = new()
 type {Name}.Domain: public static class DomainModule
@@ -43,8 +50,10 @@ member {Name}.Infrastructure.Logging.LoggingConstants: public const string Corre
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string OriginalFormat = "{OriginalFormat}"
 type {Name}.Infrastructure.Logging: public static class LoggingModule
 member {Name}.Infrastructure.Logging.LoggingModule: public static ILoggingBuilder AddJsonLogging(this ILoggingBuilder logging, bool toStandardError = false)
-type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+[tenancy.mode=interface] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
+[tenancy.mode=none] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
+[tenancy.mode=interface] member {Name}.Infrastructure.Persistence.AppDbContext: public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
 type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
 member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
 member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> IdentityAggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
@@ -68,14 +77,15 @@ member {Name}.Infrastructure.Persistence.PersistenceConstants: public const stri
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserIdMaxLength = 64
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserNameMaxLength = 256
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
+[tenancy.mode=interface] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string TenantOwnedData = "Tenant-owned data"
 type {Name}.Infrastructure.Persistence: public static class PersistenceModule
 member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
-[events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
-[events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
 [events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
+[events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
 member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
-[exceptions=minimal] member {Name}.Infrastructure.Persistence.UnitOfWork: public Task<int> SaveChangesAsync()
 [exceptions=coded|catalogued] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
+[exceptions=minimal] member {Name}.Infrastructure.Persistence.UnitOfWork: public Task<int> SaveChangesAsync()
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
 member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task RollbackTransactionAsync()
