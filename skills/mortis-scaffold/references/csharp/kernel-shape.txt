@@ -51,26 +51,26 @@ member {Name}.Infrastructure.Logging.LoggingConstants: public const string Corre
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string OriginalFormat = "{OriginalFormat}"
 type {Name}.Infrastructure.Logging: public static class LoggingModule
 member {Name}.Infrastructure.Logging.LoggingModule: public static ILoggingBuilder AddJsonLogging(this ILoggingBuilder logging, bool toStandardError = false)
-[tenancy.mode=interface] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
-[tenancy.mode=none] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
-member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
-[tenancy.mode=interface] member {Name}.Infrastructure.Persistence.AppDbContext: public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
-type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
-member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
-member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> IdentityAggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
-member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TEntity> ChildEntityConfiguration<TEntity, TKey>(this EntityTypeBuilder<TEntity> builder) where TEntity : Entity<TKey>
-type {Name}.Infrastructure.Persistence: public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
-member {Name}.Infrastructure.Persistence.DesignTimeDbContextFactory: public AppDbContext CreateDbContext(string[] args)
-type {Name}.Infrastructure.Persistence: public abstract class EfRepository<TAggregate, TKey>(AppDbContext context, IUnitOfWork unitOfWork, EventContext eventContext) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
-member {Name}.Infrastructure.Persistence.EfRepository: protected readonly DbSet<TAggregate> DbSet = context.Set<TAggregate>()
-member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task CreateAsync(TAggregate aggregate)
-member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task UpdateAsync(TAggregate aggregate)
-member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task DeleteAsync(TAggregate aggregate)
-member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdAsync(TKey id)
-member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
-member {Name}.Infrastructure.Persistence.EfRepository: protected IQueryable<TAggregate> Query()
-member {Name}.Infrastructure.Persistence.EfRepository: protected void RaiseEvents(TAggregate aggregate)
-member {Name}.Infrastructure.Persistence.EfRepository: protected void EnsureTransaction()
+[database=postgres,tenancy.mode=interface] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
+[database=postgres,tenancy.mode=none] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+[database=postgres] member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
+[database=postgres,tenancy.mode=interface] member {Name}.Infrastructure.Persistence.AppDbContext: public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+[database=postgres] type {Name}.Infrastructure.Persistence: public static class ConfigurationExtensions
+[database=postgres] member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> AggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
+[database=postgres] member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TAggregate> IdentityAggregateConfiguration<TAggregate, TKey>(this EntityTypeBuilder<TAggregate> builder) where TAggregate : AggregateRoot<TKey>
+[database=postgres] member {Name}.Infrastructure.Persistence.ConfigurationExtensions: public static EntityTypeBuilder<TEntity> ChildEntityConfiguration<TEntity, TKey>(this EntityTypeBuilder<TEntity> builder) where TEntity : Entity<TKey>
+[database=postgres] type {Name}.Infrastructure.Persistence: public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
+[database=postgres] member {Name}.Infrastructure.Persistence.DesignTimeDbContextFactory: public AppDbContext CreateDbContext(string[] args)
+[database=postgres] type {Name}.Infrastructure.Persistence: public abstract class EfRepository<TAggregate, TKey>(AppDbContext context, IUnitOfWork unitOfWork, EventContext eventContext) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: protected readonly DbSet<TAggregate> DbSet = context.Set<TAggregate>()
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task CreateAsync(TAggregate aggregate)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task UpdateAsync(TAggregate aggregate)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task DeleteAsync(TAggregate aggregate)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdAsync(TKey id)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: protected IQueryable<TAggregate> Query()
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: protected void RaiseEvents(TAggregate aggregate)
+[database=postgres] member {Name}.Infrastructure.Persistence.EfRepository: protected void EnsureTransaction()
 type {Name}.Infrastructure.Persistence: public static class PersistenceConstants
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringName = "Default"
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringVariable = "ConnectionStrings__Default"
@@ -79,18 +79,18 @@ member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int 
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserNameMaxLength = 256
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
 [tenancy.mode=interface] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string TenantOwnedData = "Tenant-owned data"
-type {Name}.Infrastructure.Persistence: public static class PersistenceModule
-member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
-[events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
-[events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
-[events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
-member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
-[exceptions=coded|catalogued] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
-[exceptions=minimal] member {Name}.Infrastructure.Persistence.UnitOfWork: public Task<int> SaveChangesAsync()
-member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
-member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
-member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task RollbackTransactionAsync()
-member {Name}.Infrastructure.Persistence.UnitOfWork: public void OnCommitted(Func<Task> action)
+[database=postgres] type {Name}.Infrastructure.Persistence: public static class PersistenceModule
+[database=postgres] member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
+[database=postgres,events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
+[database=postgres,events.outbox=after-command] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[database=postgres,events.outbox=none] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, EventPublisher eventPublisher, ILogger<UnitOfWork> logger) : IUnitOfWork
+[database=postgres] member {Name}.Infrastructure.Persistence.UnitOfWork: public bool HasTransaction
+[database=postgres,exceptions=coded|catalogued] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task<int> SaveChangesAsync()
+[database=postgres,exceptions=minimal] member {Name}.Infrastructure.Persistence.UnitOfWork: public Task<int> SaveChangesAsync()
+[database=postgres] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
+[database=postgres] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
+[database=postgres] member {Name}.Infrastructure.Persistence.UnitOfWork: public async Task RollbackTransactionAsync()
+[database=postgres] member {Name}.Infrastructure.Persistence.UnitOfWork: public void OnCommitted(Func<Task> action)
 type {Name}.Shared.Application: public abstract class BaseCommandHandler<TCommand, TContent>(CommandPipeline<TCommand> commandPipeline) where TCommand : ICommand<TContent>
 member {Name}.Shared.Application.BaseCommandHandler: protected abstract Task<CommandResult<TContent>> OnHandle(TCommand command)
 member {Name}.Shared.Application.BaseCommandHandler: public Task<CommandResult<TContent>> Handle(TCommand command)
@@ -217,3 +217,32 @@ member {Name}.Shared.Persistence.IUnitOfWork: Task RollbackTransactionAsync()
 member {Name}.Shared.Persistence.IUnitOfWork: void OnCommitted(Func<Task> action)
 type {Name}.Shared: public static class SharedModule
 member {Name}.Shared.SharedModule: public static IServiceCollection AddSharedModule(this IServiceCollection services)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoModule
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoModule: public static IServiceCollection AddMongoModule(this IServiceCollection services, IConfiguration configuration)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoClassMaps
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoClassMaps: public static void Register()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoUnitOfWork(IMongoClient mongoClient, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public IClientSessionHandle Session { get; private set; }
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public bool HasTransaction => Session?.IsInTransaction == true;
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public Task<int> SaveChangesAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task RollbackTransactionAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void OnCommitted(Func<Task> action)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void Remember(object aggregate, long version)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public long VersionOf(object aggregate)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public abstract class MongoRepository<TAggregate, TKey>(IMongoDatabase database, MongoUnitOfWork unitOfWork, EventContext eventContext, string collectionName) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task CreateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task UpdateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task DeleteAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task<TAggregate> FindByIdAsync(TKey id)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoExceptionHandler
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static async Task<T> Run<T>(Func<Task<T>> write)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static Task Run(Func<Task> write)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class ConcurrencyConflictException(string name) : Exception($"{name} was changed by someone else since it was loaded.");
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexes(IMongoDatabase database)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexes: public async Task EnsureAsync()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexesService(MongoIndexes mongoIndexes, IHostEnvironment hostEnvironment) : IHostedService
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StartAsync(CancellationToken cancellationToken)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StopAsync(CancellationToken cancellationToken)

@@ -49,3 +49,12 @@ Sharding, change streams as a relay, time-series collections, a migration tool f
 
 - The .NET driver's default Guid representation has changed across versions; set the standard representation explicitly and pin it with a test that reads raw bytes.
 - A transaction on a standalone server fails at the first write, not at connect. The conformance suite must check the replica set first and say so plainly.
+
+## Notes (done)
+
+Knowledge only, as planned (decision 45); the maintainer kept it so rather than building a fourth variant.
+
+- Page `infrastructure-mongo.md`, layer 1 `architecture/documents.md`, ADR `0017`, `database-mongo.sh`, `shape-mongo.txt` appended to `kernel-shape.txt`; every piece is a line in `docs/unverified.md`.
+- Changed from the plan: no inbox and no Console scenarios (decisions 34, 40); the outbox claim follows today's design (attempts, `max_attempts`, `nextAttemptAt`) rather than `status` and `locked_until`; the scenarios check became the example's flows read back from the documents. The example's integer `Category` key comes from a counter document, so the Domain stays identical.
+- The manifest now gates the EF Core files with `database` = `postgres`; `build_shape.py` adds `database=` to their shape lines; `check_docs.py` skips the entries no variant builds.
+

@@ -212,6 +212,15 @@
    }
   },
   {
+   "path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -1046,7 +1055,8 @@
     "events.outbox": [
      "after-command",
      "background"
-    ]
+    ],
+    "database": "postgres"
    }
   },
   {
@@ -1164,14 +1174,18 @@
    "path": "src/{Name}.Infrastructure/Persistence/AppDbContext.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryConfiguration.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1180,7 +1194,8 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1188,14 +1203,18 @@
    "path": "src/{Name}.Infrastructure/Persistence/ConfigurationExtensions.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1204,7 +1223,8 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1217,20 +1237,27 @@
     "exceptions": [
      "coded",
      "catalogued"
-    ]
+    ],
+    "database": "postgres"
    }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/DesignTimeDbContextFactory.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/EfRepository.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/LocalizedTextConversion.cs",
@@ -1238,7 +1265,8 @@
    "source": "snippets",
    "kernel": false,
    "when": {
-    "languages.mode": "data"
+    "languages.mode": "data",
+    "database": "postgres"
    }
   },
   {
@@ -1247,13 +1275,15 @@
    "source": "tool",
    "when_any": [
     {
-     "example": "true"
+     "example": "true",
+     "database": "postgres"
     },
     {
      "events.outbox": [
       "after-command",
       "background"
-     ]
+     ],
+     "database": "postgres"
     }
    ],
    "kernel": false,
@@ -1265,13 +1295,15 @@
    "source": "tool",
    "when_any": [
     {
-     "example": "true"
+     "example": "true",
+     "database": "postgres"
     },
     {
      "events.outbox": [
       "after-command",
       "background"
-     ]
+     ],
+     "database": "postgres"
     }
    ],
    "kernel": false,
@@ -1283,15 +1315,129 @@
    "source": "tool",
    "when_any": [
     {
-     "example": "true"
+     "example": "true",
+     "database": "postgres"
     },
     {
      "events.outbox": [
       "after-command",
       "background"
-     ]
+     ],
+     "database": "postgres"
     }
    ],
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Categories/CategoryRepository.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/ConcurrencyConflictException.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerRepository.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoClassMaps.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoExceptionHandler.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexes.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexesService.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoModule.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoRepository.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoUnitOfWork.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderRepository.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductRepository.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "mongo"
+   },
    "kernel": false
   },
   {
@@ -1299,7 +1445,8 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1308,7 +1455,8 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1322,14 +1470,18 @@
    "path": "src/{Name}.Infrastructure/Persistence/PersistenceModule.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1338,7 +1490,8 @@
    "page": "infrastructure-postgres.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1346,7 +1499,10 @@
    "path": "src/{Name}.Infrastructure/Persistence/UnitOfWork.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
-   "kernel": true
+   "kernel": true,
+   "when": {
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs",
@@ -1951,7 +2107,8 @@
    "page": "tenancy.md",
    "source": "snippets",
    "when": {
-    "tenancy.mode": "interface"
+    "tenancy.mode": "interface",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1960,7 +2117,26 @@
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoClassMapsTests.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoRepositoryRulesTests.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
    },
    "kernel": false
   },
@@ -1969,7 +2145,8 @@
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1978,7 +2155,8 @@
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1987,7 +2165,8 @@
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -1996,7 +2175,8 @@
    "page": "worked-slice-tests.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "database": "postgres"
    },
    "kernel": false
   },
@@ -2283,6 +2463,15 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/SolutionFolder.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/{Name}.Tests.csproj",
    "page": "solution.md",
    "source": "data",
@@ -2330,6 +2519,9 @@
    "test/{Name}.Tests/TestSupport/Domain/{Plural}": [
     "Fake*.cs",
     "{Aggregate}RepositoryBuilder.cs"
+   ],
+   "src/{Name}.Infrastructure/Persistence/Mongo/{Plural}": [
+    "{Aggregate}Repository.cs"
    ]
   }
  },

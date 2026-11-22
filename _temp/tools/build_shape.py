@@ -45,12 +45,17 @@ target = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp" / "kernel
 manifest = json.loads((target.parent / "manifest.json").read_text())
 lines = []
 for entry in manifest["files"]:
-    if not entry["kernel"]:
+    if not entry["kernel"] or entry.get("source") == "snippets" and entry.get("when", {}).get("database") == "mongo":
         continue
     relative = entry["path"].replace("{Name}", "Boilerplate")
+    database = entry.get("when", {}).get("database")
     by_preset = {preset: shape_of_file(VARIANTS / preset / relative, "Boilerplate") for preset in PRESETS}
     for line, presets in merged(by_preset):
-        lines.append(line if len(presets) == len(PRESETS) else condition(relative, line, presets) + line)
+        marked = line if len(presets) == len(PRESETS) else condition(relative, line, presets) + line
+        if database:
+            marked = f"[database={database}," + marked[1:] if marked.startswith("[") else f"[database={database}] " + marked
+        lines.append(marked)
+lines += [line for line in (Path(__file__).parent / "shape-mongo.txt").read_text().splitlines() if line and not line.startswith("#")]
 header = [l for l in target.read_text().splitlines() if l.startswith("#")]
 target.write_text("\n".join(header) + "\n" + "\n".join(lines) + "\n")
 print(len(lines), "shape lines")

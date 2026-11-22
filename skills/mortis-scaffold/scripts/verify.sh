@@ -117,6 +117,16 @@ else
     fi
   fi
 
+  if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "mongo" ]; then
+    export MONGO_URL="${MONGO_URL:-mongodb://localhost:27017/mortis_verify_$(printf '%s' "$NAME" | tr 'A-Z.' 'a-z_')?replicaSet=rs0&directConnection=true}"
+    export ConnectionStrings__Default="$MONGO_URL"
+    if [ "$DRY_RUN" = 0 ] && ! command -v mongosh >/dev/null 2>&1; then
+      skip "conformance: database-mongo.sh" "mongosh is not installed"
+    else
+      run_conformance database-mongo.sh
+    fi
+  fi
+
   ADDONS=",$(get addons),"
   export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
   case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac

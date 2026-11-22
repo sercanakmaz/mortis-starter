@@ -91,6 +91,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/event-consumers.md` | steps 6 and 7: registering event consumers in the hosts, and any new consumer |
 | `references/csharp/authentication.md` | steps 6 and 7, when `auth` is `jwt` |
 | `references/csharp/tenancy.md` | steps 6, 7 and 10, when `tenancy.mode` is `interface` |
+| `references/csharp/infrastructure-mongo.md` | steps 6 and 7, when `database` is `mongo` (not built yet: hand-written snippets) |
 | `references/csharp/languages.md` | steps 3, 6, 7 and 10, when `languages.mode` is not `none` |
 | `references/csharp/adopting.md` | the project already exists |
 | `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |

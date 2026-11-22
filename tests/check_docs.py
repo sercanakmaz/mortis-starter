@@ -46,6 +46,10 @@ def manifest():
     return json.load(open(os.path.join(CSHARP, "manifest.json"), encoding="utf-8"))
 
 
+def built_nowhere(entry):
+    return entry.get("when", {}).get("database") == "mongo"
+
+
 def check_manifest_covers_template():
     if not os.path.isdir(TEMPLATE):
         return
@@ -63,7 +67,7 @@ def check_manifest_covers_template():
 def check_kernel_shape():
     if not os.path.isdir(TEMPLATE):
         return
-    kernel = [e["path"].replace("{Name}", "Boilerplate") for e in manifest()["files"] if e["kernel"]]
+    kernel = [e["path"].replace("{Name}", "Boilerplate") for e in manifest()["files"] if e["kernel"] and not built_nowhere(e)]
     for preset in ("lean", "standard", "advanced"):
         expected = []
         for f in kernel:
@@ -111,7 +115,7 @@ def check_snippets_cover_members():
         return
     blocks = "\n".join(b for _, b in code_blocks())
     for entry in manifest()["files"]:
-        if not entry["kernel"]:
+        if not entry["kernel"] or built_nowhere(entry):
             continue
         path = source_path(entry["path"].replace("{Name}", "Boilerplate"))
         if not path.endswith(".cs") or os.path.basename(path) == "Program.cs":

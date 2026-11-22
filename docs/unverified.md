@@ -21,5 +21,9 @@ What phase 1 has not proven. Since decision 37 every page's code is compiled, te
 | 11 | `TenantScope.Bypass` used by a real job | Unit-tested; no example job crosses tenants |
 | 12 | `languages.mode` = `messages` without `data`, and `ErrorCatalogue` with messages (catalogued without languages) | Page snippets only; no variant builds them |
 | 12 | Translated validation field messages; searching by a translated field | Not built; the pages describe the JSON path and the per-language index |
+| 13 | `infrastructure-mongo.md`: every snippet (`MongoModule`, `MongoClassMaps`, `MongoUnitOfWork`, `MongoRepository`, `MongoExceptionHandler`, `ConcurrencyConflictException`, `MongoIndexes`, `MongoIndexesService`, the MongoDB `OutboxRepository`, the repositories, the tenancy filter, the tests) | Written by hand against MongoDB.Driver 3.14.1; never compiled |
+| 13 | `conformance/database-mongo.sh` and its wiring in `verify.sh` | Never run; needs a replica set and `mongosh` |
+| 13 | `shape-mongo.txt` lines in `kernel-shape.txt`; the `database` gates in `manifest.json`; ADR `0017` | No MongoDB project generated yet |
+| 13 | Assumptions to check first: `AutoMap` finds the Domain's non-public constructors and `protected set` properties; a duplicate inside a transaction surfaces as `MongoCommandException` 11000; the claim's write conflict carries the `TransientTransactionError` label | From the driver's documentation, not from a run |
 | 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
 | 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

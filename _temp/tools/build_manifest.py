@@ -37,6 +37,25 @@ MESSAGES_PREFIXES = ("src/Boilerplate.Shared/Application/Languages.cs", "src/Boi
                      "test/Boilerplate.Tests/Infrastructure/Localization/", "test/Boilerplate.Tests/Shared/Application/LanguagesTests.cs")
 DATA_PREFIXES = ("src/Boilerplate.Shared/Domain/LocalizedText.cs", "src/Boilerplate.Infrastructure/Persistence/LocalizedTextConversion.cs", "test/Boilerplate.Tests/Shared/Domain/LocalizedTextTests.cs")
 DATA_EXAMPLE_FILES = ("src/Boilerplate.Application/Products/RenameProductCommand.cs", "test/Boilerplate.Tests/Application/Products/RenameProductCommandHandlerTests.cs")
+POSTGRES_PREFIXES = ("src/Boilerplate.Infrastructure/Persistence/", "test/Boilerplate.Tests/Infrastructure/Persistence/", "src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs")
+POSTGRES_EXCEPTIONS = ("src/Boilerplate.Infrastructure/Persistence/PersistenceConstants.cs",)
+MONGO_FILES = {
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoModule.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoClassMaps.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoUnitOfWork.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoRepository.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoExceptionHandler.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/ConcurrencyConflictException.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexes.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexesService.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Categories/CategoryRepository.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerRepository.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderRepository.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductRepository.cs": ({"example": "true"}, False),
+    "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoClassMapsTests.cs": ({}, False),
+    "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoRepositoryRulesTests.cs": ({}, False),
+    "test/{Name}.Tests/TestSupport/SolutionFolder.cs": ({}, False),
+}
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
 RABBITMQ_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/RabbitMq/", "test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/")
@@ -133,10 +152,15 @@ for f in files:
         entry["when"] = OPTION_FILES[f]
         entry["kernel"] = False
         entry["page"] = "event-consumers.md" if f.startswith(EVENT_CONSUMER_FILES) else OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "outbox.md" if "Worker" in f else "events-inprocess.md" if ("EventPublisher" in f or "MessagingConstants" in f) else "failures.md")
+    if f.startswith(POSTGRES_PREFIXES) and f not in POSTGRES_EXCEPTIONS:
+        entry["when"] = {**entry.get("when", {}), "database": "postgres"}
     in_all = all(f in present[preset] for preset in PRESETS)
     assert in_all or "when" in entry and set(entry["when"]) != {"example"}, f"{f} is in only some variants and has no option"
     out.append(entry)
-initial_when = [{"example": "true"}, {"events.outbox": OUTBOX}]
+for path, (when, kernel) in MONGO_FILES.items():
+    out.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel})
+out.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False})
+initial_when = [{"example": "true", "database": "postgres"}, {"events.outbox": OUTBOX, "database": "postgres"}]
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False})
@@ -153,6 +177,7 @@ manifest={
      "src/{Name}.Domain/Aggregates/{Plural}":["{Aggregate}.cs","I{Aggregate}Repository.cs","{Aggregate}Constants.cs","{Aggregate}Status.cs","*Model.cs","Events/*.cs","*.cs"],
      "src/{Name}.Application/{Plural}":["{Aggregate}Dto.cs","*Command.cs","*When*EventHandler.cs"],
      "src/{Name}.Infrastructure/Persistence/{Plural}":["{Aggregate}Configuration.cs","{Aggregate}Repository.cs"],
+     "src/{Name}.Infrastructure/Persistence/Mongo/{Plural}":["{Aggregate}Repository.cs"],
      "src/{Name}.Api/Controllers":["{Plural}Controller.cs"],
      "test/{Name}.Tests/Domain/{Plural}":["*Tests.cs"],
      "test/{Name}.Tests/Application/{Plural}":["*CommandHandlerTests.cs","*EventHandlerTests.cs"],
@@ -163,6 +188,7 @@ manifest={
 }
 old = json.load(open(TARGET))
 manifest["aggregate_files"] = old["aggregate_files"]
+manifest["aggregate_files"]["folders"].setdefault("src/{Name}.Infrastructure/Persistence/Mongo/{Plural}", ["{Aggregate}Repository.cs"])
 manifest["always_allowed"] = old["always_allowed"]
 json.dump(manifest, open(TARGET, "w"), indent=1)
 print(len(out), "entries")
