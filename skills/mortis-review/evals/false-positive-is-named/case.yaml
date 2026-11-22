@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: false-positive-is-named
+expected_outcome: |
+  A script finding the code shows to be a false positive is reported as such, naming the check, not hidden.

@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs",
+   "find": "        customer.Block();",
+   "replace": "        if (customer.IsBlocked)\n        {\n            throw new BusinessRuleException(\"already_blocked\", \"The customer is blocked.\");\n        }\n\n        customer.Block();"
+  }
+ ],
+ "expect": [
+  [
+   "C03",
+   "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs"
+  ]
+ ]
+}

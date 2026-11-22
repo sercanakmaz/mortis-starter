@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Products/CreateProductCommand.cs",
+   "find": "ICommand<ProductDto>, IContextCommand, ITransactionalCommand",
+   "replace": "ICommand<ProductDto>, ITransactionalCommand"
+  }
+ ],
+ "expect": [
+  [
+   "C06",
+   "src/Boilerplate.Application/Products/CreateProductCommand.cs"
+  ]
+ ]
+}

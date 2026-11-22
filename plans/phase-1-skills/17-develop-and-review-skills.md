@@ -60,3 +60,13 @@ Automatic refactoring of an existing non-Mortis codebase (the "adopting in an ex
 
 - Decision 28: `mortis-review` judges a command handler that changes several aggregates by the second-aggregate test in the placement guide (is the second change the intent of the action, or a consequence?), never by counting calls. `mortis-develop` adds a consequence as an event handler, never as a new line in an existing command handler.
 - Decision 31: `mortis-review` flags any repository write (`CreateAsync`, `UpdateAsync`, `DeleteAsync`, upserts), save, transaction call or `IUnitOfWork` in the Domain layer, and a domain service that takes a whole repository where a read port would do (a warning, not an error). `mortis-develop` adds a read port in `Ports/` when a domain service needs data the handler cannot know it needs.
+
+## Notes (done)
+
+Written unattended (decision 51), after steps 10 and 18 so the recipes cover every option.
+
+- `mortis-develop`: the plan's 13 recipes plus `turn-on-an-option.md`; the language rendering is one page, `references/csharp/recipes.md`, because the recipes' paths are already C#'s. `new_aggregate.sh` lists the files (or `--touch` creates them empty); it writes no code.
+- `mortis-review`: 14 checks in `review.py`, `--dry-run` lists them. The review fixtures are JSON files (a base variant, the edits that plant one violation, the expected finding) in `tests/fixtures/review/`, and they are run now by `tests/check_review.py`: 14 of 14 report exactly the planted finding, and the three variants report none. The phase 2 item "on each fixture, review.sh reports the planted violation and nothing else" is therefore already proven on these fixtures.
+- The incident log is in what a generated project carries (`docs/incidents.md`, in the variants); the "where else must this change" checklist per option is `mortis-develop/references/where-else.md`.
+- Evals: five each, written, not run.
+- Found on the way: the variants' `AGENTS.md` rule 19 and 20 still named the system user and `.AsConsoleUser()`; fixed.

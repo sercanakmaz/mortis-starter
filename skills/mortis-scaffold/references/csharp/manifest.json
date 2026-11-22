@@ -378,6 +378,12 @@
    "kernel": false
   },
   {
+   "path": "docs/incidents.md",
+   "page": "project-docs.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
    "path": "global.json",
    "page": "solution.md",
    "source": "data",

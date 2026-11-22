@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Installs every skill in skills/ into ~/.claude/skills (or $CLAUDE_SKILLS_DIR).
+# Installs every skill in skills/ into ~/.claude/skills (or $CLAUDE_SKILLS_DIR). The four skills are installed together:
+# mortis-develop and mortis-review read mortis-scaffold's pages and scripts through ../mortis-scaffold.
 #   install.sh          copies the skill folders
 #   install.sh --link   symlinks them, so edits in this repository take effect at once
 
@@ -35,3 +36,8 @@ for skill_dir in "$REPO_DIR"/skills/*/; do
 
   echo "Installed $skill_name -> $destination ($MODE)"
 done
+
+for required in mortis-architect mortis-scaffold mortis-develop mortis-review; do
+  [ -e "$TARGET_DIR/$required" ] || echo "Warning: $required is missing from $TARGET_DIR; the other skills refer to it by ../$required" >&2
+done
+command -v python3 >/dev/null || echo "Warning: python3 is not on PATH; the skills' scripts (decisions, verify, review) need it" >&2

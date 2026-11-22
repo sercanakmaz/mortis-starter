@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandler.cs",
+   "find": "(ICommandDispatcher commandDispatcher)",
+   "replace": "(ICommandDispatcher commandDispatcher, ICustomerRepository customerRepository)"
+  }
+ ],
+ "expect": [
+  [
+   "C08",
+   "src/Boilerplate.Application/Customers/RegisterCompletedOrderWhenOrderCompletedEventHandler.cs"
+  ]
+ ]
+}

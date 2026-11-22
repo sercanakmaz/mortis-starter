@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: advanced-tenant-index
+expected_outcome: |
+  In the advanced project, a new aggregate's unique index without TenantId is an error with the exact fix.

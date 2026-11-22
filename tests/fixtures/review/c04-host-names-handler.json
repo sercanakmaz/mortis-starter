@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Api/Controllers/ProductsController.cs",
+   "find": "    [HttpPost]",
+   "replace": "    private static readonly Type HandlerType = typeof(CreateProductCommandHandler);\n\n    [HttpPost]"
+  }
+ ],
+ "expect": [
+  [
+   "C04",
+   "src/Boilerplate.Api/Controllers/ProductsController.cs"
+  ]
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs",
+   "find": "        customer.Block();",
+   "replace": "        var stamp = DateTime.Now;\n        customer.Block();"
+  }
+ ],
+ "expect": [
+  [
+   "C10",
+   "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs"
+  ]
+ ]
+}

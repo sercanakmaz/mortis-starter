@@ -1,0 +1,15 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Domain/Services/AuditService.cs",
+   "write": "using Boilerplate.Shared.Persistence;\n\nnamespace Boilerplate.Domain.Services;\n\npublic class AuditService(IUnitOfWork unitOfWork)\n{\n    public Task Save() => unitOfWork.SaveChangesAsync();\n}\n"
+  }
+ ],
+ "expect": [
+  [
+   "C12",
+   "src/Boilerplate.Domain/Services/AuditService.cs"
+  ]
+ ]
+}

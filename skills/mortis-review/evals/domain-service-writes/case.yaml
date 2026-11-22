@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: domain-service-writes
+expected_outcome: |
+  A domain service that calls UpdateAsync is an error (decision 31); one that takes a whole repository is a warning.

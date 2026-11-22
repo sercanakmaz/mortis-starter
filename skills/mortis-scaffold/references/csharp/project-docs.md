@@ -9,6 +9,7 @@ The markdown files a generated project gets. They are data: write each one exact
 | `CLAUDE.md` | below |
 | `README.md` | below |
 | `plans/README.md` | below |
+| `docs/incidents.md` | below |
 | `docs/architecture.md` | `project-docs-architecture.md` |
 | `docs/adr/0000` to `0008`, `0010`, `0012`, `0009` with the correlation add-on, `0011` with an outbox, `0013` with RabbitMQ, `0014` with `auth` = `jwt`, `0015` with tenancy, `0016` with translated messages or data, `0017` with MongoDB, `0018` with a query side, `0019` with `auth` = `jwt`, `0020` with the api-conventions add-on, `0021` with idempotent commands, `0022` with observability, `0023` with `testing` above `unit`, `0024` to `0031` with the advanced add-ons (soft delete, caching, scheduler, storage, secrets, loop guard, contexts, events project) | `project-docs-adr.md` |
 
@@ -61,8 +62,8 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | 16 | **Locals are named after the thing they hold**: `orderRepository`, never `repository`, `service`, `builder` or a `Mock` suffix. Constants live in a `*Constants` class. | Review |
 | 17 | **A new abstraction needs two real implementations today**, or it is a boundary a test must replace. Choosing one of several implementations is keyed dependency injection, never a factory with a `switch`. Write the decision down in `docs/adr/`. | Review |
 | 18 | **A new NuGet package needs the owner's agreement.** No mediator, mapping or assertion library: the command pipeline, `Dto.Map` and xUnit `Assert` are the choices here. | Review |
-| 19 | **A reaction is a sync event handler or an event consumer, and its base class says which.** `BaseSyncEventHandler<TEvent>` runs inside the transaction, awaited, ordered by `Sequence`; a throw rolls the whole command back, so it is the place for a rule that must hold together with the change. `BaseEventConsumer<TEvent>` runs after COMMIT in its own scope and transaction as the `system` user; its failure is logged and never undoes the original change, so it is for eventual consistency (stock, read models, notifications). An event with an event consumer implements `IQueueEvent` and carries every value the consumer needs; the consumer never reloads the publisher. A consumer runs only when the host that runs it has its `AddEventConsumer` line, and `Retry(n)` there is its retry count. Write event consumers for at-least-once delivery, because a broker will replace the in-process dispatcher. | Compiler (`BaseEventConsumer` requires `IQueueEvent`), dispatcher and handler tests |
-| 20 | **What the host knows is data on the command, never ambient.** A command that writes implements `IContextCommand` with one line, `[JsonIgnore] public CommandContext Context { get; set; }`: never a user, correlation or tenant property of its own. The host fills it: `ContextCommandFilter` in the Api, `.AsConsoleUser()` in the Console. The handler passes `command.Context.User` to the aggregate. An event handler sends its command with `Context = ContextOf(@event)`. There is no `IUserContext` and no ambient correlation id. | Filter, pipeline, event-context and handler tests; `verify.sh` |
+| 19 | **A reaction is a sync event handler or an event consumer, and its base class says which.** `BaseSyncEventHandler<TEvent>` runs inside the transaction, awaited, ordered by `Sequence`; a throw rolls the whole command back, so it is the place for a rule that must hold together with the change. `BaseEventConsumer<TEvent>` runs after COMMIT in its own scope and transaction as the user whose command raised the event (there is no system user); its failure is logged and never undoes the original change, so it is for eventual consistency (stock, read models, notifications). An event with an event consumer implements `IQueueEvent` and carries every value the consumer needs; the consumer never reloads the publisher. A consumer runs only when the host that runs it has its `AddEventConsumer` line, and `Retry(n)` there is its retry count. Write event consumers for at-least-once delivery, because a broker will replace the in-process dispatcher. | Compiler (`BaseEventConsumer` requires `IQueueEvent`), dispatcher and handler tests |
+| 20 | **What the host knows is data on the command, never ambient.** A command that writes implements `IContextCommand` with one line, `[JsonIgnore] public CommandContext Context { get; set; }`: never a user, correlation or tenant property of its own. The host fills it: `ContextCommandFilter` in the Api, `ConsoleArguments` (`--user`, required) in the Console. The handler passes `command.Context.User` to the aggregate. An event handler sends its command with `Context = ContextOf(@event)`. There is no `IUserContext` and no ambient correlation id. | Filter, pipeline, event-context and handler tests; `verify.sh` |
 
 ## 3. Adding an aggregate: every place it touches
 
@@ -82,7 +83,7 @@ Write the fakes, builders and tests first, watch them fail, then write the code.
 
 - **Know how it will be verified before you start**: a test, a Console command, or a request against the running Api.
 - **Name the files you expect to touch before you touch them.** A finding outside that list is written down, not fixed on the way.
-- **Fixing a bug**: first a test that fails with the bug's own symptom, then the fix, then the same test passes unchanged. Never narrow the scenario, never fit the expected value to the output, never weaken an assertion that went red.
+- **Fixing a bug**: first a test that fails with the bug's own symptom, then the fix, then the same test passes unchanged. Never narrow the scenario, never fit the expected value to the output, never weaken an assertion that went red. Add a row to `docs/incidents.md` naming the guarding test.
 - **"Done" needs output.** Show the build and test result; say which part was skipped and why.
 - **Git**: an AI agent does not run `git add` or `git commit`, and never runs `checkout`, `restore`, `stash`, `reset`, `clean`, `rebase`, `merge` or `revert`. It leaves its work in the working tree and says what changed.
 - **Plans** go to `plans/<work>/` and are deleted when the work ends. What should outlive the work moves to `docs/`.
@@ -163,4 +164,15 @@ A plan states, in this order:
 7. **End**: what closes the work.
 
 A plan carries no commit steps. When the work ends the plan folder is deleted, and anything that should outlive it moves to `docs/`.
+~~~~
+
+## docs/incidents.md
+
+~~~~markdown
+# Incidents
+
+Bugs this project has already hit, newest first, each with the test that now guards it. `mortis-develop` adds a row when it fixes a bug; `mortis-review` checks that a fix comes with its row and its test.
+
+| Date | What happened | Cause | Guarding test |
+|---|---|---|---|
 ~~~~

@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Domain/Aggregates/Products/Product.cs",
+   "find": "public class Product",
+   "replace": "// the product\npublic class Product"
+  }
+ ],
+ "expect": [
+  [
+   "C01",
+   "src/Boilerplate.Domain/Aggregates/Products/Product.cs"
+  ]
+ ]
+}

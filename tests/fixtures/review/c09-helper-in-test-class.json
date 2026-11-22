@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "test/Boilerplate.Tests/Domain/Customers/CustomerTests.cs",
+   "find": "public class CustomerTests\n{",
+   "replace": "public class CustomerTests\n{\n    private static string EmailOf(string name) => name + \"@example.com\";\n"
+  }
+ ],
+ "expect": [
+  [
+   "C09",
+   "test/Boilerplate.Tests/Domain/Customers/CustomerTests.cs"
+  ]
+ ]
+}

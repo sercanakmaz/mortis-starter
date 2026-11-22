@@ -1,0 +1,23 @@
+{
+ "base": "lean",
+ "git": true,
+ "before": [
+  {
+   "file": "test/Boilerplate.Tests/Architecture/event-contracts.json",
+   "write": "{}\n"
+  }
+ ],
+ "edits": [
+  {
+   "file": "src/Boilerplate.Domain/Aggregates/Orders/Events/LineAdded.cs",
+   "find": "int Quantity)",
+   "replace": "int Quantity, string Unit)"
+  }
+ ],
+ "expect": [
+  [
+   "C11",
+   "src/Boilerplate.Domain/Aggregates/Orders/Events/LineAdded.cs"
+  ]
+ ]
+}

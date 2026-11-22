@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs",
+   "find": "        return CommandResult.FromContent(CustomerDto.Map(customer));\n    }",
+   "replace": "        return CommandResult.FromContent(CustomerDto.Map(customer));\n    }\n\n    private static bool Twice(bool value) => value;"
+  }
+ ],
+ "expect": [
+  [
+   "C02",
+   "src/Boilerplate.Application/Customers/BlockCustomerCommand.cs"
+  ]
+ ]
+}

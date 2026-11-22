@@ -1,0 +1,15 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Domain/Services/PricingService.cs",
+   "write": "using Boilerplate.Domain.Aggregates.Products;\n\nnamespace Boilerplate.Domain.Services;\n\npublic class PricingService(IProductRepository productRepository)\n{\n    public int Discount() => 0;\n}\n"
+  }
+ ],
+ "expect": [
+  [
+   "C13",
+   "src/Boilerplate.Domain/Services/PricingService.cs"
+  ]
+ ]
+}

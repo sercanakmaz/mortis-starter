@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: lean-project-clean
+expected_outcome: |
+  A clean lean project gets a clean verdict that lists the checks not run (C07, C11, C14) and why.

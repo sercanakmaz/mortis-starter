@@ -1,0 +1,16 @@
+{
+ "base": "advanced",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Infrastructure/Persistence/Products/ProductConfiguration.cs",
+   "find": "builder.HasAlternateKey(product => new { product.TenantId, product.Sku });",
+   "replace": "builder.HasAlternateKey(product => product.Sku);"
+  }
+ ],
+ "expect": [
+  [
+   "C07",
+   "src/Boilerplate.Infrastructure/Persistence/Products/ProductConfiguration.cs"
+  ]
+ ]
+}

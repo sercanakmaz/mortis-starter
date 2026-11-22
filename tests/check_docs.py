@@ -127,7 +127,7 @@ def check_snippets_cover_members():
 
 
 def check_one_way():
-    for skill in ("mortis-scaffold", "mortis-architect"):
+    for skill in ("mortis-scaffold", "mortis-architect", "mortis-develop", "mortis-review"):
         for base, _, files in os.walk(os.path.join(ROOT, "skills", skill)):
             for name in files:
                 if name.endswith(".md"):
@@ -208,6 +208,38 @@ def check_decisions_schema():
             fail(f"decisions-file.md does not mention the key {key}")
 
 
+DEVELOP = os.path.join(ROOT, "skills", "mortis-develop", "references")
+TAG = re.compile(r"\[([\w.]+)(!?=)([^\]]+)\]")
+
+
+def check_recipe_tags():
+    schema = json.load(open(os.path.join(ARCHITECT, "references", "schema.json"), encoding="utf-8"))
+    pages = set(os.listdir(CSHARP)) | set(os.listdir(os.path.join(DEVELOP, "recipes"))) | {"adr-template.md", "kernel-shape.txt"}
+    recipes = sorted(os.path.join(DEVELOP, "recipes", name) for name in os.listdir(os.path.join(DEVELOP, "recipes")))
+    for path in recipes + [os.path.join(DEVELOP, "where-else.md")]:
+        relative = os.path.relpath(path, ROOT)
+        for number, line in enumerate(open(path, encoding="utf-8"), 1):
+            for key, operator, raw in TAG.findall(line.replace("\\|", "|")):
+                spec = schema["keys"].get(key)
+                if spec is None:
+                    fail(f"{relative}:{number}: the tag [{key}{operator}{raw}] names no key of schema.json")
+                    continue
+                allowed = spec.get("values")
+                for value in raw.split("|"):
+                    if allowed is not None and value not in allowed:
+                        fail(f"{relative}:{number}: the tag [{key}{operator}{raw}]: {value} is not a value of {key}")
+            if path in recipes and line.startswith("| ") and not line.startswith("| #") and not line.startswith("|---"):
+                cells = [cell.strip() for cell in line.replace("\\|", "/").strip().strip("|").split("|")]
+                if len(cells) != 5:
+                    fail(f"{relative}:{number}: a recipe row has {len(cells)} cells, not five (#, file, page, rule, test)")
+                    continue
+                for page in re.findall(r"`([\w.-]+\.(?:md|txt))`", cells[2]):
+                    if page not in pages and not page.startswith("../"):
+                        fail(f"{relative}:{number}: the page {page} does not exist")
+                if not cells[3]:
+                    fail(f"{relative}:{number}: a recipe row names no rule")
+
+
 def main():
     check_manifest_covers_template()
     check_kernel_shape()
@@ -215,6 +247,7 @@ def main():
     check_one_way()
     check_copies()
     check_decisions_schema()
+    check_recipe_tags()
     if failures:
         for message in failures:
             print("DOC-MISMATCH", message)

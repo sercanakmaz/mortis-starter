@@ -1,0 +1,18 @@
+{
+ "base": "lean",
+ "mortis": {
+  "addons": "contexts"
+ },
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/Contexts/Sales/Orders/StockProbe.cs",
+   "write": "namespace Boilerplate.Application.Contexts.Sales.Orders;\n\npublic record StockProbe(Boilerplate.Domain.Contexts.Catalog.Aggregates.Products.Product Product);\n"
+  }
+ ],
+ "expect": [
+  [
+   "C14",
+   "src/Boilerplate.Application/Contexts/Sales/Orders/StockProbe.cs"
+  ]
+ ]
+}

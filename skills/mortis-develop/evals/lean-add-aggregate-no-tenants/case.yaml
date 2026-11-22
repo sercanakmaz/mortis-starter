@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: lean-add-aggregate-no-tenants
+expected_outcome: |
+  A Supplier aggregate in a lean project, with no mention of tenants, outbox or translations.

@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: consequence-inside-handler
+expected_outcome: |
+  The review flags the stock decrease inside CompleteOrderCommandHandler as a consequence (decision 28) with a fix naming an event consumer.

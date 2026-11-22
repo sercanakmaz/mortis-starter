@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: standard-invoice-with-lines
+expected_outcome: |
+  An Invoice aggregate with an InvoiceLine child entity, a CreateInvoiceCommand and an event consumer in the standard-preset project; build 0 warnings, tests green, review clean.

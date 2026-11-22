@@ -1,0 +1,16 @@
+{
+ "base": "lean",
+ "edits": [
+  {
+   "file": "src/Boilerplate.Application/ApplicationModule.cs",
+   "find": "        services.AddCommandHandler<CreateCategoryCommand, CategoryDto, CreateCategoryCommandHandler>();\n",
+   "replace": ""
+  }
+ ],
+ "expect": [
+  [
+   "C05",
+   "src/Boilerplate.Application/Categories/CreateCategoryCommand.cs"
+  ]
+ ]
+}

@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: consequence-is-an-event-handler
+expected_outcome: |
+  Blocking a customer cancels the customer's open orders through an event handler in the Orders folder, not inside BlockCustomerCommand.
