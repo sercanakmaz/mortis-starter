@@ -4,7 +4,7 @@
 # Applies when: example = true, database = postgres; after example-database.sh
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
-# The user of a Console run: the console user, or the subject of CONSOLE_TOKEN with tenancy.
+# The user every Console run names with --user (lib.sh).
 CONSOLE_USER="${CONSOLE_USER:-console}"
 
 OUTBOX="${OUTBOX:-none}"
@@ -32,7 +32,7 @@ events_log() { if [ -n "$RELAY_PID" ]; then printf '%s' "$RELAY_LOG"; else print
 # Any command, by name, from its JSON
 CLI_OUT="$(run CreateProduct "{\"sku\":\"CLI-1-$S\",\"name\":\"Cli\",\"stock\":5}")"
 expect_equal "console: CreateProduct '<json>' prints only the created product on stdout" "CLI-1-$S|5" "$(json_field "$CLI_OUT" "['Sku']")|$(json_field "$CLI_OUT" "['Stock']")"
-expect_equal "console: ... and the row is in the database, written by the console user" "5|$CONSOLE_USER" "$(sql "select stock || '|' || created_user_id from products where sku = 'CLI-1-$S'")"
+expect_equal "console: ... and the row is in the database, written by the user named with --user" "5|$CONSOLE_USER" "$(sql "select stock || '|' || created_user_id from products where sku = 'CLI-1-$S'")"
 run decreaseproductstock "{\"SKU\":\"CLI-1-$S\",\"Quantity\":2}" >/dev/null
 expect_equal "console: a command name is matched ignoring case and the JSON names too" "3" "$(sql "select stock from products where sku = 'CLI-1-$S'")"
 printf '{"sku":"CLI-2-%s","name":"From file","stock":1}' "$S" > "$WORK/product.json"
@@ -43,6 +43,8 @@ expect_equal "console: an invalid command exits with 2 and prints validation_fai
 expect_equal "console: ... and nothing was written" "3" "$(sql "select stock from products where sku = 'CLI-1-$S'")"
 console_run DecreaseProductStock '{not json' >/dev/null 2>"$WORK/err.log"
 expect_equal "console: broken JSON exits with 2 and prints invalid_parameter" "2|invalid_parameter" "$?|$(error_code "$WORK/err.log")"
+"$LANG_SH" console "$PROJECT" "$NAME" CreateProduct "{\"sku\":\"NOUSER-$S\",\"name\":\"Nobody\",\"stock\":1}" >/dev/null 2>"$WORK/err.log"
+expect_equal "console: a run without --user is refused with invalid_parameter (exit 2), and nothing is written" "2|invalid_parameter|0" "$?|$(error_code "$WORK/err.log")|$(sql "select count(*) from products where sku = 'NOUSER-$S'")"
 expect_equal "logs: every line on stderr is one flat JSON object with CorrelationId first" "yes" "$(python3 -I -c '
 import json, sys
 lines = [line for line in open(sys.argv[1]) if line.strip()]
@@ -69,9 +71,9 @@ expect_equal "order: the customer's count was raised by the sync event handler i
 expect_equal "order: a child added to a loaded order was inserted (3 lines)" "3" "$(sql "select count(*) from order_lines l join orders o on o.id = l.order_id where o.order_number = 'ORD-$S'")"
 expect_equal "order: the cancelled child was updated in place" "out of stock" "$(sql "select cancellation_reason from order_lines where is_cancelled and sku = 'SKU-2-$S'")"
 expect_equal "order: the value object is stored in two columns, currency upper-cased" "10.5000|EUR" "$(sql "select price_amount || '|' || price_currency from order_lines where sku = 'SKU-1-$S'")"
-expect_equal "order: audit columns carry the console user" "$CONSOLE_USER|$CONSOLE_USER" "$(sql "select created_user_id || '|' || updated_user_id from orders where order_number = 'ORD-$S'")"
+expect_equal "order: audit columns carry the user named with --user" "$CONSOLE_USER|$CONSOLE_USER" "$(sql "select created_user_id || '|' || updated_user_id from orders where order_number = 'ORD-$S'")"
 expect_equal "order: event consumers moved the stock after the commit (added 2, 1 and 4; cancelled 1)" "SKU-1=98,SKU-2=100,SKU-3=96" "$(eventually "select string_agg(left(sku, 5) || '=' || stock, ',' order by sku) from products where sku like 'SKU-_-$S'" "SKU-1=98,SKU-2=100,SKU-3=96")"
-expect_equal "order: an event consumer writes as the system user, the command as the console user" "system|$CONSOLE_USER" "$(sql "select updated_user_id || '|' || created_user_id from products where id = '$P1'")"
+expect_equal "order: an event consumer writes as the user whose command raised the event; there is no system user" "$CONSOLE_USER|$CONSOLE_USER" "$(sql "select updated_user_id || '|' || created_user_id from products where id = '$P1'")"
 expect_equal "order: the sync handler's command carries the Complete command's correlation, caused by its event" "1" "$(log_count "$WORK/console.log" "l.get('Message') == 'RegisterCompletedOrderCommand started' and l.get('CorrelationId') == '$COMPLETE_CORRELATION' and l.get('CausationId') not in (None, '')")"
 
 # Sync and event consumers on one event, and the causation chain

@@ -232,7 +232,7 @@ on Completed [sync] do send CountCompletedOrder(customerId, context)
 on LineAdded [async] do send ReserveStock(productId, quantity, context)
 ```
 
-- Runs after the commit, in a new scope and its own transaction, as the system actor.
+- Runs after the commit, in a new scope and its own transaction, as the user whose command raised the event.
 - Registered by hand, one line per consumer in the host that runs it, with its own retry count; nothing is discovered.
 - If it fails after its retries, the original change stays committed.
 - Must be safe to run twice: delivery is at-least-once.

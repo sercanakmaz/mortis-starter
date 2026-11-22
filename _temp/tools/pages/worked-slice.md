@@ -98,7 +98,7 @@ protected override async Task<CommandResult<ProductDto>> OnHandle(DecreaseProduc
 
 @@member src/Boilerplate.Application/Products/DecreaseProductStockCommand.cs::DecreaseProductStockCommandValidator::DecreaseProductStockCommandValidator@@
 
-Event consumers (after the commit, as the system user), in `Products/`; each gets its `AddEventConsumer` line in the hosts that run it (`event-consumers.md`):
+Event consumers (after the commit, as the user whose command raised the event), in `Products/`; each gets its `AddEventConsumer` line in the hosts that run it (`event-consumers.md`):
 
 @@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs::DecreaseStockWhenOrderLineAddedEventConsumer::OnHandle@@
 

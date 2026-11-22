@@ -95,7 +95,7 @@ Mapping from our event:
 | `headers["Mortis-Tenant-Id"]`, `headers["Mortis-User-Id"]`, `headers["Mortis-User-Email"]`, `headers["Mortis-Language"]` | the event's context |
 | `sentTime` | the publish time, not `OccurredAt` |
 
-A message that arrives without the `Mortis-*` headers (published by a MassTransit service) is handled as the system user with no tenant.
+A message that arrives without the `Mortis-*` headers (published by a MassTransit service) is handled with no user and no tenant: the consumer's command records an empty user.
 
 ## Transport properties
 

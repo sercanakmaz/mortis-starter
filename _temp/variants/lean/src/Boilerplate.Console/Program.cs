@@ -28,7 +28,7 @@ using var host = builder.Build();
 
 if (args.Length == 0)
 {
-    System.Console.Error.WriteLine("Usage: dotnet run -- <Command> [json | @file.json]");
+    System.Console.Error.WriteLine("Usage: dotnet run -- --user <id> [--email <email>] <Command> [json | @file.json]");
 
     return 1;
 }
@@ -39,7 +39,8 @@ var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetReq
 
 try
 {
-    var content = await consoleCommandRunner.RunAsync(args[0], args.ElementAtOrDefault(1));
+    var consoleArguments = ConsoleArguments.Parse(args);
+    var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, consoleArguments.CommandContext);
 
     System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
 

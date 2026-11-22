@@ -33,6 +33,8 @@ Follow these steps in order. Keep `.mortis/progress.md` in the project: one line
 | 12 | `dotnet format` | | no changes left |
 | 13 | `scripts/verify.sh <project-dir>` | | every check passes or is skipped with a stated reason |
 
+Before step 1, with `auth` = `jwt`: ask the developer which claim carries the caller's permissions and in what form (a list claim, a space-separated `scope`, or roles with their permissions); write the answers to the hosts' `Auth` settings. Permissions are not generated yet (`permissions.md`, decision 47), but the answer is recorded so the project is ready for them.
+
 Rules for every step:
 
 - Generate only what `MORTIS.md` chose (decision 33): no code for an option that is off, and no runtime switch between options.
@@ -92,6 +94,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/authentication.md` | steps 6 and 7, when `auth` is `jwt` |
 | `references/csharp/tenancy.md` | steps 6, 7 and 10, when `tenancy.mode` is `interface` |
 | `references/csharp/infrastructure-mongo.md` | steps 6 and 7, when `database` is `mongo` (not built yet: hand-written snippets) |
+| `references/csharp/permissions.md` | steps 6 and 7, when `auth` is `jwt`, after asking the developer which claim carries permissions and in what form (not built yet: hand-written snippets) |
 | `references/csharp/queries.md`, `read-models.md` | steps 6 and 7, when `queries` is not `commands` (not built yet: hand-written snippets) |
 | `references/csharp/languages.md` | steps 3, 6, 7 and 10, when `languages.mode` is not `none` |
 | `references/csharp/adopting.md` | the project already exists |

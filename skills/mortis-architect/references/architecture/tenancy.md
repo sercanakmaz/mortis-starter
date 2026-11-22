@@ -13,12 +13,21 @@ host receives a request:
   context.user   := (claim "sub", claim "email")         claim names are settings
   context.tenant := claim "tenant_id"                     only with tenancy
 console run:
-  the same, from a token given to the run; without one, the console user and no tenant
+  the run names its user, tenant and language as options; a console takes no token (tokens belong to the HTTP layer)
 event consumer:
-  context.user   := the system user
+  context.user   := event.user           there is no system user
   context.tenant := event.tenant
 ```
 
+```
+permission check (every command, before validation):
+  command.permission in context.permissions, else 403 forbidden
+  a reaction's command carries the event's user and permissions, so it is checked as that user
+```
+
+- Every command declares one permission; nothing is open by default and there is no allow-list.
+- There is no system user. A reaction runs as the user whose command caused it, so that user needs the reaction's permission too.
+- Which claim carries the permissions, and in what form, is asked when the project is generated.
 - The service validates tokens and issues none. For local work a development command signs a token with a development key, and refuses outside the development environment.
 - Every endpoint needs a caller, except health checks.
 

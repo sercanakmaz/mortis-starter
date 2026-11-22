@@ -112,7 +112,7 @@ def main():
             keys = DIFFERS_BY.get(relative, [])
             if not any(values[first].get(key) != values[second].get(key) for key in keys):
                 problems.append(f"{relative} differs between {first} and {second}, and no option explains it")
-    for entry in json.loads(MANIFEST.read_text())["files"]:
+    for entry in [e for e in json.loads(MANIFEST.read_text())["files"] if not e.get("unbuilt")]:
         if entry.get("glob") or entry["path"] == "MORTIS.md" or "/Migrations/" in entry["path"]:
             continue
         relative = entry["path"].replace("{Name}", "Boilerplate")

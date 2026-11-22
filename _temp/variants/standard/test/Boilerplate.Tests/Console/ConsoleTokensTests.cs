@@ -1,5 +1,6 @@
 using Boilerplate.Tests.TestSupport.Infrastructure.Authentication;
 using Microsoft.Extensions.Hosting.Internal;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Boilerplate.Shared.Exceptions;
 using Microsoft.Extensions.Hosting;
 using Boilerplate.Console;
@@ -9,21 +10,14 @@ namespace Boilerplate.Tests.Console;
 public class ConsoleTokensTests
 {
     [Fact]
-    public async Task ContextOfAsync_WithoutAToken_Should_BeTheConsoleUser()
-    {
-        var commandContext = await new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production }).ContextOfAsync(null);
-
-        Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail], [commandContext.User.Id, commandContext.User.Email]);
-    }
-
-    [Fact]
-    public async Task WriteDevelopmentToken_InDevelopment_Should_WriteATokenThatContextOfAsyncReadsBack()
+    public async Task WriteDevelopmentToken_InDevelopment_Should_WriteATokenSignedWithTheDevelopmentKeyCarryingTheClaims()
     {
         var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
 
-        var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken("{\"subject\":\"user-1\",\"email\":\"user-1@localhost\"}"));
+        var tokenValidationResult = await new JsonWebTokenHandler().ValidateTokenAsync(consoleTokens.WriteDevelopmentToken("{\"subject\":\"user-1\",\"email\":\"user-1@localhost\"}"), FakeAuthSettings.Create().ValidationParameters());
 
-        Assert.Equal(["user-1", "user-1@localhost"], [commandContext.User.Id, commandContext.User.Email]);
+        Assert.True(tokenValidationResult.IsValid);
+        Assert.Equal(["user-1", "user-1@localhost"], new[] { "sub", "email" }.Select(claim => tokenValidationResult.Claims[claim].ToString()));
     }
 
     [Fact]
@@ -31,16 +25,14 @@ public class ConsoleTokensTests
     {
         var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production });
 
-        Assert.Throws<ForbiddenException>(() => consoleTokens.WriteDevelopmentToken(null));
+        Assert.Throws<ForbiddenException>(() => consoleTokens.WriteDevelopmentToken("{\"subject\":\"user-1\"}"));
     }
 
     [Fact]
-    public async Task ContextOfAsync_WithATokenThatDoesNotValidate_Should_ThrowInvalidParameterForTheToken()
+    public void WriteDevelopmentToken_WithoutASubject_Should_ThrowInvalidParameter()
     {
         var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
 
-        var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleTokens.ContextOfAsync("not.a.token"));
-
-        Assert.StartsWith("token is invalid", exception.Message);
+        Assert.Throws<InvalidParameterException>(() => consoleTokens.WriteDevelopmentToken(null));
     }
 }

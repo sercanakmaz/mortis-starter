@@ -42,7 +42,7 @@ A host does three things: authenticate, fill the command's context (who, which c
 |---|---|---|
 | Api | requests | the credential, the request headers |
 | Console | a name and a JSON argument | a fixed console actor |
-| Worker | a timer or a message | the message's own context, or a system actor |
+| Worker | a timer or a message | the message's own context: the user whose command raised it |
 
 ## Direction of dependencies
 

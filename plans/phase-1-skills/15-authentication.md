@@ -42,3 +42,12 @@ User management, roles stored in our database, refresh tokens, API keys.
 ## Notes
 
 The sign-in part of this step was built in step 11 (decision 42): token validation, the claims in the context, the Console token and the development token command, with `auth.sh`. What remains here: permissions (`IAuthorizedCommand`, the pipeline check, `ForbiddenException`), the architecture test and the allow-list, and the decision on the system and Console users passing authorization.
+
+## Notes (done)
+
+Knowledge only for permissions (decision 47); two related changes were built in every variant.
+
+- Built: no system user (consumers run as the event's user; `SystemUser` deleted), and the Console takes no token: `--user` (required), `--email`, `--tenant`, `--language` through `ConsoleArguments`; `dev-token` only writes HTTP tokens. Conformance follows: `console_run` passes `--user` and `--tenant`, a run without `--user` is refused, the consumer's write is audited as the order's user. lean 14, standard 16, advanced 19.
+- Written, not built: `permissions.md` (every command declares a permission, no allow-list, checked before validation, reactions checked as the user), ADR `0019`, `permissions.sh`. The permissions claim and its form are asked of the developer at scaffold time.
+- The plan's ADR number `0011` was taken: `0019`.
+

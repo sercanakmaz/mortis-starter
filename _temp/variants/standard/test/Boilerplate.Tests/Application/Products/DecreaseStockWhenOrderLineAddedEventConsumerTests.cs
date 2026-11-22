@@ -29,7 +29,7 @@ public class DecreaseStockWhenOrderLineAddedEventConsumerTests
     }
 
     [Fact]
-    public async Task Handle_Should_RunTheCommandAsTheSystemUserWhateverUserRaisedTheEvent()
+    public async Task Handle_Should_RunTheCommandAsTheUserWhoseCommandRaisedTheEvent()
     {
         Product writtenProduct = null;
         var productRepositoryBuilder = ProductRepositoryBuilder.Create()
@@ -41,6 +41,6 @@ public class DecreaseStockWhenOrderLineAddedEventConsumerTests
 
         await eventConsumer.Handle(new LineAdded(Guid.CreateVersion7().ToString(), Guid.CreateVersion7().ToString(), "SKU-1", 3) { UserId = "user-7", UserEmail = "user-7@localhost" });
 
-        Assert.Equal([SystemUser.Id, SystemUser.Email], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
+        Assert.Equal(["user-7", "user-7@localhost"], [writtenProduct.UpdatedUserId, writtenProduct.UpdatedUserName]);
     }
 }

@@ -18,16 +18,18 @@ type {Name}.Api.Middlewares: public record ErrorResponseModel(string Code, strin
 member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
 type {Name}.Application: public static class ApplicationModule
 member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
+type {Name}.Console: public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
+member {Name}.Console.ConsoleArguments: public static ConsoleArguments Parse(IReadOnlyList<string> args)
 type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
-[auth=jwt] member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
-[auth=none] member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument)
+member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
 type {Name}.Console: public static class ConsoleConstants
-member {Name}.Console.ConsoleConstants: public const string UserId = "console"
-member {Name}.Console.ConsoleConstants: public const string UserEmail = "console@localhost"
+member {Name}.Console.ConsoleConstants: public const string UserOption = "--user"
+member {Name}.Console.ConsoleConstants: public const string EmailOption = "--email"
+member {Name}.Console.ConsoleConstants: public const string TenantOption = "--tenant"
+member {Name}.Console.ConsoleConstants: public const string LanguageOption = "--language"
+member {Name}.Console.ConsoleConstants: public const string OptionPrefix = "--"
 member {Name}.Console.ConsoleConstants: public const string CommandSuffix = "Command"
 member {Name}.Console.ConsoleConstants: public const string FilePrefix = "@"
-[auth=jwt] member {Name}.Console.ConsoleConstants: public const string TokenOption = "--token"
-[auth=jwt] member {Name}.Console.ConsoleConstants: public const string TokenVariable = "MORTIS_TOKEN"
 [auth=jwt] member {Name}.Console.ConsoleConstants: public const string DevelopmentTokenCommand = "dev-token"
 [auth=jwt] member {Name}.Console.ConsoleConstants: public const int DevelopmentTokenHours = 8
 member {Name}.Console.ConsoleConstants: public static readonly JsonSerializerOptions OutputOptions = new()
@@ -179,9 +181,6 @@ member {Name}.Shared.Domain.EventContext: public EventBase TakeDispatched()
 member {Name}.Shared.Domain.EventContext: public void Clear()
 type {Name}.Shared.Domain: public sealed class EventHandlerExecutor(IServiceProvider serviceProvider, EventContext eventContext)
 member {Name}.Shared.Domain.EventHandlerExecutor: public async Task ExecuteRaisedAsync()
-type {Name}.Shared.Domain: public static class SystemUser
-member {Name}.Shared.Domain.SystemUser: public const string Id = "system"
-member {Name}.Shared.Domain.SystemUser: public const string Email = "system@localhost"
 type {Name}.Shared.Exceptions: public class BusinessRuleException(string code, string message) : ExceptionBase(code, HttpStatusCode.Conflict, message)
 [languages.mode=messages|data] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException, new Dictionary<string, object>
 [languages.mode=none] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException)

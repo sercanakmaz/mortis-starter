@@ -87,12 +87,12 @@ else
     if [ "$result" = 0 ]; then pass "conformance: $1"; else fail "conformance: $1" "see the lines above"; fi
   }
   export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)" LANGUAGES="$(get languages.mode)" QUERIES="$(get queries)"
-  # With auth = jwt the checks call the API with a development token; with tenancy that token, and every Console run, belongs to TENANT_A.
+  # With auth = jwt the checks call the API with a development token; with tenancy that token, and every Console run (--tenant), belong to TENANT_A.
   if [ "$DRY_RUN" = 0 ] && [ "$AUTH" = "jwt" ]; then
     export TENANT_A="$(new_id)" TENANT_B="$(new_id)"
     if [ "$TENANCY" = "interface" ]; then
       export TOKEN="$(dev_token "{\"subject\":\"conformance\",\"email\":\"conformance@example.com\",\"tenant\":\"$TENANT_A\"}")"
-      export CONSOLE_TOKEN="$TOKEN" CONSOLE_USER="conformance"
+      export CONSOLE_TENANT="$TENANT_A"
     else
       export TOKEN="$(dev_token '{"subject":"conformance","email":"conformance@example.com"}')"
     fi

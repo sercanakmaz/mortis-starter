@@ -115,8 +115,8 @@ Every command handler changes one aggregate: in this domain every second change 
 |---|---|---|---|---|
 | Order `Completed` | sync | `RegisterCompletedOrder(customerId)` | the user of the event | a blocked customer must veto the completion |
 | Order `LineCancelled` | sync | `CancelOrderWhenAllLinesCancelled(orderId)` | the user of the event | the order must not stay open with no active line |
-| Order `LineAdded` | async | `DecreaseProductStock(sku, quantity)` | the system actor | stock may lag; an order is not refused for stock |
-| Order `LineCancelled` | async | `IncreaseProductStock(sku, quantity)` | the system actor | as above |
+| Order `LineAdded` | async | `DecreaseProductStock(sku, quantity)` | the user who added the line | stock may lag; an order is not refused for stock |
+| Order `LineCancelled` | async | `IncreaseProductStock(sku, quantity)` | the user who cancelled the line | as above |
 
 ## Views
 

@@ -13,10 +13,11 @@ expect_equal() {
 }
 
 sql() { psql -d "$DATABASE" -tAc "$1"; }
-# With tenancy every Console run carries CONSOLE_TOKEN (set by verify.sh); with auth = jwt every API call carries TOKEN through api_curl.
-console_run() { "$LANG_SH" console "$PROJECT" "$NAME" ${CONSOLE_TOKEN:+--token "$CONSOLE_TOKEN"} "$@"; }
+# Every Console run names its user (CONSOLE_USER) and, with tenancy, its tenant (CONSOLE_TENANT, set by verify.sh): the Console takes no token.
+# With auth = jwt every API call carries TOKEN through api_curl.
+console_run() { "$LANG_SH" console "$PROJECT" "$NAME" --user "${CONSOLE_USER:-console}" --email "${CONSOLE_USER:-console}@example.com" ${CONSOLE_TENANT:+--tenant "$CONSOLE_TENANT"} "$@"; }
 api_curl() { curl ${TOKEN:+-H "Authorization: Bearer $TOKEN"} "$@"; }
-dev_token() { CONSOLE_TOKEN="" console_run dev-token "$1" 2>/dev/null; }
+dev_token() { "$LANG_SH" console "$PROJECT" "$NAME" dev-token "$1" 2>/dev/null; }
 new_id() { python3 -I -c 'import uuid; print(uuid.uuid4())'; }
 wire_name() { "$LANG_SH" wire-name "$PROJECT" "$NAME" "$1" "$2"; }
 json_field() { python3 -I -c "import sys, json; d = json.loads(sys.argv[1]); print(d$2)" "$1"; }

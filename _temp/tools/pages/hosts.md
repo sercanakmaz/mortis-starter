@@ -95,7 +95,7 @@ An action with no body builds the command itself:
 
 Project `{Name}.Console`. A host that runs one command and exits: `dotnet run -- <Command> [json | @file.json]`. No scenarios: a sequence of commands is a sequence of runs.
 
-- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the console user, with a new correlation id per run.
+- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the user the run names with `--user`, with a new correlation id per run.
 - stdout holds only the result, as indented JSON; logs go to stderr as JSON lines (`logging.md`), so the result can be piped.
 - Exit codes: 0 done, 1 no command name, 2 a failure printed to stderr as one line `{ code, message, errors }`.
 - With `events.outbox` = `background` the Console only writes outbox rows; the worker in the Api or the Worker publishes them.
@@ -119,7 +119,15 @@ File `ConsoleCommandRunner.cs`, namespace `{Name}.Console`:
 @@member src/Boilerplate.Console/ConsoleCommandRunner.cs::ConsoleCommandRunner::RunAsync@@
 
 - A new command needs nothing in the Console: the runner finds it.
-- With `auth` = `jwt` the run takes a token (`--token <jwt>` or `MORTIS_TOKEN`) and `RunAsync` takes the context it yields; `dev-token` prints a development token (`authentication.md`).
+- The run names its user: `--user <id>` (required, there is no default user) and `--email`, then `--tenant` and `--language` where those options are on. `ConsoleArguments` reads them into the context `RunAsync` takes. The Console takes no token: tokens belong to the HTTP layer, which extracts the user from them. With `auth` = `jwt`, `dev-token` only prints a development token for HTTP calls (`authentication.md`).
+
+@@decl src/Boilerplate.Console/ConsoleArguments.cs::ConsoleArguments@@
+
+@@members src/Boilerplate.Console/ConsoleArguments.cs::ConsoleArguments@@
+
+Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs`:
+
+@@members test/Boilerplate.Tests/Console/ConsoleArgumentsTests.cs::ConsoleArgumentsTests@@
 
 File `ConsoleConstants.cs`:
 

@@ -45,19 +45,13 @@ The other five audit properties have the same shape: `CreatedUserId` and `Create
 - `Version` truncates to microseconds because PostgreSQL stores microseconds; an in-memory value and a stored one must compare equal.
 - `SetUpdatedAudit` is called after the operation, so the events the operation raised carry the user.
 
-## AuditUser and SystemUser
+## AuditUser
 
 File `Domain/AuditUser.cs`:
 
 @@decl src/Boilerplate.Shared/Domain/AuditUser.cs::AuditUser@@
 
-File `Domain/SystemUser.cs`, the actor of event consumers:
-
-@@decl src/Boilerplate.Shared/Domain/SystemUser.cs::SystemUser@@
-
-@@member src/Boilerplate.Shared/Domain/SystemUser.cs::SystemUser::Id@@
-
-@@member src/Boilerplate.Shared/Domain/SystemUser.cs::SystemUser::Email@@
+There is no system user: every write, including those of event consumers, records the user whose command started the flow.
 
 ## EventBase and IQueueEvent
 
@@ -129,7 +123,7 @@ File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEve
 
 @@member src/Boilerplate.Shared/Domain/BaseSyncEventHandler.cs::BaseSyncEventHandler::ContextOf@@
 
-File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the system user in `ContextOf`:
+File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the same `ContextOf`, the event's user:
 
 @@decl src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer@@
 

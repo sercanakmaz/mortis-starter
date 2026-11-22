@@ -48,9 +48,9 @@ A command without `ITransactionalCommand` gets no transaction. If it tries to wr
 There is no ambient "current user" or "current request". What the host knows about the call is data on the command, in one property:
 
 - A command that writes implements `IContextCommand`: one line, `[JsonIgnore] public CommandContext Context { get; set; }`. The context holds the user, the correlation id of the whole request, the causation id (the event that led to this command, if any), and the tenant and language when those options are on. The client can neither send nor read it.
-- **The host fills it.** The Api's `ContextCommandFilter` builds one context per request from the claims and the request's correlation id. The Console's `.AsConsoleUser()` sets the console user and one correlation id per run. A command that arrives without a context gets one with a new correlation id from the pipeline.
+- **The host fills it.** The Api's `ContextCommandFilter` builds one context per request from the claims and the request's correlation id. The Console's `ConsoleArguments` builds it from the run's `--user`, `--email`, `--tenant` and `--language` options, with one correlation id per run; it takes no token. A command that arrives without a context gets one with a new correlation id from the pipeline.
 - The handler passes `command.Context.User` to the aggregate (`new Order(..., user)`, `order.SetUpdatedAudit(user)`). Queries have no context: they write nothing.
-- **An event carries the context of the command that raised it.** `AggregateRoot` stamps the user; while a command runs, `EventContext` stamps its correlation id, causation id, tenant and language on every event its aggregates raise. An event handler gives the command it sends `ContextOf(@event)`: the same correlation id, the event as its cause, and the event's user (sync) or `SystemUser` (async). One correlation id therefore follows a request through every command and event it causes, and each causation id says what caused each step.
+- **An event carries the context of the command that raised it.** `AggregateRoot` stamps the user; while a command runs, `EventContext` stamps its correlation id, causation id, tenant and language on every event its aggregates raise. An event handler gives the command it sends `ContextOf(@event)`: the same correlation id, the event as its cause, and the event's user, for sync handlers and event consumers alike; there is no system user. One correlation id therefore follows a request through every command and event it causes, and each causation id says what caused each step.
 
 ## 3. Domain events
 
@@ -61,7 +61,7 @@ commit, before COMMIT   EventHandlerExecutor runs every BaseSyncEventHandler<TEv
                         a handler may write and may raise more events; those are handled too
 COMMIT
 commit, after COMMIT    each event marked IQueueEvent goes to EventPublisher, which runs every
-                        consumer registered for it with AddEventConsumer, each in its own scope and transaction, as `SystemUser`
+                        consumer registered for it with AddEventConsumer, each in its own scope and transaction, as the event's user
                         then the OnCommitted actions run
 ```
 
@@ -107,7 +107,7 @@ dotnet run --project src/Boilerplate.Console -- GetProduct '{"id":"<id>"}'
 
 - The first argument is the command's type name without `Command` (case ignored); the runner finds it in the Application assembly, so a new command needs nothing in the Console. The second is the JSON (names ignore case; empty means the command's defaults).
 - stdout holds only the result as JSON; the log lines go to stderr. A failure is one line `{ code, message, errors }` on stderr and exit code 2; no command name is exit code 1.
-- A flow that spans several commands is several runs. The Console user is `console`; each run has its own correlation id.
+- A flow that spans several commands is several runs. Each run names its user with `--user <id>` (required); each has its own correlation id.
 - **VS Code:** `.vscode/launch.json` asks for the name and the JSON each time you press F5. It needs the C# extension and builds the Console first through the `build-console` task.
 
 ## 6. What is deliberately not here

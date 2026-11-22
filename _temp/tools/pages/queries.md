@@ -49,11 +49,13 @@ public abstract class BaseQueryHandler<TQuery, TResult>(IEnumerable<IValidator<T
     {
         query.Context ??= new CommandContext();
 
-        var failures = validators.SelectMany(validator => validator.Validate(query).Errors).ToList();
+        var validationFailures = validators.SelectMany(validator => validator.Validate(query).Errors).ToList();
 
-        if (failures.Count > 0)
+        if (validationFailures.Count > 0)
         {
-            throw new ValidationFailedException(failures);
+            throw new ValidationFailedException(validationFailures
+                .GroupBy(validationFailure => validationFailure.PropertyName)
+                .ToDictionary(group => group.Key, group => group.Select(validationFailure => validationFailure.ErrorMessage).ToArray()));
         }
 
         return await OnHandle(query);
@@ -63,7 +65,7 @@ public abstract class BaseQueryHandler<TQuery, TResult>(IEnumerable<IValidator<T
 }
 ```
 
-`ValidationFailedException` takes the failures the way `CommandPipeline` passes them (`shared-application.md`).
+`ValidationFailedException` takes the failures grouped by property, exactly as `CommandPipeline` passes them (`shared-application.md`).
 
 File `IQueryDispatcher.cs` and `QueryDispatcher.cs`, the same shape as `CommandDispatcher`:
 

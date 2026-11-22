@@ -11,15 +11,14 @@ Api request -> UseAuthentication: JwtBearer validates the token (issuer, audienc
             -> AuthorizeFilter: no valid token -> 401
             -> ContextCommandFilter: CommandContext.User = (sub, email) from the claims named in AuthSettings
                                      with tenancy: CommandContext.TenantId = the tenant claim, and the tenant scope is entered
-Console run -> [--token <jwt> | MORTIS_TOKEN] validated the same way; the same claims fill the context
-            -> without a token: the console user, and no tenant
+Console run -> takes no token: tokens belong to the HTTP layer; the run names its user with --user (hosts.md)
 dotnet run -- dev-token '{"subject":..., "email":..., "tenant":...}'   Development only: prints a token signed with Auth:SigningKey
 ```
 
 - Every controller needs an authenticated caller (`AuthorizeFilter` on all controllers). `/health` stays open.
 - The claim names are settings (`Auth:SubjectClaim`, `Auth:EmailClaim`, `Auth:TenantClaim`), because identity providers name them differently. Inbound claims are not renamed (`MapInboundClaims = false`).
 - Two ways to trust a token, both settings: `Auth:Authority` (an OpenID Connect authority whose published keys sign the tokens) for real environments, `Auth:SigningKey` (a symmetric development key, only in `appsettings.Development.json`) for local work and the conformance checks.
-- Event consumers keep running as the system user (`ContextOf(@event)`), whatever token raised the event.
+- Event handlers and consumers run as the user whose command raised the event (`ContextOf(@event)`); there is no system user.
 
 ## AuthSettings
 
@@ -190,7 +189,7 @@ Package: `Microsoft.AspNetCore.Authentication.JwtBearer` in the Api, `Microsoft.
 
 ## The Console
 
-File `src/{Name}.Console/ConsoleTokens.cs`. It turns a token into the run's context, and writes development tokens:
+File `src/{Name}.Console/ConsoleTokens.cs`. It only writes development tokens for HTTP calls; a Console run never reads a token:
 
 ```csharp
 public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvironment)
@@ -198,27 +197,6 @@ public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvir
 
 ```csharp
 public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvironment)
-```
-
-```csharp
-public async Task<CommandContext> ContextOfAsync(string token)
-{
-    if (string.IsNullOrWhiteSpace(token))
-    {
-        return new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail), Language = Languages.Default };
-    }
-
-    var tokenValidationResult = await new JsonWebTokenHandler().ValidateTokenAsync(token, authSettings.ValidationParameters());
-
-    if (!tokenValidationResult.IsValid)
-    {
-        throw new InvalidParameterException("token", "the token is not valid", tokenValidationResult.Exception);
-    }
-
-    var principal = new ClaimsPrincipal(tokenValidationResult.ClaimsIdentity);
-
-    return new CommandContext { User = authSettings.UserOf(principal), TenantId = authSettings.TenantOf(principal), Language = Languages.Resolve([authSettings.LanguageOf(principal)]) };
-}
 ```
 
 ```csharp
@@ -237,8 +215,8 @@ public string WriteDevelopmentToken(string argument)
     var developmentUser = JsonSerializer.Deserialize<DevelopmentUser>(string.IsNullOrWhiteSpace(argument) ? "{}" : argument, ConsoleConstants.InputOptions);
     var claims = new Dictionary<string, object>
     {
-        [authSettings.SubjectClaim] = developmentUser.Subject ?? ConsoleConstants.UserId,
-        [authSettings.EmailClaim] = developmentUser.Email ?? ConsoleConstants.UserEmail
+        [authSettings.SubjectClaim] = developmentUser.Subject ?? throw new InvalidParameterException("subject", "a development token needs a subject"),
+        [authSettings.EmailClaim] = developmentUser.Email
     };
 
     if (!string.IsNullOrEmpty(developmentUser.Tenant))
@@ -267,65 +245,32 @@ private sealed record DevelopmentUser(string Subject, string Email, string Tenan
 ```
 
 - Without tenancy, leave out the tenant claim and the record's `Tenant`.
-- An invalid token fails the run with `invalid_parameter` (exit code 2). `dev-token` outside Development fails with `forbidden`.
+- `dev-token` outside Development fails with `forbidden`; without a subject, with `invalid_parameter`.
 
-`ConsoleCommandRunner.RunAsync` takes the context instead of building the console user itself:
-
-```csharp
-public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
-{
-    var commandType = commandAssembly.GetTypes()
-        .FirstOrDefault(type => !type.IsAbstract && type.Name.Equals(name + ConsoleConstants.CommandSuffix, StringComparison.OrdinalIgnoreCase));
-
-    var contentType = commandType?.GetInterfaces()
-        .FirstOrDefault(contract => contract.IsGenericType && contract.GetGenericTypeDefinition() == typeof(ICommand<>))?
-        .GetGenericArguments()[0]
-        ?? throw new InvalidParameterException("command", $"{name} is not a command");
-
-    var json = string.IsNullOrWhiteSpace(argument) ? "{}"
-        : argument.StartsWith(ConsoleConstants.FilePrefix) ? await File.ReadAllTextAsync(argument[ConsoleConstants.FilePrefix.Length..])
-        : argument;
-
-    object command;
-
-    try
-    {
-        command = JsonSerializer.Deserialize(json, commandType, ConsoleConstants.InputOptions);
-    }
-    catch (JsonException exception)
-    {
-        throw new InvalidParameterException("arguments", exception.Message, exception);
-    }
-
-    if (command is null)
-    {
-        throw new InvalidParameterException("arguments", "a JSON object is required");
-    }
-
-    if (command is IContextCommand contextCommand)
-    {
-        contextCommand.Context = commandContext;
-    }
-
-    var send = typeof(ICommandDispatcher).GetMethod(nameof(ICommandDispatcher.Send)).MakeGenericMethod(contentType);
-    dynamic commandResult = await (dynamic)send.Invoke(commandDispatcher, [command]);
-
-    return commandResult.Content;
-}
-```
-
-`ConsoleConstants` gains the option, the variable, the command name and the token lifetime:
+`ConsoleConstants` gains the command name and the token lifetime:
 
 ```csharp
 public static class ConsoleConstants
 ```
 
 ```csharp
-public const string UserId = "console";
+public const string UserOption = "--user";
 ```
 
 ```csharp
-public const string UserEmail = "console@localhost";
+public const string EmailOption = "--email";
+```
+
+```csharp
+public const string TenantOption = "--tenant";
+```
+
+```csharp
+public const string LanguageOption = "--language";
+```
+
+```csharp
+public const string OptionPrefix = "--";
 ```
 
 ```csharp
@@ -334,14 +279,6 @@ public const string CommandSuffix = "Command";
 
 ```csharp
 public const string FilePrefix = "@";
-```
-
-```csharp
-public const string TokenOption = "--token";
-```
-
-```csharp
-public const string TokenVariable = "MORTIS_TOKEN";
 ```
 
 ```csharp
@@ -360,7 +297,7 @@ public static readonly JsonSerializerOptions OutputOptions = new() { WriteIndent
 public static readonly JsonSerializerOptions InputOptions = new() { PropertyNameCaseInsensitive = true };
 ```
 
-`Program.cs` with `auth` = `jwt` (the plain version is on `hosts.md`). The `TenantScope` line is there only with tenancy, and the `AddEventConsumer` lines of `hosts.md` stay when `events.transport` is not `rabbitmq` (this snippet is the RabbitMQ variant's, which has none):
+`Program.cs` with `auth` = `jwt` (the plain version is on `hosts.md`): `dev-token` is handled before the arguments are read. The `TenantScope` and `Languages.Resolve` lines are there only with tenancy and languages, and the `AddEventConsumer` lines of `hosts.md` stay when `events.transport` is not `rabbitmq` (this snippet is the RabbitMQ variant's, which has none):
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -391,48 +328,41 @@ builder.Services
 
 using var host = builder.Build();
 
-var arguments = args.ToList();
-var token = Environment.GetEnvironmentVariable(ConsoleConstants.TokenVariable);
-
-if (arguments.Count >= 2 && arguments[0] == ConsoleConstants.TokenOption)
+if (args.Length == 0)
 {
-    token = arguments[1];
-    arguments.RemoveRange(0, 2);
-}
-
-if (arguments.Count == 0)
-{
-    System.Console.Error.WriteLine("Usage: dotnet run -- [--token <jwt>] <Command> [json | @file.json]   or   dotnet run -- dev-token [json]");
+    System.Console.Error.WriteLine("Usage: dotnet run -- --user <id> [--email <email>] [--tenant <id>] [--language <tag>] <Command> [json | @file.json]   or   dotnet run -- dev-token [json]");
 
     return 1;
 }
 
 using var scope = host.Services.CreateScope();
 
-var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
 var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
 var language = Languages.Default;
 var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
+
+try
+{
+    if (args[0] == ConsoleConstants.DevelopmentTokenCommand)
+    {
+        var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
+
+        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(args.ElementAtOrDefault(1)));
+
+        return 0;
+    }
+
+    var consoleArguments = ConsoleArguments.Parse(args);
+    var commandContext = consoleArguments.CommandContext with { Language = Languages.Resolve([consoleArguments.CommandContext.Language]) };
+    language = commandContext.Language;
 ```
 
 The member continues:
 
 ```csharp
-try
-{
-    if (arguments[0] == ConsoleConstants.DevelopmentTokenCommand)
-    {
-        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(arguments.ElementAtOrDefault(1)));
-
-        return 0;
-    }
-
-    var commandContext = await consoleTokens.ContextOfAsync(token);
-    language = commandContext.Language;
-
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
 
-    var content = await consoleCommandRunner.RunAsync(arguments[0], arguments.ElementAtOrDefault(1), commandContext);
+    var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, commandContext);
 
     System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
 
@@ -546,24 +476,14 @@ public class ConsoleTokensTests
 
 ```csharp
 [Fact]
-public async Task ContextOfAsync_WithoutAToken_Should_BeTheConsoleUserWithoutATenant()
-{
-    var commandContext = await new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production }).ContextOfAsync(null);
-
-    Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail, null, "en"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
-}
-```
-
-```csharp
-[Fact]
-public async Task WriteDevelopmentToken_InDevelopment_Should_WriteATokenThatContextOfAsyncReadsBack()
+public async Task WriteDevelopmentToken_InDevelopment_Should_WriteATokenSignedWithTheDevelopmentKeyCarryingTheClaims()
 {
     var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
-    var tenantId = Guid.CreateVersion7().ToString();
 
-    var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken($"{{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"{tenantId}\",\"language\":\"tr\"}}"));
+    var tokenValidationResult = await new JsonWebTokenHandler().ValidateTokenAsync(consoleTokens.WriteDevelopmentToken("{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"tenant-1\",\"language\":\"tr\"}"), FakeAuthSettings.Create().ValidationParameters());
 
-    Assert.Equal(["user-1", "user-1@localhost", tenantId, "tr"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
+    Assert.True(tokenValidationResult.IsValid);
+    Assert.Equal(["user-1", "user-1@localhost", "tenant-1", "tr"], new[] { "sub", "email", "tenant_id", "locale" }.Select(claim => tokenValidationResult.Claims[claim].ToString()));
 }
 ```
 
@@ -573,19 +493,17 @@ public void WriteDevelopmentToken_OutsideDevelopment_Should_ThrowForbidden()
 {
     var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production });
 
-    Assert.Throws<ForbiddenException>(() => consoleTokens.WriteDevelopmentToken(null));
+    Assert.Throws<ForbiddenException>(() => consoleTokens.WriteDevelopmentToken("{\"subject\":\"user-1\"}"));
 }
 ```
 
 ```csharp
 [Fact]
-public async Task ContextOfAsync_WithATokenThatDoesNotValidate_Should_ThrowInvalidParameterForTheToken()
+public void WriteDevelopmentToken_WithoutASubject_Should_ThrowInvalidParameter()
 {
     var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
 
-    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleTokens.ContextOfAsync("not.a.token"));
-
-    Assert.StartsWith("token is invalid", exception.Message);
+    Assert.Throws<InvalidParameterException>(() => consoleTokens.WriteDevelopmentToken(null));
 }
 ```
 
@@ -602,8 +520,8 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | File | Namespace | Usings |
 |---|---|---|
 | `src/{Name}.Api/Authentication/JwtAuthenticationModule.cs` | `{Name}.Api.Authentication` | Microsoft.AspNetCore.Authentication.JwtBearer, {Name}.Infrastructure.Authentication |
-| `src/{Name}.Console/ConsoleTokens.cs` | `{Name}.Console` | Microsoft.Extensions.Hosting, Microsoft.IdentityModel.JsonWebTokens, Microsoft.IdentityModel.Tokens, System.Security.Claims, System.Text.Json, {Name}.Infrastructure.Authentication, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
+| `src/{Name}.Console/ConsoleTokens.cs` | `{Name}.Console` | Microsoft.Extensions.Hosting, Microsoft.IdentityModel.JsonWebTokens, Microsoft.IdentityModel.Tokens, System.Text.Json, {Name}.Infrastructure.Authentication, {Name}.Shared.Exceptions |
 | `src/{Name}.Infrastructure/Authentication/AuthSettings.cs` | `{Name}.Infrastructure.Authentication` | Microsoft.IdentityModel.Protocols, Microsoft.IdentityModel.Protocols.OpenIdConnect, Microsoft.IdentityModel.Tokens, System.Security.Claims, System.Text, {Name}.Shared.Domain |
-| `test/{Name}.Tests/Console/ConsoleTokensTests.cs` | `{Name}.Tests.Console` | Microsoft.Extensions.Hosting, Microsoft.Extensions.Hosting.Internal, {Name}.Console, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Authentication |
+| `test/{Name}.Tests/Console/ConsoleTokensTests.cs` | `{Name}.Tests.Console` | Microsoft.Extensions.Hosting, Microsoft.Extensions.Hosting.Internal, Microsoft.IdentityModel.JsonWebTokens, {Name}.Console, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Authentication |
 | `test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs` | `{Name}.Tests.Infrastructure.Authentication` | Microsoft.IdentityModel.JsonWebTokens, System.Security.Claims, {Name}.Infrastructure.Authentication, {Name}.Tests.TestSupport.Infrastructure.Authentication |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Authentication/FakeAuthSettings.cs` | `{Name}.Tests.TestSupport.Infrastructure.Authentication` | Microsoft.IdentityModel.JsonWebTokens, Microsoft.IdentityModel.Tokens, System.Text, {Name}.Infrastructure.Authentication |

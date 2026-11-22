@@ -5,7 +5,7 @@
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-console_run >"$WORK/names.txt" 2>&1
+"$LANG_SH" console "$PROJECT" "$NAME" >"$WORK/names.txt" 2>&1
 expect_equal "console: with no name it exits with 1" "1" "$?"
 case "$(cat "$WORK/names.txt")" in *"Usage:"*) pass "console: with no name it prints the usage" ;; *) fail "console: with no name it prints the usage" ;; esac
 console_run NoSuchCommand >/dev/null 2>"$WORK/err.log"

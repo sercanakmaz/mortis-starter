@@ -2,7 +2,7 @@
 
 Applies when `events.outbox` is `none`. Project `{Name}.Infrastructure`, folder `Messaging/`. Layer 1: `events.md`.
 
-Two classes. After `COMMIT` the unit of work hands each queue event to `EventPublisher`, which logs it and runs the event's registered consumers (`event-consumers.md`), each in its own scope and transaction, as the system user. Nothing is stored.
+Two classes. After `COMMIT` the unit of work hands each queue event to `EventPublisher`, which logs it and runs the event's registered consumers (`event-consumers.md`), each in its own scope and transaction, as the user whose command raised the event. Nothing is stored.
 
 What can be lost: an event whose event consumer had not run when the process died. Say so plainly when it matters; the outbox options remove it.
 

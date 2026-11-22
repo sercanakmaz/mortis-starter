@@ -99,6 +99,15 @@ READ_MODEL_FILES = {
     "src/{Name}.Application/Orders/ListOrderSummariesQuery.cs": ({"example": "true"}, False),
     "test/{Name}.Tests/Infrastructure/ReadModels/ReadModelModuleTests.cs": ({"example": "true"}, False),
 }
+PERMISSION_FILES = {
+    "src/{Name}.Shared/Application/IAuthorizedCommand.cs": {},
+    "src/{Name}.Infrastructure/Authentication/PermissionsFormat.cs": {},
+    "src/{Name}.Application/Products/ProductPermissions.cs": {"example": "true"},
+    "src/{Name}.Application/Orders/OrderPermissions.cs": {"example": "true"},
+    "src/{Name}.Application/Customers/CustomerPermissions.cs": {"example": "true"},
+    "src/{Name}.Application/Categories/CategoryPermissions.cs": {"example": "true"},
+    "test/{Name}.Tests/Application/PermissionRulesTests.cs": {},
+}
 GET_COMMAND_FILES = [f"src/Boilerplate.Application/{folder}/Get{name}Command.cs" for folder, name in (("Products", "Product"), ("Orders", "Order"), ("Customers", "Customer"), ("Categories", "Category"))]
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
@@ -209,6 +218,9 @@ for path, (when, kernel) in QUERY_FILES.items():
     out.append({"path": path, "page": "queries.md", "source": "snippets", "when": {**when, "queries": ["split", "read-models"]}, "kernel": kernel, "unbuilt": True})
 for path, (when, kernel) in READ_MODEL_FILES.items():
     out.append({"path": path, "page": "read-models.md", "source": "snippets", "when": {**when, "queries": "read-models", "database": "postgres"}, "kernel": kernel, "unbuilt": True})
+for path, when in PERMISSION_FILES.items():
+    out.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
+out.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0018-queries-and-read-models.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"queries": ["split", "read-models"]}, "kernel": False, "unbuilt": True})
 initial_when = [{"example": "true", "database": "postgres"}, {"events.outbox": OUTBOX, "database": "postgres"}]
@@ -240,7 +252,7 @@ manifest={
 old = json.load(open(TARGET))
 manifest["aggregate_files"] = old["aggregate_files"]
 manifest["aggregate_files"]["folders"].setdefault("src/{Name}.Infrastructure/Persistence/Mongo/{Plural}", ["{Aggregate}Repository.cs"])
-for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
+for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs", "{Aggregate}Permissions.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
     existing = manifest["aggregate_files"]["folders"][folder]
     for pattern in patterns:
         if pattern not in existing:

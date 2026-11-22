@@ -11,15 +11,14 @@ Api request -> UseAuthentication: JwtBearer validates the token (issuer, audienc
             -> AuthorizeFilter: no valid token -> 401
             -> ContextCommandFilter: CommandContext.User = (sub, email) from the claims named in AuthSettings
                                      with tenancy: CommandContext.TenantId = the tenant claim, and the tenant scope is entered
-Console run -> [--token <jwt> | MORTIS_TOKEN] validated the same way; the same claims fill the context
-            -> without a token: the console user, and no tenant
+Console run -> takes no token: tokens belong to the HTTP layer; the run names its user with --user (hosts.md)
 dotnet run -- dev-token '{"subject":..., "email":..., "tenant":...}'   Development only: prints a token signed with Auth:SigningKey
 ```
 
 - Every controller needs an authenticated caller (`AuthorizeFilter` on all controllers). `/health` stays open.
 - The claim names are settings (`Auth:SubjectClaim`, `Auth:EmailClaim`, `Auth:TenantClaim`), because identity providers name them differently. Inbound claims are not renamed (`MapInboundClaims = false`).
 - Two ways to trust a token, both settings: `Auth:Authority` (an OpenID Connect authority whose published keys sign the tokens) for real environments, `Auth:SigningKey` (a symmetric development key, only in `appsettings.Development.json`) for local work and the conformance checks.
-- Event consumers keep running as the system user (`ContextOf(@event)`), whatever token raised the event.
+- Event handlers and consumers run as the user whose command raised the event (`ContextOf(@event)`); there is no system user.
 
 ## AuthSettings
 
@@ -66,24 +65,20 @@ Package: `Microsoft.AspNetCore.Authentication.JwtBearer` in the Api, `Microsoft.
 
 ## The Console
 
-File `src/{Name}.Console/ConsoleTokens.cs`. It turns a token into the run's context, and writes development tokens:
+File `src/{Name}.Console/ConsoleTokens.cs`. It only writes development tokens for HTTP calls; a Console run never reads a token:
 
 @@decl variant:advanced/src/Boilerplate.Console/ConsoleTokens.cs::ConsoleTokens@@
 
 @@members variant:advanced/src/Boilerplate.Console/ConsoleTokens.cs::ConsoleTokens@@
 
 - Without tenancy, leave out the tenant claim and the record's `Tenant`.
-- An invalid token fails the run with `invalid_parameter` (exit code 2). `dev-token` outside Development fails with `forbidden`.
+- `dev-token` outside Development fails with `forbidden`; without a subject, with `invalid_parameter`.
 
-`ConsoleCommandRunner.RunAsync` takes the context instead of building the console user itself:
-
-@@member variant:advanced/src/Boilerplate.Console/ConsoleCommandRunner.cs::ConsoleCommandRunner::RunAsync@@
-
-`ConsoleConstants` gains the option, the variable, the command name and the token lifetime:
+`ConsoleConstants` gains the command name and the token lifetime:
 
 @@members variant:advanced/src/Boilerplate.Console/ConsoleConstants.cs::ConsoleConstants@@
 
-`Program.cs` with `auth` = `jwt` (the plain version is on `hosts.md`). The `TenantScope` line is there only with tenancy, and the `AddEventConsumer` lines of `hosts.md` stay when `events.transport` is not `rabbitmq` (this snippet is the RabbitMQ variant's, which has none):
+`Program.cs` with `auth` = `jwt` (the plain version is on `hosts.md`): `dev-token` is handled before the arguments are read. The `TenantScope` and `Languages.Resolve` lines are there only with tenancy and languages, and the `AddEventConsumer` lines of `hosts.md` stay when `events.transport` is not `rabbitmq` (this snippet is the RabbitMQ variant's, which has none):
 
 @@data variant:advanced/src/Boilerplate.Console/Program.cs csharp@@
 

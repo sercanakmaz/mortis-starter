@@ -235,6 +235,16 @@
    "unbuilt": true
   },
   {
+   "path": "docs/adr/0019-every-command-declares-a-permission.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -391,6 +401,17 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Categories/CategoryPermissions.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Categories/CreateCategoryCommand.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -449,6 +470,17 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/CustomerPermissions.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Customers/GetCustomerCommand.cs",
@@ -592,6 +624,17 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Orders/OrderPermissions.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Products/CreateProductCommand.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -684,6 +727,17 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Products/ProductPermissions.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Products/RenameProductCommand.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -698,6 +752,12 @@
    "page": "solution.md",
    "source": "data",
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Console/ConsoleArguments.cs",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": true
   },
   {
    "path": "src/{Name}.Console/ConsoleCommandRunner.cs",
@@ -1155,6 +1215,16 @@
    "when": {
     "auth": "jwt"
    }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Authentication/PermissionsFormat.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/InfrastructureModule.cs",
@@ -1958,6 +2028,16 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Shared/Application/IAuthorizedCommand.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/ICommand.cs",
    "page": "shared-application.md",
    "source": "snippets",
@@ -2136,12 +2216,6 @@
    "when": {
     "languages.mode": "data"
    }
-  },
-  {
-   "path": "src/{Name}.Shared/Domain/SystemUser.cs",
-   "page": "shared-domain.md",
-   "source": "snippets",
-   "kernel": true
   },
   {
    "path": "src/{Name}.Shared/Exceptions/BusinessRuleException.cs",
@@ -2378,6 +2452,16 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/PermissionRulesTests.cs",
+   "page": "permissions.md",
+   "source": "snippets",
+   "when": {
+    "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/CreateProductCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -2472,6 +2556,12 @@
    },
    "kernel": false,
    "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Console/ConsoleArgumentsTests.cs",
+   "page": "testing-kernel.md",
+   "source": "snippets",
+   "kernel": false
   },
   {
    "path": "test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs",
@@ -3054,7 +3144,8 @@
     "*Command.cs",
     "*When*EventHandler.cs",
     "*When*EventConsumer.cs",
-    "*Query.cs"
+    "*Query.cs",
+    "{Aggregate}Permissions.cs"
    ],
    "src/{Name}.Infrastructure/Persistence/{Plural}": [
     "{Aggregate}Configuration.cs",

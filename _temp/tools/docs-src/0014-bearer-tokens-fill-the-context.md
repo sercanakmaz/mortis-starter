@@ -6,7 +6,7 @@
 
 ## Decision
 
-The Api validates JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`) and every controller needs an authenticated caller; `/health` stays open. Keys come from an OpenID Connect authority (`Auth:Authority`) or, in Development only, a symmetric key (`Auth:SigningKey` in `appsettings.Development.json`). `ContextCommandFilter` fills `CommandContext.User` from the subject and email claims, and the tenant from the tenant claim when tenancy is on; the claim names are settings. The Console accepts the same token (`--token` or `MORTIS_TOKEN`) and otherwise runs as the console user. `dotnet run -- dev-token` prints a development token and refuses outside Development. Event consumers run as the system user.
+The Api validates JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`) and every controller needs an authenticated caller; `/health` stays open. Keys come from an OpenID Connect authority (`Auth:Authority`) or, in Development only, a symmetric key (`Auth:SigningKey` in `appsettings.Development.json`). `ContextCommandFilter` fills `CommandContext.User` from the subject and email claims, and the tenant from the tenant claim when tenancy is on; the claim names are settings. The Console takes no token: tokens belong to the HTTP layer, and a Console run names its user with `--user`. `dotnet run -- dev-token` prints a development token for HTTP calls and refuses outside Development. Event consumers run as the user whose command raised the event; there is no system user.
 
 ## What varies
 
@@ -23,7 +23,7 @@ Which identity provider issues the tokens, and what it names the claims.
 
 ## Consequences
 
-- Gained: every write records the real user; the Console and the Api read tokens the same way; local work needs no identity server.
+- Gained: every write records the real user, including the writes of event consumers; local work needs no identity server.
 - Lost or owed: permissions per command are not checked yet; the development key must never reach another environment.
 - Cost of going back: low.
 

@@ -229,7 +229,7 @@ public async Task<IActionResult> Complete([FromRoute] Guid id)
 
 Project `{Name}.Console`. A host that runs one command and exits: `dotnet run -- <Command> [json | @file.json]`. No scenarios: a sequence of commands is a sequence of runs.
 
-- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the console user, with a new correlation id per run.
+- The command is found by name in the Application assembly (`<Name>Command`, case ignored), read from the JSON (names ignore case), sent through `ICommandDispatcher` as the user the run names with `--user`, with a new correlation id per run.
 - stdout holds only the result, as indented JSON; logs go to stderr as JSON lines (`logging.md`), so the result can be piped.
 - Exit codes: 0 done, 1 no command name, 2 a failure printed to stderr as one line `{ code, message, errors }`.
 - With `events.outbox` = `background` the Console only writes outbox rows; the worker in the Api or the Worker publishes them.
@@ -267,7 +267,7 @@ using var host = builder.Build();
 
 if (args.Length == 0)
 {
-    System.Console.Error.WriteLine("Usage: dotnet run -- <Command> [json | @file.json]");
+    System.Console.Error.WriteLine("Usage: dotnet run -- --user <id> [--email <email>] <Command> [json | @file.json]");
 
     return 1;
 }
@@ -278,7 +278,8 @@ var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetReq
 
 try
 {
-    var content = await consoleCommandRunner.RunAsync(args[0], args.ElementAtOrDefault(1));
+    var consoleArguments = ConsoleArguments.Parse(args);
+    var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, consoleArguments.CommandContext);
 
     System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
 
@@ -322,7 +323,7 @@ public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly
 ```
 
 ```csharp
-public async Task<object> RunAsync(string name, string argument)
+public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
 {
     var commandType = commandAssembly.GetTypes()
         .FirstOrDefault(type => !type.IsAbstract && type.Name.Equals(name + ConsoleConstants.CommandSuffix, StringComparison.OrdinalIgnoreCase));
@@ -354,7 +355,7 @@ public async Task<object> RunAsync(string name, string argument)
 
     if (command is IContextCommand contextCommand)
     {
-        contextCommand.Context = new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail) };
+        contextCommand.Context = commandContext;
     }
 
     var send = typeof(ICommandDispatcher).GetMethod(nameof(ICommandDispatcher.Send)).MakeGenericMethod(contentType);
@@ -365,7 +366,93 @@ public async Task<object> RunAsync(string name, string argument)
 ```
 
 - A new command needs nothing in the Console: the runner finds it.
-- With `auth` = `jwt` the run takes a token (`--token <jwt>` or `MORTIS_TOKEN`) and `RunAsync` takes the context it yields; `dev-token` prints a development token (`authentication.md`).
+- The run names its user: `--user <id>` (required, there is no default user) and `--email`, then `--tenant` and `--language` where those options are on. `ConsoleArguments` reads them into the context `RunAsync` takes. The Console takes no token: tokens belong to the HTTP layer, which extracts the user from them. With `auth` = `jwt`, `dev-token` only prints a development token for HTTP calls (`authentication.md`).
+
+```csharp
+public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
+```
+
+```csharp
+public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
+```
+
+```csharp
+private static readonly string[] Options = [ConsoleConstants.UserOption, ConsoleConstants.EmailOption, ConsoleConstants.TenantOption, ConsoleConstants.LanguageOption];
+```
+
+```csharp
+public static ConsoleArguments Parse(IReadOnlyList<string> args)
+{
+    var options = new Dictionary<string, string>();
+    var index = 0;
+
+    while (index < args.Count && args[index].StartsWith(ConsoleConstants.OptionPrefix))
+    {
+        if (!Options.Contains(args[index]) || index + 1 >= args.Count)
+        {
+            throw new InvalidParameterException(args[index], $"the options are {string.Join(", ", Options)}, each with a value");
+        }
+
+        options[args[index]] = args[index + 1];
+        index += 2;
+    }
+
+    if (index >= args.Count)
+    {
+        throw new InvalidParameterException("command", "a command name is required");
+    }
+
+    if (!options.TryGetValue(ConsoleConstants.UserOption, out var userId) || string.IsNullOrWhiteSpace(userId))
+    {
+        throw new InvalidParameterException(ConsoleConstants.UserOption, "the user running the command is required");
+    }
+
+    var commandContext = new CommandContext
+    {
+        User = new AuditUser(userId, options.GetValueOrDefault(ConsoleConstants.EmailOption)),
+        TenantId = options.GetValueOrDefault(ConsoleConstants.TenantOption),
+        Language = options.GetValueOrDefault(ConsoleConstants.LanguageOption)
+    };
+
+    return new ConsoleArguments(commandContext, args[index], args.ElementAtOrDefault(index + 1));
+}
+```
+
+Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs`:
+
+```csharp
+public class ConsoleArgumentsTests
+```
+
+```csharp
+[Fact]
+public void Parse_Should_TakeTheContextFromTheOptionsAndThenTheCommandAndItsArgument()
+{
+    var consoleArguments = ConsoleArguments.Parse(["--user", "user-1", "--email", "user-1@localhost", "--tenant", "tenant-1", "--language", "tr", "CreateProduct", "{}"]);
+
+    Assert.Equal(["user-1", "user-1@localhost", "tenant-1", "tr", "CreateProduct", "{}"],
+        [consoleArguments.CommandContext.User.Id, consoleArguments.CommandContext.User.Email, consoleArguments.CommandContext.TenantId, consoleArguments.CommandContext.Language, consoleArguments.Name, consoleArguments.Argument]);
+}
+```
+
+```csharp
+[Fact]
+public void Parse_WithoutAUser_Should_ThrowInvalidParameter()
+{
+    var exception = Assert.Throws<InvalidParameterException>(() => ConsoleArguments.Parse(["CreateProduct", "{}"]));
+
+    Assert.StartsWith("--user is invalid", exception.Message);
+}
+```
+
+```csharp
+[Fact]
+public void Parse_WithAnUnknownOptionOrNoCommand_Should_ThrowInvalidParameter()
+{
+    Assert.Throws<InvalidParameterException>(() => ConsoleArguments.Parse(["--token", "x", "CreateProduct"]));
+    Assert.Throws<InvalidParameterException>(() => ConsoleArguments.Parse(["--user", "user-1"]));
+}
+```
 
 File `ConsoleConstants.cs`:
 
@@ -378,11 +465,23 @@ public static class ConsoleConstants
 ```
 
 ```csharp
-public const string UserId = "console";
+public const string UserOption = "--user";
 ```
 
 ```csharp
-public const string UserEmail = "console@localhost";
+public const string EmailOption = "--email";
+```
+
+```csharp
+public const string TenantOption = "--tenant";
+```
+
+```csharp
+public const string LanguageOption = "--language";
+```
+
+```csharp
+public const string OptionPrefix = "--";
 ```
 
 ```csharp
@@ -490,6 +589,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Api/Middlewares/ErrorResponseModel.cs` | `{Name}.Api.Middlewares` | none |
 | `src/{Name}.Api/Middlewares/ExceptionHandler.cs` | `{Name}.Api.Middlewares` | Microsoft.AspNetCore.Diagnostics, System.Net, {Name}.Shared.Exceptions |
 | `src/{Name}.Api/Program.cs` | `` | {Name}.Api.Filters, {Name}.Api.Middlewares, {Name}.Application, {Name}.Application.Products, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared |
-| `src/{Name}.Console/ConsoleCommandRunner.cs` | `{Name}.Console` | System.Reflection, System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
+| `src/{Name}.Console/ConsoleArguments.cs` | `{Name}.Console` | {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions |
+| `src/{Name}.Console/ConsoleCommandRunner.cs` | `{Name}.Console` | System.Reflection, System.Text.Json, {Name}.Shared.Application, {Name}.Shared.Exceptions |
 | `src/{Name}.Console/ConsoleConstants.cs` | `{Name}.Console` | System.Text.Json |
 | `src/{Name}.Console/Program.cs` | `` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, System.Text.Json, {Name}.Application, {Name}.Application.Products, {Name}.Console, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Shared, {Name}.Shared.Application, {Name}.Shared.Exceptions |

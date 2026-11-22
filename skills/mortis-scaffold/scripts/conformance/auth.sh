@@ -26,7 +26,7 @@ expect_equal "auth: a request without a token is refused with 401" "401" "$(stat
 expect_equal "auth: a token signed with another key is refused with 401" "401" "$(status -H "Authorization: Bearer $FORGED" "http://localhost:$PORT/categories/1")"
 expect_equal "auth: with a valid token the write succeeds" "201" "$(status -X POST -H "Authorization: Bearer $USER_TOKEN" -H "Content-Type: application/json" -d "{\"sku\":\"AUTH-$S\",\"name\":\"Signed in\",\"stock\":1}" "http://localhost:$PORT/products")"
 expect_equal "auth: ... and the audit columns hold the token's subject and email" "auth-$S|auth-$S@example.com" "$(sql "select created_user_id || '|' || created_user_name from products where sku = 'AUTH-$S'")"
-DOTNET_ENVIRONMENT=Production CONSOLE_TOKEN="" console_run dev-token '{"subject":"x"}' >"$WORK/prod.out" 2>"$WORK/prod.err"
+DOTNET_ENVIRONMENT=Production "$LANG_SH" console "$PROJECT" "$NAME" dev-token '{"subject":"x"}' >"$WORK/prod.out" 2>"$WORK/prod.err"
 expect_equal "auth: the development token command refuses to run outside Development" "2|forbidden|0" "$?|$(error_code "$WORK/prod.err")|$(wc -c <"$WORK/prod.out" | tr -d ' ')"
 
 kill "$API_PID" 2>/dev/null

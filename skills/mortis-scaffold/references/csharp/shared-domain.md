@@ -95,7 +95,7 @@ protected void RaiseEvent(EventBase @event)
 - `Version` truncates to microseconds because PostgreSQL stores microseconds; an in-memory value and a stored one must compare equal.
 - `SetUpdatedAudit` is called after the operation, so the events the operation raised carry the user.
 
-## AuditUser and SystemUser
+## AuditUser
 
 File `Domain/AuditUser.cs`:
 
@@ -103,19 +103,7 @@ File `Domain/AuditUser.cs`:
 public sealed record AuditUser(string Id, string Email);
 ```
 
-File `Domain/SystemUser.cs`, the actor of event consumers:
-
-```csharp
-public static class SystemUser
-```
-
-```csharp
-public const string Id = "system";
-```
-
-```csharp
-public const string Email = "system@localhost";
-```
+There is no system user: every write, including those of event consumers, records the user whose command started the flow.
 
 ## EventBase and IQueueEvent
 
@@ -291,7 +279,7 @@ protected static CommandContext ContextOf(EventBase @event)
 }
 ```
 
-File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the system user in `ContextOf`:
+File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the same `ContextOf`, the event's user:
 
 ```csharp
 public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : EventBase, IQueueEvent
@@ -300,7 +288,7 @@ public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : 
 ```csharp
 protected static CommandContext ContextOf(EventBase @event)
 {
-    return CommandContext.FromEvent(@event, new AuditUser(SystemUser.Id, SystemUser.Email));
+    return CommandContext.FromEvent(@event, new AuditUser(@event.UserId, @event.UserEmail));
 }
 ```
 
@@ -358,4 +346,3 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Shared/Domain/EventBase.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Domain/EventContext.cs` | `{Name}.Shared.Domain` | {Name}.Shared.Application |
 | `src/{Name}.Shared/Domain/EventHandlerExecutor.cs` | `{Name}.Shared.Domain` | Microsoft.Extensions.DependencyInjection |
-| `src/{Name}.Shared/Domain/SystemUser.cs` | `{Name}.Shared.Domain` | none |

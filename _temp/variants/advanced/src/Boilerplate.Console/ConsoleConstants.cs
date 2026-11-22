@@ -4,12 +4,13 @@ namespace Boilerplate.Console;
 
 public static class ConsoleConstants
 {
-    public const string UserId = "console";
-    public const string UserEmail = "console@localhost";
+    public const string UserOption = "--user";
+    public const string EmailOption = "--email";
+    public const string TenantOption = "--tenant";
+    public const string LanguageOption = "--language";
+    public const string OptionPrefix = "--";
     public const string CommandSuffix = "Command";
     public const string FilePrefix = "@";
-    public const string TokenOption = "--token";
-    public const string TokenVariable = "MORTIS_TOKEN";
     public const string DevelopmentTokenCommand = "dev-token";
     public const int DevelopmentTokenHours = 8;
 

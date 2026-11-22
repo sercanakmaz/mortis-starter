@@ -46,7 +46,6 @@
 | Rule (business rule) | a stable-coded failure raised by an aggregate |
 | Sweeper | releases outbox rows whose lock expired |
 | Sync handler | an event handler that runs inside the command's transaction |
-| System actor | the actor used when no user caused the work |
 | Tenant | a customer of the service whose data must stay apart from every other's |
 | Tenant | the customer organisation whose data a row belongs to |
 | Tenant scope | the tenant of one request, run or consumed message, entered by the host before any data is touched |

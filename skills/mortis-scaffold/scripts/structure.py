@@ -71,6 +71,8 @@ def check(root, plan_only=False):
     problems = []
     files = set(project_files(root))
     for entry in expected:
+        if entry.get("unbuilt"):
+            continue
         regex = pattern_to_regex(entry["path"], name)
         if not any(regex.match(f) for f in files):
             problems.append(f"missing: {entry['path'].replace('{Name}', name)} (see references/{language}/{entry['page']})")

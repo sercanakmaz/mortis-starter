@@ -6,7 +6,7 @@
 
 ## Decision
 
-`dotnet run --project src/Boilerplate.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The Console user is `console`. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
+`dotnet run --project src/Boilerplate.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The run names its user with `--user <id>` (required) and `--email`, and its tenant and language with `--tenant` and `--language` where those options are on; the Console takes no token. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
 
 ## What varies
 

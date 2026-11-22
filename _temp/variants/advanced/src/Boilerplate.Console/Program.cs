@@ -26,44 +26,37 @@ builder.Services
 
 using var host = builder.Build();
 
-var arguments = args.ToList();
-var token = Environment.GetEnvironmentVariable(ConsoleConstants.TokenVariable);
-
-if (arguments.Count >= 2 && arguments[0] == ConsoleConstants.TokenOption)
+if (args.Length == 0)
 {
-    token = arguments[1];
-    arguments.RemoveRange(0, 2);
-}
-
-if (arguments.Count == 0)
-{
-    System.Console.Error.WriteLine("Usage: dotnet run -- [--token <jwt>] <Command> [json | @file.json]   or   dotnet run -- dev-token [json]");
+    System.Console.Error.WriteLine("Usage: dotnet run -- --user <id> [--email <email>] [--tenant <id>] [--language <tag>] <Command> [json | @file.json]   or   dotnet run -- dev-token [json]");
 
     return 1;
 }
 
 using var scope = host.Services.CreateScope();
 
-var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
 var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
 var language = Languages.Default;
 var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
 
 try
 {
-    if (arguments[0] == ConsoleConstants.DevelopmentTokenCommand)
+    if (args[0] == ConsoleConstants.DevelopmentTokenCommand)
     {
-        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(arguments.ElementAtOrDefault(1)));
+        var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
+
+        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(args.ElementAtOrDefault(1)));
 
         return 0;
     }
 
-    var commandContext = await consoleTokens.ContextOfAsync(token);
+    var consoleArguments = ConsoleArguments.Parse(args);
+    var commandContext = consoleArguments.CommandContext with { Language = Languages.Resolve([consoleArguments.CommandContext.Language]) };
     language = commandContext.Language;
 
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
 
-    var content = await consoleCommandRunner.RunAsync(arguments[0], arguments.ElementAtOrDefault(1), commandContext);
+    var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, commandContext);
 
     System.Console.WriteLine(JsonSerializer.Serialize(content, ConsoleConstants.OutputOptions));
 

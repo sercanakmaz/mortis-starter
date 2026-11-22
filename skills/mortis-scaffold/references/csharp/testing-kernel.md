@@ -739,7 +739,7 @@ public async Task RunAsync_WithJson_Should_FindTheCommandByItsNameIgnoringCaseAn
     var handled = new List<FakeCommand>();
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await consoleCommandRunner.RunAsync("fake", "{\"NAME\":\"from json\"}");
+    await consoleCommandRunner.RunAsync("fake", "{\"NAME\":\"from json\"}", new CommandContext());
 
     Assert.Equal("from json", Assert.Single(handled).Name);
 }
@@ -752,7 +752,7 @@ public async Task RunAsync_WithoutJson_Should_RunTheCommandWithItsDefaults()
     var handled = new List<FakeCommand>();
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await consoleCommandRunner.RunAsync("Fake", null);
+    await consoleCommandRunner.RunAsync("Fake", null, new CommandContext());
 
     Assert.Equal("Default name", Assert.Single(handled).Name);
 }
@@ -767,7 +767,7 @@ public async Task RunAsync_WithAFileReference_Should_ReadTheJsonFromTheFile()
     await File.WriteAllTextAsync(path, "{\"name\":\"from file\"}");
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    await consoleCommandRunner.RunAsync("Fake", ConsoleConstants.FilePrefix + path);
+    await consoleCommandRunner.RunAsync("Fake", ConsoleConstants.FilePrefix + path, new CommandContext());
 
     File.Delete(path);
     Assert.Equal("from file", Assert.Single(handled).Name);
@@ -780,7 +780,7 @@ public async Task RunAsync_WithAnUnknownName_Should_ThrowInvalidParameterForTheC
 {
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().Build(), typeof(FakeCommand).Assembly);
 
-    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("NoSuch", null));
+    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("NoSuch", null, new CommandContext()));
 
     Assert.StartsWith("command is invalid", exception.Message);
 }
@@ -793,7 +793,7 @@ public async Task RunAsync_WithBrokenJson_Should_ThrowInvalidParameterForTheArgu
     var handled = new List<FakeCommand>();
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeCommandHandler(CommandPipelineBuilder<FakeCommand>.Create().Build(), handled)).Build(), typeof(FakeCommand).Assembly);
 
-    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("Fake", "{not json"));
+    var exception = await Assert.ThrowsAsync<InvalidParameterException>(() => consoleCommandRunner.RunAsync("Fake", "{not json", new CommandContext()));
 
     Assert.StartsWith("arguments is invalid", exception.Message);
     Assert.Empty(handled);
@@ -802,15 +802,15 @@ public async Task RunAsync_WithBrokenJson_Should_ThrowInvalidParameterForTheArgu
 
 ```csharp
 [Fact]
-public async Task RunAsync_WithAContextCommand_Should_RunItAsTheConsoleUserWhateverTheJsonSays()
+public async Task RunAsync_WithAContextCommand_Should_RunItWithTheGivenContextWhateverTheJsonSays()
 {
     var handled = new List<FakeContextCommand>();
     var consoleCommandRunner = new ConsoleCommandRunner(CommandDispatcherBuilder.Create().WithCommandHandler(new FakeContextCommandHandler(CommandPipelineBuilder<FakeContextCommand>.Create().Build(), handled)).Build(), typeof(FakeContextCommand).Assembly);
 
-    await consoleCommandRunner.RunAsync("FakeContext", "{\"context\":{\"user\":{\"id\":\"spoofed\"}}}");
+    await consoleCommandRunner.RunAsync("FakeContext", "{\"context\":{\"user\":{\"id\":\"spoofed\"}}}", new CommandContext { User = new AuditUser("user-1", "user-1@localhost"), TenantId = "tenant-1" });
 
     var contextCommand = Assert.Single(handled);
-    Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail], [contextCommand.Context.User.Id, contextCommand.Context.User.Email]);
+    Assert.Equal(["user-1", "user-1@localhost", "tenant-1"], [contextCommand.Context.User.Id, contextCommand.Context.User.Email, contextCommand.Context.TenantId]);
     Assert.NotEqual(Guid.Empty, contextCommand.Context.CorrelationId);
 }
 ```
@@ -823,7 +823,8 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 |---|---|---|
 | `test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs` | `{Name}.Tests.Api.Filters` | {Name}.Api.Filters, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Tests.TestSupport.Api, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Api/Middlewares/ExceptionHandlerTests.cs` | `{Name}.Tests.Api.Middlewares` | Microsoft.AspNetCore.Http, Microsoft.Extensions.Logging, System.Text.Json, {Name}.Api.Middlewares, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Messaging |
-| `test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs` | `{Name}.Tests.Console` | {Name}.Console, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs` | `{Name}.Tests.Console` | {Name}.Console, {Name}.Shared.Exceptions |
+| `test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs` | `{Name}.Tests.Console` | {Name}.Console, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Infrastructure/Logging/JsonLineFormatterTests.cs` | `{Name}.Tests.Infrastructure.Logging` | Microsoft.Extensions.Logging, Microsoft.Extensions.Logging.Abstractions, System.Text.Json, {Name}.Infrastructure.Logging |
 | `test/{Name}.Tests/Shared/Application/CommandContextTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Application, {Name}.Tests.TestSupport.Shared.Domain |
 | `test/{Name}.Tests/Shared/Application/CommandDispatcherTests.cs` | `{Name}.Tests.Shared.Application` | {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Shared.Application |

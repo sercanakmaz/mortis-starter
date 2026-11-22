@@ -161,7 +161,7 @@ File `{Plural}/{Aggregate}Dto.cs`. A record with settable properties and a stati
 
 File `{ReactingPlural}/{Action}When{Aggregate}{Event}EventHandler.cs`, in the folder of the aggregate that reacts. Body: one awaited `Send`. The event's own namespace is imported with an alias when another aggregate has an event of the same name.
 
-The command it sends gets its context from `ContextOf(@event)`, which the base class gives: the same correlation id, the event as its cause, and the event's user for a sync handler or the system user for an async one. A sync handler:
+The command it sends gets its context from `ContextOf(@event)`, which the base class gives: the same correlation id, the event as its cause, and the event's user, the user whose command raised it, for a sync handler and an event consumer alike. A sync handler:
 
 ```csharp
 public class CancelOrderWhenOrderLineCancelledEventHandler(ICommandDispatcher commandDispatcher) : BaseSyncEventHandler<LineCancelled>
@@ -169,7 +169,7 @@ public class CancelOrderWhenOrderLineCancelledEventHandler(ICommandDispatcher co
 
 @@member src/Boilerplate.Application/Orders/CancelOrderWhenOrderLineCancelledEventHandler.cs::CancelOrderWhenOrderLineCancelledEventHandler::OnHandle@@
 
-An event consumer is the same with `BaseEventConsumer<TEvent>`, named `{Action}When{Aggregate}{Event}EventConsumer.cs`; the base class makes it the system user:
+An event consumer is the same with `BaseEventConsumer<TEvent>`, named `{Action}When{Aggregate}{Event}EventConsumer.cs`; its command runs as the event's user too:
 
 ```csharp
 public class DecreaseStockWhenOrderLineAddedEventConsumer(ICommandDispatcher commandDispatcher) : BaseEventConsumer<LineAdded>

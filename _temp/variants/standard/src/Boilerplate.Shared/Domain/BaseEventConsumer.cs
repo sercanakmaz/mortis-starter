@@ -18,6 +18,6 @@ public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : 
 
     protected static CommandContext ContextOf(EventBase @event)
     {
-        return CommandContext.FromEvent(@event, new AuditUser(SystemUser.Id, SystemUser.Email));
+        return CommandContext.FromEvent(@event, new AuditUser(@event.UserId, @event.UserEmail));
     }
 }

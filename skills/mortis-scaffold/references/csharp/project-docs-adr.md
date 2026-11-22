@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -121,7 +121,7 @@ Nothing: this is a placement decision.
 
 ## Decision
 
-A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleCommandRunner` in the Console (`console`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler passes `@event.UserId` on to the next command; an event consumer sends it as `SystemUser`.
+A command that writes implements `IUserCommand`. The presentation layer fills it: `UserCommandFilter` in the Api (claims `NameIdentifier` and `Email`, overwriting anything the client sent) and `ConsoleArguments` in the Console (the run's `--user` and `--email`). The command handler passes `command.ToAuditUser()` as the first argument of the service's write methods, and the service passes it to the aggregate. An event carries the user of the change that raised it: `AggregateRoot` stamps `EventBase.UserId` and `UserEmail` when it raises the event. A sync handler and an event consumer both pass `@event.UserId` on to the next command; there is no system user.
 
 ## What varies
 
@@ -193,7 +193,7 @@ The conformance checks `stock` (sync and async on one event) and `blocked-custom
 
 ## Decision
 
-`dotnet run --project src/{Name}.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The Console user is `console`. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
+`dotnet run --project src/{Name}.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The run names its user with `--user <id>` (required) and `--email`, and its tenant and language with `--tenant` and `--language` where those options are on; the Console takes no token. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
 
 ## What varies
 
@@ -529,7 +529,7 @@ Which broker carries events between services, and what other services must under
 
 ## Decision
 
-The Api validates JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`) and every controller needs an authenticated caller; `/health` stays open. Keys come from an OpenID Connect authority (`Auth:Authority`) or, in Development only, a symmetric key (`Auth:SigningKey` in `appsettings.Development.json`). `ContextCommandFilter` fills `CommandContext.User` from the subject and email claims, and the tenant from the tenant claim when tenancy is on; the claim names are settings. The Console accepts the same token (`--token` or `MORTIS_TOKEN`) and otherwise runs as the console user. `dotnet run -- dev-token` prints a development token and refuses outside Development. Event consumers run as the system user.
+The Api validates JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`) and every controller needs an authenticated caller; `/health` stays open. Keys come from an OpenID Connect authority (`Auth:Authority`) or, in Development only, a symmetric key (`Auth:SigningKey` in `appsettings.Development.json`). `ContextCommandFilter` fills `CommandContext.User` from the subject and email claims, and the tenant from the tenant claim when tenancy is on; the claim names are settings. The Console takes no token: tokens belong to the HTTP layer, and a Console run names its user with `--user`. `dotnet run -- dev-token` prints a development token for HTTP calls and refuses outside Development. Event consumers run as the user whose command raised the event; there is no system user.
 
 ## What varies
 
@@ -546,7 +546,7 @@ Which identity provider issues the tokens, and what it names the claims.
 
 ## Consequences
 
-- Gained: every write records the real user; the Console and the Api read tokens the same way; local work needs no identity server.
+- Gained: every write records the real user, including the writes of event consumers; local work needs no identity server.
 - Lost or owed: permissions per command are not checked yet; the development key must never reach another environment.
 - Cost of going back: low.
 
@@ -700,4 +700,41 @@ Which screens need a list query, and which need a read model.
 ## How it is enforced
 
 `QueryRulesTests` (no query handler depends on the unit of work, a repository or a domain service), `ProductReaderTests` (the page's SQL), `ReadModelModuleTests`, and `queries.sh`.
+~~~~
+
+## 0019-every-command-declares-a-permission.md
+
+~~~~markdown
+# 0019 — Every command declares a permission, checked against the caller's
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Signed-in callers (`0014`) may still be allowed to do only part of what the service offers. Leaving a command unprotected by mistake must be impossible, and a reaction to an event must not do more than the user who caused it may.
+
+## Decision
+
+Every command implements `IAuthorizedCommand` with one permission constant, declared per aggregate next to the commands; an architecture test fails otherwise, and there is no allow-list. The caller's permissions come from a claim whose name and form the developer chose (`Auth:PermissionsClaim`, `Auth:PermissionsFormat`) and travel on the context and on every event. `CommandPipeline` checks the command's permission before validation and answers 403 `forbidden`. There is no system user and no bypass: a command sent by an event handler or consumer runs as the user whose command raised the event, with that user's permissions. The Console names the run's permissions with `--permissions`.
+
+## What varies
+
+Which permissions exist and who holds them; the identity provider decides the second.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Authenticated is enough | Nothing | Every signed-in caller can do everything |
+| An allow-list of open commands | One list to keep | A forgotten command is open by default |
+| Reactions as a system user that skips checks | A trusted actor | Audit loses the real user; a reaction may do more than its cause |
+| **One permission per command, checked for every caller and every reaction** | A constant per command; reaction permissions granted with their triggers | n/a |
+
+## Consequences
+
+- Gained: no command is open by mistake; audit shows the real user of every write, reactions included; a refusal happens before the request's shape is checked.
+- Lost or owed: a user needs the permissions of the reactions their commands trigger (creating an order needs `products.decrease-stock`); permissions travel with events, so the outbox and the bus carry them.
+- Cost of going back: low.
+
+## How it is enforced
+
+`PermissionRulesTests`, the pipeline tests, and `permissions.sh` (403 without the permission, before validation; reactions as the user; the Console's `--permissions`).
 ~~~~

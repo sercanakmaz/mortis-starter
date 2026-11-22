@@ -28,8 +28,8 @@ CUSTOMER_A="$(field "['id']")"
 expect_equal "tenancy: tenant B cannot change tenant A's customer" "404|false" "$(as "$B" -X PUT "$(url "/customers/$CUSTOMER_A/block")")|$(sql "select is_blocked from customers where id = '$CUSTOMER_A'" | sed 's/^f$/false/; s/^t$/true/')"
 expect_equal "tenancy: a caller without a tenant cannot write tenant-owned data: 403 tenant_required" "403|tenant_required|0" "$(as "$NONE" -X POST -d "{\"sku\":\"N-$S\",\"name\":\"nobody's\",\"stock\":1}" "$(url /products)")|$(field "['code']")|$(sql "select count(*) from products where sku = 'N-$S'")"
 expect_equal "tenancy: a caller without a tenant cannot read tenant-owned data: 403" "403" "$(as "$NONE" "$(url "/products/$PRODUCT_A")")"
-CONSOLE_TOKEN="" console_run CreateProduct "{\"sku\":\"NC-$S\",\"name\":\"console\",\"stock\":1}" >/dev/null 2>"$WORK/tenancy.err"
-expect_equal "tenancy: a Console run without a token cannot write tenant-owned data" "2|tenant_required" "$?|$(error_code "$WORK/tenancy.err")"
+CONSOLE_TENANT="" console_run CreateProduct "{\"sku\":\"NC-$S\",\"name\":\"console\",\"stock\":1}" >/dev/null 2>"$WORK/tenancy.err"
+expect_equal "tenancy: a Console run without --tenant cannot write tenant-owned data" "2|tenant_required" "$?|$(error_code "$WORK/tenancy.err")"
 
 as "$A" -X POST -d "{\"name\":\"Global $S\"}" "$(url /categories)" >/dev/null
 CATEGORY="$(field "['id']")"
