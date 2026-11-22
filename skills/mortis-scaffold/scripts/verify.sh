@@ -140,6 +140,8 @@ else
     case "$ADDONS" in *",observability,"*) run_conformance observability.sh ;; esac
   fi
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
+  export TESTING="$(get testing)"
+  [ "$TESTING" != "unit" ] && run_conformance testing.sh
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
     run_conformance outbox.sh
     if [ "$TRANSPORT" = "rabbitmq" ]; then

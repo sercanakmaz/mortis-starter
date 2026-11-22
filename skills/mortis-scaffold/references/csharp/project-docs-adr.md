@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48); `0023` only when `testing` is not `unit` (not built yet, decision 49). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -848,4 +848,40 @@ Where telemetry is sent, and the outbox lag threshold.
 ## How it is enforced
 
 `CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, `TraceLinkTests` (one trace id from request to consumer), and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).
+~~~~
+
+## 0023-testing-levels.md
+
+~~~~markdown
+# 0023 — How much testing structure the project starts with
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: The core ships unit tests with fakes for every class. Some failures only show when the pieces are wired together, when a real database answers, or when the code drifts from its own rules over months.
+
+## Decision
+
+The project starts at testing level `{testing}`. `handlers` adds a validator test per command and scenario tests through the real container, dispatcher and pipeline, built with `ValidateOnBuild`. `integration` adds `{Name}.IntegrationTests`: repositories, the unit of work, the outbox and the broker against real PostgreSQL and RabbitMQ in containers (or `MORTIS_TEST_POSTGRES` / `MORTIS_TEST_RABBITMQ`), one database per test class; without either the tests are skipped, never passed. `architecture` adds reflection rules (layer references, every command and sync handler registered, no private method in a `*Service`), a golden file pinning every queue event's wire name and JSON shape, and an 80% line-coverage gate. Each level includes the ones before it.
+
+## What varies
+
+The level, and the coverage threshold.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Unit tests only, whatever the project | Nothing | Wiring, SQL and contract drift are found in production |
+| Every level for every project | Containers and a coverage gate in every CI | Too heavy for a prototype |
+| **A level chosen per project, each including the ones before** | The chosen level's tests to keep | n/a |
+
+## Consequences
+
+- Gained: a missing registration fails a test, not the first request; the real SQL is exercised; a changed event contract is a reviewed change to one file.
+- Lost or owed: Docker or a test database in CI from `integration`; the golden file is updated deliberately (`MORTIS_UPDATE_CONTRACTS=1`) when a contract changes on purpose.
+- Cost of going back: low.
+
+## How it is enforced
+
+The level's own tests, and `testing.sh` (no integration project at `unit`; skipped, not passed, without a database; each architecture rule fails on a deliberately broken copy).
 ~~~~

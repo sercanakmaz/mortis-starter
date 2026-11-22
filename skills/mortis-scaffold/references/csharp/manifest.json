@@ -276,6 +276,20 @@
    "unbuilt": true
   },
   {
+   "path": "docs/adr/0023-testing-levels.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "handlers",
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -2622,6 +2636,177 @@
    }
   },
   {
+   "path": "test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "database": "postgres",
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Messaging/OutboxClaimTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.outbox": [
+     "after-command",
+     "background"
+    ],
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Messaging/RabbitMqRoundTripTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.transport": "rabbitmq"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Persistence/IdempotencyStoreTests.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Persistence/ProductRepositoryTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "example": "true",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationCollections.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationConstants.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationServices.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/PostgresFixture.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/RabbitMqFixture.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.transport": "rabbitmq"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/{Name}.IntegrationTests.csproj",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Api/Conventions/ApiConventionsModuleTests.cs",
    "page": "api-conventions.md",
    "source": "snippets",
@@ -2793,6 +2978,21 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/CreateProductCommandValidatorTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "handlers",
+     "integration",
+     "architecture"
+    ],
+    "example": "true"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -2875,6 +3075,56 @@
      "split",
      "read-models"
     ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/EventContractTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/LayerRulesTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/RegistrationRulesTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/ServiceRulesTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/event-contracts.json",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
    },
    "kernel": false,
    "unbuilt": true
@@ -2964,17 +3214,6 @@
    }
   },
   {
-   "path": "test/{Name}.Tests/Infrastructure/Diagnostics/TraceLinkTests.cs",
-   "page": "observability.md",
-   "source": "snippets",
-   "when": {
-    "database": "postgres",
-    "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
    "path": "test/{Name}.Tests/Infrastructure/Localization/MessageLocalizerTests.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -3056,17 +3295,6 @@
     "database": "postgres"
    },
    "kernel": false
-  },
-  {
-   "path": "test/{Name}.Tests/Infrastructure/Persistence/Idempotency/IdempotencyStoreTests.cs",
-   "page": "idempotency.md",
-   "source": "snippets",
-   "when": {
-    "addons": "idempotent-commands",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoClassMapsTests.cs",
@@ -3174,6 +3402,21 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Scenarios/CreateProductScenarioTests.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "handlers",
+     "integration",
+     "architecture"
+    ],
+    "example": "true"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Shared/Application/CommandContextTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
@@ -3251,6 +3494,16 @@
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Architecture/EventContracts.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": "architecture"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Domain/Categories/CategoryRepositoryBuilder.cs",
@@ -3376,6 +3629,20 @@
    "when": {
     "tenancy.mode": "interface"
    }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Scenarios/ScenarioHost.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "handlers",
+     "integration",
+     "architecture"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs",
@@ -3516,7 +3783,8 @@
     "*CommandHandlerTests.cs",
     "*EventHandlerTests.cs",
     "*EventConsumerTests.cs",
-    "*QueryHandlerTests.cs"
+    "*QueryHandlerTests.cs",
+    "*ValidatorTests.cs"
    ],
    "test/{Name}.Tests/Infrastructure/Persistence/{Plural}": [
     "{Aggregate}ConfigurationTests.cs",
@@ -3568,6 +3836,11 @@
     "src/{Name}.Api/Program.cs",
     "src/{Name}.Api/appsettings.json",
     "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"
+   ],
+   "testing": [
+    "{Name}.slnx",
+    "Directory.Packages.props",
+    "test/{Name}.Tests/{Name}.Tests.csproj"
    ],
    "observability": [
     "src/{Name}.Api/Program.cs",

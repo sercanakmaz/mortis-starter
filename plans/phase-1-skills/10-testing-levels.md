@@ -43,3 +43,12 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 End-to-end tests through HTTP beyond what the conformance suite does; load tests.
+
+## Notes (done)
+
+Written unattended as knowledge only (decision 49), after step 16.
+
+- The core's handler tests stay at `unit` (they use no I/O and the variants ship them at `unit`); `handlers` adds validator tests and scenarios through the real container. The registration rules stay at `architecture`, as planned; `ScenarioHost`'s `ValidateOnBuild` already catches a missing registration at `handlers`.
+- Skips use `Xunit.SkippableFact` (the variants are on xUnit 2, which has no dynamic skip).
+- `testing.sh` breaks a copy of the project three ways (a handler registration removed, a private method in a `*Service`, a queue event's JSON name changed); a layer-reference break cannot be planted without a reference cycle, so the layer rule is proved by its test alone.
+- Step 16's PostgreSQL tests (`IdempotencyStoreTests`, `TraceLinkTests`) moved to the integration project.

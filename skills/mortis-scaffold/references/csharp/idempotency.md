@@ -246,7 +246,7 @@ The member continues:
     }
 ```
 
-And, in the same style: another hash gives 422 `idempotency_key_reused`; an in-progress record gives 409; no header, or a `PUT`, runs the action and never touches the store; a 201 object result calls `FinishAsync` with its body; an exception calls `ForgetAsync`. `test/{Name}.Tests/Infrastructure/Persistence/Idempotency/IdempotencyStoreTests.cs` runs against PostgreSQL like the repository tests: two `StartAsync` calls with the same key return null then the in-progress record; one older than the timeout is taken over; `DeleteExpiredAsync` removes only expired records. `scripts/conformance/idempotency.sh` proves it over HTTP.
+And, in the same style: another hash gives 422 `idempotency_key_reused`; an in-progress record gives 409; no header, or a `PUT`, runs the action and never touches the store; a 201 object result calls `FinishAsync` with its body; an exception calls `ForgetAsync`. `test/{Name}.IntegrationTests/Persistence/IdempotencyStoreTests.cs` runs against PostgreSQL in the integration project (`testing` = `integration` or above, `testing-levels.md`): two `StartAsync` calls with the same key return null then the in-progress record; one older than the timeout is taken over; `DeleteExpiredAsync` removes only expired records. `scripts/conformance/idempotency.sh` proves it over HTTP.
 
 ## Namespaces and usings
 

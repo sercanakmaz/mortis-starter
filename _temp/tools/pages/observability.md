@@ -327,7 +327,7 @@ Health endpoints are not MVC endpoints, so the global `AuthorizeFilter` does not
 
 `OutboxMessageTests` gains: `From` inside a started activity stores that activity's `Id` as `TraceParent`, and outside any activity stores null. `MessageEnvelopeTests` gains the same for the `traceparent` header. `ReceiveEndpointService` and `OutboxWorker` are covered by the trace test:
 
-`test/{Name}.Tests/Infrastructure/Diagnostics/TraceLinkTests.cs` (integration, PostgreSQL, the database transport shown; the RabbitMQ variant publishes and consumes through the broker like `transport-rabbitmq.sh`):
+`test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs` (the integration project, `testing` = `integration` or above; PostgreSQL, the database transport shown; the RabbitMQ variant publishes and consumes through the broker like `transport-rabbitmq.sh`):
 
 ```csharp
     [Fact]
@@ -349,7 +349,7 @@ Health endpoints are not MVC endpoints, so the global `AuthorizeFilter` does not
     }
 ```
 
-`RequestSource` is a test-only `ActivitySource` standing in for the ASP.NET span; `IntegrationServices` and `PublishPendingAsync` are the integration test support of `testing.md`. `scripts/conformance/observability.sh` proves the same link across processes, for every transport, through the `TraceId` of the log lines.
+`RequestSource` is a test-only `ActivitySource` standing in for the ASP.NET span; `IntegrationServices` is the integration project's support (`testing-levels.md`); `PublishPendingAsync` drains the outbox like the conformance checks do. `scripts/conformance/observability.sh` proves the same link across processes, for every transport, through the `TraceId` of the log lines.
 
 ## Namespaces and usings
 
@@ -360,7 +360,7 @@ Health endpoints are not MVC endpoints, so the global `AuthorizeFilter` does not
 | `OutboxLagProbe.cs`, `OutboxHealthCheck.cs`, `RabbitMqHealthCheck.cs` | `{Name}.Infrastructure.Diagnostics` | `{Name}.Infrastructure.Messaging.Outbox`, `{Name}.Infrastructure.Messaging.RabbitMq`, `{Name}.Infrastructure.Persistence`, `{Name}.Shared.Diagnostics`, `Microsoft.EntityFrameworkCore`, `Microsoft.Extensions.Diagnostics.HealthChecks`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Hosting`, `Microsoft.Extensions.Options` |
 | `RequestLoggingMiddleware.cs` | `{Name}.Api.Middlewares` | `{Name}.Infrastructure.Diagnostics`, `System.Diagnostics` |
 | `HealthResponse.cs` | `{Name}.Api.Observability` | `Microsoft.Extensions.Diagnostics.HealthChecks` |
-| `TraceLinkTests.cs` | `{Name}.Tests.Infrastructure.Diagnostics` | `{Name}.Shared.Diagnostics`, `OpenTelemetry`, `OpenTelemetry.Trace`, `System.Diagnostics` |
+| `TraceLinkTests.cs` | `{Name}.IntegrationTests.Diagnostics` | `{Name}.Shared.Diagnostics`, `OpenTelemetry`, `OpenTelemetry.Trace`, `System.Diagnostics` |
 
 ## Decision record
 

@@ -84,6 +84,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/hosts.md` | step 7, and any controller |
 | `references/csharp/testing.md` | step 8: test layout, rules, kernel test support |
 | `references/csharp/testing-kernel.md` | step 8: the kernel tests |
+| `references/csharp/testing-levels.md` | step 8, when `testing` is not `unit`: scenarios, the integration project, the architecture rules (not built yet: hand-written snippets) |
 | `references/csharp/project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | step 9 |
 | `references/csharp/worked-slice.md`, `worked-slice-tests.md` | step 10, and as the pattern for any new aggregate |
 | `references/csharp/failures.md` | the `exceptions` level: what each level adds, the status table, `ErrorReference`, the catalogue |

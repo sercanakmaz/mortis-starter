@@ -129,7 +129,7 @@ IDEMPOTENCY_FILES = {
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyCleanupService.cs": {},
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyModule.cs": {},
     "test/{Name}.Tests/Api/Idempotency/IdempotencyFilterTests.cs": {},
-    "test/{Name}.Tests/Infrastructure/Persistence/Idempotency/IdempotencyStoreTests.cs": {},
+    "test/{Name}.IntegrationTests/Persistence/IdempotencyStoreTests.cs": {"testing": ["integration", "architecture"]},
 }
 OBSERVABILITY_FILES = {
     "src/{Name}.Shared/Diagnostics/Telemetry.cs": ({}, True),
@@ -141,7 +141,30 @@ OBSERVABILITY_FILES = {
     "src/{Name}.Infrastructure/Diagnostics/RabbitMqHealthCheck.cs": ({"events.transport": "rabbitmq"}, False),
     "src/{Name}.Api/Middlewares/RequestLoggingMiddleware.cs": ({}, False),
     "src/{Name}.Api/Observability/HealthResponse.cs": ({}, False),
-    "test/{Name}.Tests/Infrastructure/Diagnostics/TraceLinkTests.cs": ({"database": "postgres"}, False),
+    "test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs": ({"database": "postgres", "testing": ["integration", "architecture"]}, False),
+}
+HANDLERS_UP = ["handlers", "integration", "architecture"]
+INTEGRATION_UP = ["integration", "architecture"]
+TESTING_FILES = {
+    "test/{Name}.Tests/TestSupport/Scenarios/ScenarioHost.cs": {"testing": HANDLERS_UP},
+    "test/{Name}.Tests/Scenarios/CreateProductScenarioTests.cs": {"testing": HANDLERS_UP, "example": "true"},
+    "test/{Name}.Tests/Application/Products/CreateProductCommandValidatorTests.cs": {"testing": HANDLERS_UP, "example": "true"},
+    "test/{Name}.IntegrationTests/{Name}.IntegrationTests.csproj": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/TestSupport/PostgresFixture.cs": {"testing": INTEGRATION_UP, "database": "postgres"},
+    "test/{Name}.IntegrationTests/TestSupport/RabbitMqFixture.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
+    "test/{Name}.IntegrationTests/TestSupport/IntegrationConstants.cs": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/TestSupport/IntegrationCollections.cs": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/TestSupport/IntegrationServices.cs": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/Persistence/ProductRepositoryTests.cs": {"testing": INTEGRATION_UP, "example": "true", "database": "postgres"},
+    "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs": {"testing": INTEGRATION_UP, "database": "postgres"},
+    "test/{Name}.IntegrationTests/Messaging/OutboxClaimTests.cs": {"testing": INTEGRATION_UP, "events.outbox": OUTBOX, "database": "postgres"},
+    "test/{Name}.IntegrationTests/Messaging/RabbitMqRoundTripTests.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
+    "test/{Name}.Tests/Architecture/LayerRulesTests.cs": {"testing": "architecture"},
+    "test/{Name}.Tests/Architecture/RegistrationRulesTests.cs": {"testing": "architecture"},
+    "test/{Name}.Tests/Architecture/ServiceRulesTests.cs": {"testing": "architecture"},
+    "test/{Name}.Tests/Architecture/EventContractTests.cs": {"testing": "architecture"},
+    "test/{Name}.Tests/Architecture/event-contracts.json": {"testing": "architecture"},
+    "test/{Name}.Tests/TestSupport/Architecture/EventContracts.cs": {"testing": "architecture"},
 }
 OPTION_CHANGES = {
     "api-conventions": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/Middlewares/ApiConstants.cs",
@@ -149,6 +172,7 @@ OPTION_CHANGES = {
                         "src/{Name}.Application/Customers/CreateCustomerCommand.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
                         "src/{Name}.Api/Controllers/CustomersController.cs"],
     "idempotent-commands": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
+    "testing": ["{Name}.slnx", "Directory.Packages.props", "test/{Name}.Tests/{Name}.Tests.csproj"],
     "observability": ["src/{Name}.Api/Program.cs", "src/{Name}.Worker/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Worker/appsettings.json",
                       "src/{Name}.Shared/Application/CommandPipeline.cs", "src/{Name}.Shared/Domain/EventHandlerExecutor.cs", "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
                       "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs", "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs", "src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs",
@@ -277,6 +301,9 @@ for path, (when, kernel) in OBSERVABILITY_FILES.items():
 out.append({"path": "docs/adr/0020-one-shape-for-requests-and-failures.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "api-conventions"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0021-idempotency-keys-for-post.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0022-health-traces-and-metrics.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "observability"}, "kernel": False, "unbuilt": True})
+for path, when in TESTING_FILES.items():
+    out.append({"path": path, "page": "testing-levels.md", "source": "snippets", "when": when, "kernel": False, "unbuilt": True})
+out.append({"path": "docs/adr/0023-testing-levels.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"testing": HANDLERS_UP}, "kernel": False, "unbuilt": True})
 for path, when in PERMISSION_FILES.items():
     out.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})
@@ -311,7 +338,7 @@ manifest={
 old = json.load(open(TARGET))
 manifest["aggregate_files"] = old["aggregate_files"]
 manifest["aggregate_files"]["folders"].setdefault("src/{Name}.Infrastructure/Persistence/Mongo/{Plural}", ["{Aggregate}Repository.cs"])
-for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs", "{Aggregate}Permissions.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
+for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs", "{Aggregate}Permissions.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs", "*ValidatorTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
     existing = manifest["aggregate_files"]["folders"][folder]
     for pattern in patterns:
         if pattern not in existing:
