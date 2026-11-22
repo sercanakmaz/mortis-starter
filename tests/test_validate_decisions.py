@@ -90,6 +90,11 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertTrue(any(note.startswith("R8") for note in notes))
 
+    def test_r14_idempotent_commands_with_mongo_is_a_note_not_an_error(self):
+        errors, notes, values = run(make("advanced", database="mongo"))
+        self.assertEqual(errors, [])
+        self.assertTrue(any(note.startswith("R14") for note in notes))
+
     def test_r9_scheduler_needs_a_worker(self):
         self.assert_rule("R9", make("lean", addons="scheduler"))
 

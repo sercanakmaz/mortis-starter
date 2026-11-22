@@ -66,21 +66,21 @@ The add-ons switched on.
 
 ### idempotent-commands
 
-**Choose when:** clients retry POST requests.
+**Choose when:** clients retry POST requests (mobile clients, payment flows, queues that redeliver).
 
-**Costs:** an idempotency key and a table of seen keys.
+**Costs:** an `Idempotency-Key` header, a table of seen keys with their responses (24 hours by default), and a cleanup. A crash between the commit and storing the response can still run a retry twice after the in-progress timeout. Written but not generated yet (`architecture/http-and-operations.md`, decision 48); PostgreSQL only.
 
 ### observability
 
-**Choose when:** traces, metrics and health checks are needed in production.
+**Choose when:** the service runs in production and someone must see why a request was slow or an event never arrived.
 
-**Costs:** a collector to run and settings to keep.
+**Costs:** OpenTelemetry packages in the hosts, a column on the outbox row for the trace context, `/health/live` and `/health/ready`, a collector to run when the OTLP endpoint is set (nothing is exported by default). Written but not generated yet (decision 48).
 
 ### api-conventions
 
-**Choose when:** a front end consumes the API.
+**Choose when:** a front end or another team consumes the API.
 
-**Costs:** one error body, one list shape, OpenAPI; conventions to follow.
+**Costs:** one error body for every failure (binding and routing included), unknown request members refused with a 400 (opt out per command), `PUT` replaces and `PATCH` with `Optional<T>`, enums as strings, one list shape. No API versioning. Written but not generated yet (decision 48).
 
 Example:
 

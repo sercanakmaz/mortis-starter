@@ -44,7 +44,7 @@ Read only what the situation needs.
 |---|---|
 | `references/interview.md` | you are about to ask questions: the order, which description triggers which question, the wording, the unattended path, how to write the file |
 | `references/presets.md` | choosing a preset, or explaining what lean, standard and advanced contain and who each is for |
-| `references/schema.json` | you need the exact keys, values, defaults and rules R1 to R13 (the validator reads it; do not copy values from memory) |
+| `references/schema.json` | you need the exact keys, values, defaults and rules R1 to R14 (the validator reads it; do not copy values from memory) |
 | `references/options/project.md` | `version`, `name` or `preset` |
 | `references/options/language.md` | choosing the language (only those marked available) |
 | `references/options/database.md` | postgres or mongo, and what mongo changes |
@@ -61,7 +61,7 @@ Read only what the situation needs.
 | `references/options/addons.md` | any of the twelve add-ons |
 | `references/options/example.md` | whether to generate the worked example |
 | `references/adr-template.md` | writing the decision record for a value that differs from the preset |
-| `references/architecture/` | explaining or deciding where code belongs; start with `layers.md`, then `placement-guide.md`; `building-blocks.md` for one block; `events.md` for sync, async and outbox; `tenancy.md` for the signed-in caller and tenant-owned data; `languages.md` for translated messages and data; `documents.md` for aggregates in a document database; `queries.md` for the query side and read models; `scenarios.md` for worked examples; `request-lifecycle.md` for the commit order; `pseudo-code.md` for the notation; `glossary.md` for a term |
+| `references/architecture/` | explaining or deciding where code belongs; start with `layers.md`, then `placement-guide.md`; `building-blocks.md` for one block; `events.md` for sync, async and outbox; `tenancy.md` for the signed-in caller and tenant-owned data; `languages.md` for translated messages and data; `documents.md` for aggregates in a document database; `queries.md` for the query side and read models; `http-and-operations.md` for API conventions, idempotent POSTs, health, traces and metrics; `scenarios.md` for worked examples; `request-lifecycle.md` for the commit order; `pseudo-code.md` for the notation; `glossary.md` for a term |
 
 ## Rules for this skill
 

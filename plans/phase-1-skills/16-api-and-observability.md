@@ -45,3 +45,14 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 Dashboards, alert rules, log shipping, rate limiting.
+
+## Notes (done)
+
+Knowledge only (decision 48), with the developer's answers: unknown members refused with a per-command opt-out; `PUT` replaces and `PATCH` with `Optional<T>`; **no API versioning** (the plan's `/v1/` dropped; one OpenAPI document).
+
+- Written, not built: architecture page `http-and-operations.md`; pages `api-conventions.md`, `idempotency.md`, `observability.md`; ADRs `0020`, `0021`, `0022`; `api-conventions.sh`, `idempotency.sh`, `observability.sh`, wired into `verify.sh` by `addons` (no variant turns them on yet).
+- The list shape reuses the query side's `PagedResult` (`size`, not `pageSize`); with `queries` = `commands` the api-conventions add-on adds `PageRequest` and `PagedResult` for list commands.
+- Idempotency is its own add-on (`idempotent-commands`), PostgreSQL only: rule R14 notes it with MongoDB. Only successes are stored; a failure frees the key.
+- The trace context travels on the outbox row (`trace_parent`) and in the envelope headers (`traceparent`), not on the event. The cross-process proof is the shared `TraceId` of the API's and the consumer's log lines (`observability.sh`); `TraceLinkTests` proves it in-process with the in-memory exporter.
+- Readiness is proved by starting the API with an unreachable database instead of stopping PostgreSQL, and by inserting an old outbox row the worker will not claim.
+- `shape_for.py` now matches list keys (`[addons=observability]`); the manifest gained `option_changes`, the existing files each unbuilt option changes.

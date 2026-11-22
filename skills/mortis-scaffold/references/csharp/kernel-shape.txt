@@ -216,6 +216,33 @@ member {Name}.Shared.Persistence.IUnitOfWork: Task RollbackTransactionAsync()
 member {Name}.Shared.Persistence.IUnitOfWork: void OnCommitted(Func<Task> action)
 type {Name}.Shared: public static class SharedModule
 member {Name}.Shared.SharedModule: public static IServiceCollection AddSharedModule(this IServiceCollection services)
+[addons=api-conventions] type {Name}.Shared.Application: public readonly record struct Optional<T>
+[addons=api-conventions] member {Name}.Shared.Application.Optional: public bool HasValue { get; }
+[addons=api-conventions] member {Name}.Shared.Application.Optional: public T Value { get; }
+[addons=api-conventions] member {Name}.Shared.Application.Optional: public static Optional<T> None => default;
+[addons=api-conventions] member {Name}.Shared.Application.Optional: public static Optional<T> Of(T value) => new(value);
+[addons=api-conventions] member {Name}.Shared.Application.Optional: public T Or(T current) => HasValue ? Value : current;
+[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverterFactory : JsonConverterFactory
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override bool CanConvert(Type typeToConvert)
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override bool HandleNull => true;
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override Optional<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override void Write(Utf8JsonWriter writer, Optional<T> value, JsonSerializerOptions options)
+[addons=observability] type {Name}.Shared.Diagnostics: public static class Telemetry
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Name = "{Name}";
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Succeeded = "succeeded";
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Refused = "refused";
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Failed = "failed";
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly ActivitySource Source = new(Name);
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Meter Meter = new(Name);
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Histogram<double> CommandDuration
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Counter<long> ConsumerFailures
+[queries=commands,addons=api-conventions] type {Name}.Shared.Application: public static class PageRequest
+[queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public const int DefaultSize = 20;
+[queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public const int MaxSize = 100;
+[queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public static int Skip(int page, int size) => (page - 1) * size;
+[queries=commands,addons=api-conventions] type {Name}.Shared.Application: public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int Size, int Total);
 [database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoModule
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoModule: public static IServiceCollection AddMongoModule(this IServiceCollection services, IConfiguration configuration)
 [database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoClassMaps

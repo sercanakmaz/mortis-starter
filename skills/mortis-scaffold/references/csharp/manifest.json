@@ -245,6 +245,37 @@
    "unbuilt": true
   },
   {
+   "path": "docs/adr/0020-one-shape-for-requests-and-failures.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0021-idempotency-keys-for-post.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0022-health-traces-and-metrics.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -308,10 +339,31 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Api/Conventions/ApiConventionsModule.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Api/Filters/ContextCommandFilter.cs",
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Idempotency/IdempotencyFilter.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Api/Middlewares/ApiConstants.cs",
@@ -357,6 +409,26 @@
      "data"
     ]
    }
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/RequestLoggingMiddleware.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Api/Observability/HealthResponse.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Api/Program.cs",
@@ -452,6 +524,17 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/ChangeCustomerCommand.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Customers/CreateCustomerCommand.cs",
@@ -913,6 +996,17 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Customers/Events/Changed.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/Created.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -1222,6 +1316,75 @@
    "source": "snippets",
    "when": {
     "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilityConstants.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilityModule.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilitySettings.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/OutboxHealthCheck.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ],
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/OutboxLagProbe.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "events.outbox": [
+     "after-command",
+     "background"
+    ],
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Diagnostics/RabbitMqHealthCheck.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "events.transport": "rabbitmq",
+    "addons": "observability"
    },
    "kernel": false,
    "unbuilt": true
@@ -1594,6 +1757,83 @@
    "when": {
     "database": "postgres"
    }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyCleanupService.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyConstants.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyModule.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecord.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecordConfiguration.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencySettings.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyStore.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/LocalizedTextConversion.cs",
@@ -2100,15 +2340,50 @@
    }
   },
   {
+   "path": "src/{Name}.Shared/Application/Optional.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/OptionalJsonConverter.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/OptionalJsonConverterFactory.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/PageRequest.cs",
    "page": "queries.md",
    "source": "snippets",
-   "when": {
-    "queries": [
-     "split",
-     "read-models"
-    ]
-   },
+   "when_any": [
+    {
+     "queries": [
+      "split",
+      "read-models"
+     ]
+    },
+    {
+     "addons": "api-conventions"
+    }
+   ],
    "kernel": true,
    "unbuilt": true
   },
@@ -2116,12 +2391,17 @@
    "path": "src/{Name}.Shared/Application/PagedResult.cs",
    "page": "queries.md",
    "source": "snippets",
-   "when": {
-    "queries": [
-     "split",
-     "read-models"
-    ]
-   },
+   "when_any": [
+    {
+     "queries": [
+      "split",
+      "read-models"
+     ]
+    },
+    {
+     "addons": "api-conventions"
+    }
+   ],
    "kernel": true,
    "unbuilt": true
   },
@@ -2147,6 +2427,16 @@
      "split",
      "read-models"
     ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Diagnostics/Telemetry.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "addons": "observability"
    },
    "kernel": true,
    "unbuilt": true
@@ -2332,10 +2622,31 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Api/Conventions/ApiConventionsModuleTests.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Api/Idempotency/IdempotencyFilterTests.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Api/Middlewares/CorrelationIdMiddlewareTests.cs",
@@ -2369,6 +2680,17 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Application/Customers/CreateCustomerCommandHandlerTests.cs",
@@ -2642,6 +2964,17 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Diagnostics/TraceLinkTests.cs",
+   "page": "observability.md",
+   "source": "snippets",
+   "when": {
+    "database": "postgres",
+    "addons": "observability"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Localization/MessageLocalizerTests.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -2723,6 +3056,17 @@
     "database": "postgres"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Idempotency/IdempotencyStoreTests.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoClassMapsTests.cs",
@@ -2864,6 +3208,16 @@
      "data"
     ]
    }
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Application/OptionalTests.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "when": {
+    "addons": "api-conventions"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Shared/Domain/AggregateRootTests.cs",
@@ -3195,5 +3549,44 @@
    ".mortis/**",
    "README.md"
   ]
+ },
+ "option_changes": {
+  "description": "Existing files an option not built yet changes; the option's page says how.",
+  "options": {
+   "api-conventions": [
+    "src/{Name}.Api/Program.cs",
+    "src/{Name}.Api/Middlewares/ApiConstants.cs",
+    "src/{Name}.Domain/Aggregates/Customers/Customer.cs",
+    "src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs",
+    "src/{Name}.Application/Customers/CustomerDto.cs",
+    "src/{Name}.Application/Customers/CreateCustomerCommand.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
+    "src/{Name}.Api/Controllers/CustomersController.cs"
+   ],
+   "idempotent-commands": [
+    "src/{Name}.Api/Program.cs",
+    "src/{Name}.Api/appsettings.json",
+    "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"
+   ],
+   "observability": [
+    "src/{Name}.Api/Program.cs",
+    "src/{Name}.Worker/Program.cs",
+    "src/{Name}.Api/appsettings.json",
+    "src/{Name}.Worker/appsettings.json",
+    "src/{Name}.Shared/Application/CommandPipeline.cs",
+    "src/{Name}.Shared/Domain/EventHandlerExecutor.cs",
+    "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
+    "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs",
+    "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs",
+    "src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs",
+    "src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs",
+    "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs",
+    "src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs",
+    "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConstants.cs",
+    "src/{Name}.Infrastructure/Logging/JsonLineFormatter.cs",
+    "src/{Name}.Infrastructure/Logging/LoggingConstants.cs"
+   ]
+  }
  }
 }

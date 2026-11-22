@@ -158,6 +158,8 @@ def check_rules(schema, values, lines):
         errors.append(rule_error(schema, "R12", at("keys.default"), "keys.default", "mongo does not support integer keys"))
     if values.get("tenancy.mode") == "interface" and values.get("auth") != "jwt":
         errors.append(rule_error(schema, "R13", at("tenancy.mode"), "tenancy.mode", "tenancy needs auth = jwt: the tenant is a claim of the signed-in caller"))
+    if values.get("database") == "mongo" and "idempotent-commands" in values.get("addons", []):
+        notes.append("R14: idempotent-commands is not offered with MongoDB yet; the scaffold skips it")
     return errors, notes
 
 

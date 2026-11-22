@@ -108,6 +108,53 @@ PERMISSION_FILES = {
     "src/{Name}.Application/Categories/CategoryPermissions.cs": {"example": "true"},
     "test/{Name}.Tests/Application/PermissionRulesTests.cs": {},
 }
+API_CONVENTION_FILES = {
+    "src/{Name}.Shared/Application/Optional.cs": ({}, True),
+    "src/{Name}.Shared/Application/OptionalJsonConverterFactory.cs": ({}, True),
+    "src/{Name}.Shared/Application/OptionalJsonConverter.cs": ({}, True),
+    "src/{Name}.Api/Conventions/ApiConventionsModule.cs": ({}, False),
+    "src/{Name}.Application/Customers/ChangeCustomerCommand.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Customers/Events/Changed.cs": ({"example": "true"}, False),
+    "test/{Name}.Tests/Shared/Application/OptionalTests.cs": ({}, False),
+    "test/{Name}.Tests/Api/Conventions/ApiConventionsModuleTests.cs": ({}, False),
+    "test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs": ({"example": "true"}, False),
+}
+IDEMPOTENCY_FILES = {
+    "src/{Name}.Api/Idempotency/IdempotencyFilter.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecord.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecordConfiguration.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyConstants.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencySettings.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyStore.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyCleanupService.cs": {},
+    "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyModule.cs": {},
+    "test/{Name}.Tests/Api/Idempotency/IdempotencyFilterTests.cs": {},
+    "test/{Name}.Tests/Infrastructure/Persistence/Idempotency/IdempotencyStoreTests.cs": {},
+}
+OBSERVABILITY_FILES = {
+    "src/{Name}.Shared/Diagnostics/Telemetry.cs": ({}, True),
+    "src/{Name}.Infrastructure/Diagnostics/ObservabilityModule.cs": ({}, False),
+    "src/{Name}.Infrastructure/Diagnostics/ObservabilitySettings.cs": ({}, False),
+    "src/{Name}.Infrastructure/Diagnostics/ObservabilityConstants.cs": ({}, False),
+    "src/{Name}.Infrastructure/Diagnostics/OutboxLagProbe.cs": ({"events.outbox": OUTBOX}, False),
+    "src/{Name}.Infrastructure/Diagnostics/OutboxHealthCheck.cs": ({"events.outbox": OUTBOX}, False),
+    "src/{Name}.Infrastructure/Diagnostics/RabbitMqHealthCheck.cs": ({"events.transport": "rabbitmq"}, False),
+    "src/{Name}.Api/Middlewares/RequestLoggingMiddleware.cs": ({}, False),
+    "src/{Name}.Api/Observability/HealthResponse.cs": ({}, False),
+    "test/{Name}.Tests/Infrastructure/Diagnostics/TraceLinkTests.cs": ({"database": "postgres"}, False),
+}
+OPTION_CHANGES = {
+    "api-conventions": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/Middlewares/ApiConstants.cs",
+                        "src/{Name}.Domain/Aggregates/Customers/Customer.cs", "src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs", "src/{Name}.Application/Customers/CustomerDto.cs",
+                        "src/{Name}.Application/Customers/CreateCustomerCommand.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
+                        "src/{Name}.Api/Controllers/CustomersController.cs"],
+    "idempotent-commands": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
+    "observability": ["src/{Name}.Api/Program.cs", "src/{Name}.Worker/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Worker/appsettings.json",
+                      "src/{Name}.Shared/Application/CommandPipeline.cs", "src/{Name}.Shared/Domain/EventHandlerExecutor.cs", "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
+                      "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs", "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs", "src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs",
+                      "src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs", "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs", "src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs",
+                      "src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConstants.cs", "src/{Name}.Infrastructure/Logging/JsonLineFormatter.cs", "src/{Name}.Infrastructure/Logging/LoggingConstants.cs"],
+}
 GET_COMMAND_FILES = [f"src/Boilerplate.Application/{folder}/Get{name}Command.cs" for folder, name in (("Products", "Product"), ("Orders", "Order"), ("Customers", "Customer"), ("Categories", "Category"))]
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
@@ -215,9 +262,21 @@ for f in files:
 for path, (when, kernel) in MONGO_FILES.items():
     out.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel, "unbuilt": True})
 for path, (when, kernel) in QUERY_FILES.items():
+    if path.endswith(("/PageRequest.cs", "/PagedResult.cs")):
+        out.append({"path": path, "page": "queries.md", "source": "snippets", "when_any": [{"queries": ["split", "read-models"]}, {"addons": "api-conventions"}], "kernel": kernel, "unbuilt": True})
+        continue
     out.append({"path": path, "page": "queries.md", "source": "snippets", "when": {**when, "queries": ["split", "read-models"]}, "kernel": kernel, "unbuilt": True})
 for path, (when, kernel) in READ_MODEL_FILES.items():
     out.append({"path": path, "page": "read-models.md", "source": "snippets", "when": {**when, "queries": "read-models", "database": "postgres"}, "kernel": kernel, "unbuilt": True})
+for path, (when, kernel) in API_CONVENTION_FILES.items():
+    out.append({"path": path, "page": "api-conventions.md", "source": "snippets", "when": {**when, "addons": "api-conventions"}, "kernel": kernel, "unbuilt": True})
+for path, when in IDEMPOTENCY_FILES.items():
+    out.append({"path": path, "page": "idempotency.md", "source": "snippets", "when": {**when, "addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
+for path, (when, kernel) in OBSERVABILITY_FILES.items():
+    out.append({"path": path, "page": "observability.md", "source": "snippets", "when": {**when, "addons": "observability"}, "kernel": kernel, "unbuilt": True})
+out.append({"path": "docs/adr/0020-one-shape-for-requests-and-failures.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "api-conventions"}, "kernel": False, "unbuilt": True})
+out.append({"path": "docs/adr/0021-idempotency-keys-for-post.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
+out.append({"path": "docs/adr/0022-health-traces-and-metrics.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "observability"}, "kernel": False, "unbuilt": True})
 for path, when in PERMISSION_FILES.items():
     out.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})
@@ -258,5 +317,6 @@ for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate
         if pattern not in existing:
             existing.insert(len(existing) - 1 if existing and existing[-1] == "*.cs" else len(existing), pattern)
 manifest["always_allowed"] = old["always_allowed"]
+manifest["option_changes"] = {"description": "Existing files an option not built yet changes; the option's page says how.", "options": OPTION_CHANGES}
 json.dump(manifest, open(TARGET, "w"), indent=1)
 print(len(out), "entries")

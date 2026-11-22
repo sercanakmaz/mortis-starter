@@ -390,6 +390,11 @@
    "id": "R13",
    "text": "tenancy.mode = interface requires auth = jwt, because the tenant is a claim of the signed-in caller.",
    "fix": "Set auth to jwt, or tenancy.mode to none."
+  },
+  {
+   "id": "R14",
+   "text": "addons containing idempotent-commands with database = mongo is not offered yet; the scaffold skips that add-on and says so (note, never an error).",
+   "fix": "Nothing to fix."
   }
  ]
 }

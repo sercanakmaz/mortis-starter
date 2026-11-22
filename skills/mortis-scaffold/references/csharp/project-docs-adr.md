@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -737,4 +737,115 @@ Which permissions exist and who holds them; the identity provider decides the se
 ## How it is enforced
 
 `PermissionRulesTests`, the pipeline tests, and `permissions.sh` (403 without the permission, before validation; reactions as the user; the Console's `--permissions`).
+~~~~
+
+## 0020-one-shape-for-requests-and-failures.md
+
+~~~~markdown
+# 0020 — One shape for requests, lists and failures
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: A front end or another team consumes this API. Each framework failure (a body that does not parse, an unknown route) has its own default shape, a typo in a request member is silently ignored, and a partial update cannot tell "leave it" from "clear it".
+
+## Decision
+
+Every failure answers the error body `{ code, message, errors? }`, the framework's own included: `invalid_request` for a body that does not parse or names a member the command does not have, `route_not_found` and `method_not_allowed` for an unknown address. Unknown members are refused by default; a command that must accept them says so on its own type with `[JsonUnmappedMemberHandling(Skip)]`. `PUT` replaces; `PATCH` changes only the members present, which are `Optional<T>` so an absent member and `null` differ. Enums travel as their names. A list answers `{ items, page, size, total }`. There is one OpenAPI document and no API versioning.
+
+## What varies
+
+Which endpoints exist and which commands accept extra members.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| The framework's defaults | Nothing | Three error shapes; typos ignored; `null` and absent are the same |
+| ProblemDetails (RFC 9457) everywhere | A second body shape next to the one commands already answer | Clients would parse both during the change |
+| JSON Patch for partial updates | A patch document per request | Hard to validate against a command; clients rarely produce it |
+| URL versioning (`/v1/`) from the start | A version segment and a document per version | No consumer needs a second version yet; added when a breaking change comes |
+| **One error body, unknown members refused, `Optional<T>` for PATCH, no versioning** | A converter and a few conventions | n/a |
+
+## Consequences
+
+- Gained: a client parses one failure shape; a typo fails loudly with the member's name; `PATCH` can clear a member.
+- Lost or owed: a client that sends extra members must stop or its command must opt out; the first breaking change needs a versioning decision.
+- Cost of going back: low.
+
+## How it is enforced
+
+`ApiConventionsModuleTests`, `OptionalTests`, the `PATCH` handler tests, and `api-conventions.sh` (an unknown member is a 400 naming it and accepted by the opted-out command; an unknown route and a broken body answer the error body; `PATCH` with `null` clears and `{}` keeps).
+~~~~
+
+## 0021-idempotency-keys-for-post.md
+
+~~~~markdown
+# 0021 — A retried POST with the same idempotency key runs once
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Clients retry a `POST` when a response is lost (a mobile network, a timeout, a queue that redelivers). Without help, each retry creates another order.
+
+## Decision
+
+A `POST` with an `Idempotency-Key` header is recorded in `idempotency_records`, scoped by the caller's tenant and user, with a hash of its method, path and body. A repeat with the same key and body gets the first response again, with `Idempotency-Replayed: true`; the same key with another body is a 422 `idempotency_key_reused`; a repeat while the first still runs is a 409 `idempotency_in_progress`. Only successes are stored; a failure frees the key. Records are deleted after `Idempotency:RetentionHours` (24). A `POST` without the header runs as before.
+
+## What varies
+
+Which clients send the header, and the retention period.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Rely on unique business keys (an order number) | Nothing extra | Only commands with a natural key are protected, and the retry gets an error instead of the first answer |
+| Store the key in the command's transaction | The filter would have to live inside the pipeline | HTTP concerns would enter the application layer |
+| **A resource filter and a table of keys with their responses** | One table, a cleanup, a small window after a crash | n/a |
+
+## Consequences
+
+- Gained: a client may retry any `POST` safely and gets the same answer.
+- Lost or owed: a crash after the command committed and before the response was stored lets a retry run again after `Idempotency:InProgressTimeoutSeconds`; the command's own unique rules are the last guard. Responses are kept for the retention period.
+- Cost of going back: low.
+
+## How it is enforced
+
+`IdempotencyFilterTests`, `IdempotencyStoreTests`, and `idempotency.sh` (a repeat returns the first response and creates one row; another body with the same key is a 422).
+~~~~
+
+## 0022-health-traces-and-metrics.md
+
+~~~~markdown
+# 0022 — Health, one trace per request across the outbox and the bus, and metrics
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: In production someone must see whether the service can serve, why a request was slow, and what happened to the events it raised, after the outbox and the bus have split the work across processes and time.
+
+## Decision
+
+`/health/live` answers while the process runs; `/health/ready` checks the database, the broker when there is one, and that the oldest unpublished outbox row is younger than `Observability:OutboxLagThresholdSeconds`. Spans come from one `ActivitySource` named after the project: one per command, sync handler, outbox publish and consumed event, under the HTTP request span. The W3C `traceparent` is stored with the outbox row and sent in the bus envelope headers, so one trace covers a request and everything it caused, with every transport. Metrics: command duration by command and outcome, outbox pending count and oldest age, consumer failures. Export is OTLP when `Observability:OtlpEndpoint` is set, nothing otherwise. Every log line carries `TraceId` and `SpanId`; one log line per request, never bodies.
+
+## What varies
+
+Where telemetry is sent, and the outbox lag threshold.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Logs and correlation ids only | Nothing | No timing, and no view across processes without searching logs |
+| A vendor SDK | Lock-in | OpenTelemetry exports to any vendor |
+| Trace context as a field of every event | A technical field in the domain's events | The outbox row and the envelope headers carry it outside the domain |
+| **OpenTelemetry, trace context on the outbox row and in the envelope, readiness on outbox lag** | Packages in the hosts, a column, a collector when exporting | n/a |
+
+## Consequences
+
+- Gained: one trace per request across processes; a stuck outbox makes the service unready instead of silently piling up events; logs and traces join on the trace id.
+- Lost or owed: a collector to run once exporting; MassTransit publishers start a new trace.
+- Cost of going back: low.
+
+## How it is enforced
+
+`CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, `TraceLinkTests` (one trace id from request to consumer), and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).
 ~~~~

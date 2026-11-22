@@ -135,6 +135,9 @@ else
     [ "$TENANCY" = "interface" ] && run_conformance tenancy.sh
     [ "$LANGUAGES" != "none" ] && run_conformance languages.sh
     run_conformance queries.sh
+    case "$ADDONS" in *",api-conventions,"*) run_conformance api-conventions.sh ;; esac
+    case "$ADDONS" in *",idempotent-commands,"*) run_conformance idempotency.sh ;; esac
+    case "$ADDONS" in *",observability,"*) run_conformance observability.sh ;; esac
   fi
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then
