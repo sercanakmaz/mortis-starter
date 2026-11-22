@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48); `0023` only when `testing` is not `unit` (not built yet, decision 49). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48); `0023` only when `testing` is not `unit` (not built yet, decision 49); `0024` to `0031` only when `addons` contains, in order, `soft-delete`, `caching`, `scheduler` (with PostgreSQL), `storage`, `secrets` (with PostgreSQL), `loop-guard`, `contexts`, `events-project` (not built yet, decision 50). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -884,4 +884,294 @@ The level, and the coverage threshold.
 ## How it is enforced
 
 The level's own tests, and `testing.sh` (no integration project at `unit`; skipped, not passed, without a database; each architecture rule fails on a deliberately broken copy).
+~~~~
+
+## 0024-soft-delete.md
+
+~~~~markdown
+# 0024 — Deleting marks a row; it never removes it
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Deleted data must stay for audit and undo, yet disappear from every read and free its natural key.
+
+## Decision
+
+A soft-deletable aggregate implements `ISoftDeletable` and raises `Deleted` and `Restored`. A named EF Core query filter hides deleted rows; ignoring it by name keeps the tenant filter. Natural unique keys are unique indexes filtered on `is_deleted = false`, so a deleted key can be reused; a restore that collides answers 409 `duplicate`.
+
+## What varies
+
+Which aggregates are soft-deletable.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Hard delete | Nothing | Audit and undo are lost |
+| An archive table | A copy per aggregate | Two schemas to keep in step |
+| **A flag, a named filter, filtered unique indexes** | Raw SQL must add the filter by hand | n/a |
+
+## Consequences
+
+- Gained: deletes are reversible and audited; a deleted key is free again.
+- Lost or owed: tables keep growing until the project writes a retention job; raw SQL and bulk updates add `is_deleted = false` by hand.
+- Cost of going back: medium (rows deleted while on stay as rows).
+
+## How it is enforced
+
+The domain and handler tests, `ProductConfigurationTests` (the filter and the filtered index), and `soft-delete.sh` (a deleted product is invisible, its SKU can be reused, a restore brings it back).
+~~~~
+
+## 0025-caching-reads.md
+
+~~~~markdown
+# 0025 — Read answers are cached and invalidated by events
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Some reads are slow and repeated. A cache that is not invalidated by the writes serves stale data, and a cache feeding a write corrupts it.
+
+## Decision
+
+Read handlers cache their answers through `ICacheService` (HybridCache: memory in each process, Redis behind it when configured), keyed by plural, tenant, id and language and tagged by aggregate instance. Every event that changes a cached answer has a sync handler that removes the tag. Commands always read the database.
+
+## What varies
+
+What is cached and for how long (`Caching:Seconds`).
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| No cache | Slower reads | Chosen against for the reads that need it |
+| Time-based expiry only | Nothing to invalidate | Answers are stale for the whole lifetime |
+| Cache the aggregate | One cache for reads and writes | A stale aggregate would feed a write |
+| **Cache answers, invalidate by events** | A handler per changing event | n/a |
+
+## Consequences
+
+- Gained: repeated reads skip the database; a caller who just wrote reads fresh data.
+- Lost or owed: a short window (the lifetime) where a concurrent read can put an old answer back; without Redis each process invalidates only its own memory.
+- Cost of going back: low.
+
+## How it is enforced
+
+`HybridCacheServiceTests`, the invalidation handler tests, and `caching.sh` (a read after a change is fresh).
+~~~~
+
+## 0026-scheduled-jobs.md
+
+~~~~markdown
+# 0026 — Jobs on a clock run once per tick, as a named service user
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Some work happens on a clock, not on a request. With several worker replicas a naive timer runs it once per replica.
+
+## Decision
+
+A recurring job implements `IRecurringJob` (a name, a default cron, `RunAsync` that sends commands). `SchedulerService` claims each due tick with an insert into `scheduled_job_runs` keyed by job and tick; only the winner runs it. Each job runs as the service user its settings name; there is no system user. One-shot jobs live in `scheduled_jobs`, claimed with `for update skip locked`.
+
+## What varies
+
+The jobs, their schedules and their users.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| A timer in each process | Nothing | Runs once per replica |
+| A distributed lock library | A lock service | A tick claimed in the database needs nothing new |
+| An external scheduler (cron, Quartz cluster) | Another system | Jobs belong next to the commands they send |
+| **A row per tick, claimed by insert** | Two tables | n/a |
+
+## Consequences
+
+- Gained: any number of workers; a job's runs and failures are visible in a table; jobs are audited as their service user.
+- Lost or owed: a failed tick is not retried until the next one; a service user per job to provision.
+- Cost of going back: low.
+
+## How it is enforced
+
+`SchedulerTicks` tests, `SchedulerClaimTests`, and `scheduler.sh` (with two workers a job fires once per tick).
+~~~~
+
+## 0027-file-storage-port.md
+
+~~~~markdown
+# 0027 — Files live behind a storage port; rows hold keys
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Files are uploaded and served. Bytes in the database bloat it; a storage SDK in the handlers ties them to one vendor.
+
+## Decision
+
+`IFileStorage` (put, open, delete) with an S3-compatible adapter (S3, MinIO) and a local-disk adapter, chosen by `Storage:Provider`. Keys are built from ids the application owns. A handler writes the file first and then the row that holds its key. Size and content type are validated.
+
+## What varies
+
+The provider, the bucket, the limits.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Bytes in the database | Nothing extra | Large rows and backups |
+| The vendor SDK in handlers | No port | Vendor lock-in; untestable handlers |
+| **A port with two adapters** | One interface | n/a |
+
+## Consequences
+
+- Gained: handlers are testable with a fake; development needs no cloud; production can move between S3-compatible stores.
+- Lost or owed: an orphan file when the row write fails; their cleanup is the project's own job.
+- Cost of going back: low.
+
+## How it is enforced
+
+`LocalDiskFileStorageTests`, `S3FileStorageTests` against MinIO, the handler tests, and `storage.sh` (an upload reads back byte for byte).
+~~~~
+
+## 0028-secrets-at-rest.md
+
+~~~~markdown
+# 0028 — Secret values are encrypted at rest with envelope keys
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Some values (tax numbers, third-party keys) must be unreadable to anyone with the database or a backup.
+
+## Decision
+
+A secret property is mapped with `IsSecret`: an EF value converter around `ISecretProtector`. Each value gets a fresh AES-256-GCM data key, wrapped by the current key-encryption key from `Secrets:Keys`; the envelope names the key that wraps it, so rotation only adds a key. The domain sees plaintext.
+
+## What varies
+
+The keys, their rotation, which members are secret.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Database encryption at rest | Nothing in code | Anyone with a connection or a dump reads plaintext |
+| One key encrypting every value | Simpler | Rotation means re-encrypting everything at once |
+| **Envelope keys with the key id inside** | A converter and keys in a secret store | n/a |
+
+## Consequences
+
+- Gained: dumps and backups hold envelopes; keys rotate without downtime.
+- Lost or owed: secret columns cannot be searched or indexed by value; losing a key loses its values.
+- Cost of going back: high (values are only readable with the keys).
+
+## How it is enforced
+
+`EnvelopeSecretProtectorTests`, `SecretColumnTests`, and `secrets.sh` (the column never holds the plaintext; the API reads it back).
+~~~~
+
+## 0029-loop-guard.md
+
+~~~~markdown
+# 0029 — A chain of reactions longer than 16 commands stops
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Handlers that trigger each other, directly or through the outbox and the bus, would run forever and fill the logs, the queues and the database.
+
+## Decision
+
+The command context and every event carry the chain of command names that led to them. The pipeline appends the command's name and refuses to run a command whose chain is longer than `LoopGuardConstants.MaxChain` (16) with a 500 `loop_detected` that names the chain.
+
+## What varies
+
+The limit.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Nothing | Nothing | An accidental loop runs until someone notices |
+| A depth number only | Smaller | The error cannot say which handlers loop |
+| **The chain of names** | A list on the context and the event | n/a |
+
+## Consequences
+
+- Gained: a loop stops within a second and its log line names it.
+- Lost or owed: every event carries a short list of names.
+- Cost of going back: low.
+
+## How it is enforced
+
+`CommandPipelineTests`, `LoopGuardTests` (two handlers that trigger each other stop at the limit), and `loop-guard.sh`.
+~~~~
+
+## 0030-bounded-contexts.md
+
+~~~~markdown
+# 0030 — Bounded contexts are folders that talk through events and ids
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Groups of aggregates have stopped sharing a vocabulary. Without a boundary, one group reaches into another's types and the two can no longer change apart.
+
+## Decision
+
+Code lives under `Contexts/{Context}` in every project. A context refers to another only through the other's events and ids; a reaction to another context's event is a handler or consumer in the reacting context. One process and one database.
+
+## What varies
+
+The contexts and which aggregates belong to each.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| One flat model | Nothing | Everything couples to everything |
+| A service per context now | Deployments, network, data copies | The split is not proven yet |
+| **Folders with a rule test** | A path segment and a test | n/a |
+
+## Consequences
+
+- Gained: contexts change apart and can become services later by moving folders.
+- Lost or owed: a type two contexts both need is duplicated or becomes an event; wire names follow the new namespaces.
+- Cost of going back: medium.
+
+## How it is enforced
+
+`ContextRulesTests`, the review skill's body-reference check, and `contexts.sh`.
+~~~~
+
+## 0031-event-contracts-project.md
+
+~~~~markdown
+# 0031 — Queue events live in a contracts project other services reference
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: Another service consumes this service's events and must not depend on its domain.
+
+## Decision
+
+The events that leave the process (`IQueueEvent`) live in `{Name}.Contracts`, which references only `{Name}.Shared` and is packable; the domain references it and raises them. Wire names come from the namespace or are pinned with `[MessageName]`.
+
+## What varies
+
+Which events are published.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Consumers reference the domain | Nothing | They couple to every internal type |
+| Consumers copy the event types | No package | Copies drift silently |
+| **A contracts project** | A package to version | n/a |
+
+## Consequences
+
+- Gained: consumers build against the contracts alone; the published surface is visible in one project.
+- Lost or owed: renaming a contract member is a breaking change; the package must be versioned and published.
+- Cost of going back: low.
+
+## How it is enforced
+
+`ContractsRulesTests`, `EventContractTests` at `architecture`, and `events-project.sh` (a consumer builds against the contracts only).
 ~~~~

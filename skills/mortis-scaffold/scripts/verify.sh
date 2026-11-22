@@ -138,8 +138,14 @@ else
     case "$ADDONS" in *",api-conventions,"*) run_conformance api-conventions.sh ;; esac
     case "$ADDONS" in *",idempotent-commands,"*) run_conformance idempotency.sh ;; esac
     case "$ADDONS" in *",observability,"*) run_conformance observability.sh ;; esac
+    for addon in soft-delete caching storage secrets loop-guard; do
+      case "$ADDONS" in *",$addon,"*) run_conformance "$addon.sh" ;; esac
+    done
+    case "$ADDONS" in *",scheduler,"*) [ "$WORKER" != "none" ] && run_conformance scheduler.sh ;; esac
   fi
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
+  case "$ADDONS" in *",contexts,"*) run_conformance contexts.sh ;; esac
+  case "$ADDONS" in *",events-project,"*) run_conformance events-project.sh ;; esac
   export TESTING="$(get testing)"
   [ "$TESTING" != "unit" ] && run_conformance testing.sh
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then

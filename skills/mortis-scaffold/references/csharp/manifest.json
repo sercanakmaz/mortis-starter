@@ -290,6 +290,88 @@
    "unbuilt": true
   },
   {
+   "path": "docs/adr/0024-soft-delete.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0025-caching-reads.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0026-scheduled-jobs.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0027-file-storage-port.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0028-secrets-at-rest.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0029-loop-guard.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "loop-guard"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0030-bounded-contexts.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "contexts"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0031-event-contracts-project.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "addons": "events-project"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -622,6 +704,18 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Orders/AddOrderLineCommand.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -629,6 +723,30 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CancelEmptyOrdersCommand.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Orders/CancelEmptyOrdersJob.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Orders/CancelOrderLineCommand.cs",
@@ -732,6 +850,17 @@
    "unbuilt": true
   },
   {
+   "path": "src/{Name}.Application/Products/AttachProductImageCommand.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Products/CreateProductCommand.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -759,6 +888,17 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Products/DeleteProductCommand.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Products/GetProductCommand.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -767,6 +907,17 @@
     "queries": "commands"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/GetProductImageCommand.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Products/GetProductQuery.cs",
@@ -801,6 +952,39 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenRenamedEventHandler.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenStockDecreasedEventHandler.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenStockIncreasedEventHandler.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Application/Products/ListProductsQuery.cs",
    "page": "queries.md",
    "source": "snippets",
@@ -810,6 +994,17 @@
      "split",
      "read-models"
     ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Products/ProductCacheKeys.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "caching"
    },
    "kernel": false,
    "unbuilt": true
@@ -843,6 +1038,28 @@
     "languages.mode": "data"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/RestoreProductCommand.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Scheduling/IRecurringJob.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/{Name}.Application.csproj",
@@ -903,6 +1120,48 @@
    "page": "solution.md",
    "source": "data",
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Contracts/ContractsMarker.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "addons": "events-project"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Contracts/Orders/LineAdded.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "events-project"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Contracts/Orders/LineCancelled.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "events-project"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Contracts/{Name}.Contracts.csproj",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "addons": "events-project"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Categories/Category.cs",
@@ -1028,6 +1287,18 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/Events/TaxNumberSet.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerReader.cs",
@@ -1222,6 +1493,50 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/Deleted.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/ImageAttached.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/Renamed.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/Events/Restored.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/StockDecreased.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -1330,6 +1645,36 @@
    "source": "snippets",
    "when": {
     "auth": "jwt"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Caching/CachingModule.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Caching/CachingSettings.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Caching/HybridCacheService.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
    },
    "kernel": false,
    "unbuilt": true
@@ -2209,6 +2554,221 @@
    "unbuilt": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Scheduling/RecurringJobRegistry.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJob.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobConfiguration.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobRun.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobRunConfiguration.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobService.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/SchedulerModule.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/SchedulerService.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/SchedulerSettings.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Scheduling/SchedulerTicks.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Secrets/EnvelopeSecretProtector.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Secrets/SecretPropertyExtensions.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Secrets/SecretsConstants.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Secrets/SecretsModule.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Secrets/SecretsSettings.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Storage/LocalDiskFileStorage.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Storage/S3FileStorage.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Storage/StorageConstants.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Storage/StorageModule.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Storage/StorageSettings.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs",
    "page": "tenancy.md",
    "source": "snippets",
@@ -2292,6 +2852,16 @@
    "unbuilt": true
   },
   {
+   "path": "src/{Name}.Shared/Application/ICacheService.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/ICommand.cs",
    "page": "shared-application.md",
    "source": "snippets",
@@ -2314,6 +2884,16 @@
    "page": "shared-application.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/IFileStorage.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Application/IQuery.cs",
@@ -2342,6 +2922,17 @@
    "unbuilt": true
   },
   {
+   "path": "src/{Name}.Shared/Application/ISecretProtector.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/Languages.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -2352,6 +2943,16 @@
      "data"
     ]
    }
+  },
+  {
+   "path": "src/{Name}.Shared/Application/LoopGuardConstants.cs",
+   "page": "loop-guard.md",
+   "source": "snippets",
+   "when": {
+    "addons": "loop-guard"
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Application/Optional.cs",
@@ -2446,6 +3047,16 @@
    "unbuilt": true
   },
   {
+   "path": "src/{Name}.Shared/Application/StoredFile.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Diagnostics/Telemetry.cs",
    "page": "observability.md",
    "source": "snippets",
@@ -2513,6 +3124,16 @@
    }
   },
   {
+   "path": "src/{Name}.Shared/Domain/ISoftDeletable.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "addons": "soft-delete"
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Domain/LocalizedText.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -2520,6 +3141,16 @@
    "when": {
     "languages.mode": "data"
    }
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/MessageNameAttribute.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "addons": "events-project"
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Exceptions/BusinessRuleException.cs",
@@ -2550,6 +3181,16 @@
    "page": "shared-other.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Exceptions/LoopDetectedException.cs",
+   "page": "loop-guard.md",
+   "source": "snippets",
+   "when": {
+    "addons": "loop-guard"
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Exceptions/NotFoundException.cs",
@@ -2713,6 +3354,38 @@
    "unbuilt": true
   },
   {
+   "path": "test/{Name}.IntegrationTests/Persistence/SecretColumnTests.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Persistence/SoftDeleteTests.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
@@ -2722,6 +3395,35 @@
      "architecture"
     ],
     "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Scheduling/SchedulerClaimTests.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/Storage/S3FileStorageTests.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "addons": "storage"
    },
    "kernel": false,
    "unbuilt": true
@@ -2914,6 +3616,18 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Orders/CancelEmptyOrdersCommandHandlerTests.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Orders/CancelOrderLineCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -2969,6 +3683,17 @@
    "unbuilt": true
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/AttachProductImageCommandHandlerTests.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/CreateProductCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -3009,6 +3734,17 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/Products/DeleteProductCommandHandlerTests.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Application/Products/GetProductQueryHandlerTests.cs",
@@ -3067,6 +3803,17 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/RestoreProductCommandHandlerTests.cs",
+   "page": "soft-delete.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "addons": "soft-delete"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/QueryRulesTests.cs",
    "page": "queries.md",
    "source": "snippets",
@@ -3075,6 +3822,26 @@
      "split",
      "read-models"
     ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/ContextRulesTests.cs",
+   "page": "contexts.md",
+   "source": "snippets",
+   "when": {
+    "addons": "contexts"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Architecture/ContractsRulesTests.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "when": {
+    "addons": "events-project"
    },
    "kernel": false,
    "unbuilt": true
@@ -3212,6 +3979,16 @@
    "when": {
     "auth": "jwt"
    }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Caching/HybridCacheServiceTests.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Localization/MessageLocalizerTests.cs",
@@ -3384,6 +4161,38 @@
    "unbuilt": true
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Scheduling/SchedulerTicksTests.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Storage/LocalDiskFileStorageTests.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Tenancy/TenantCommandHandlerMiddlewareTests.cs",
    "page": "tenancy.md",
    "source": "snippets",
@@ -3453,6 +4262,16 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/Shared/Application/LoopGuardTests.cs",
+   "page": "loop-guard.md",
+   "source": "snippets",
+   "when": {
+    "addons": "loop-guard"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Shared/Application/OptionalTests.cs",
    "page": "api-conventions.md",
    "source": "snippets",
@@ -3494,6 +4313,16 @@
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Architecture/ContextReferences.cs",
+   "page": "contexts.md",
+   "source": "snippets",
+   "when": {
+    "addons": "contexts"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Architecture/EventContracts.cs",
@@ -3645,6 +4474,16 @@
    "unbuilt": true
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/CacheServiceBuilder.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "when": {
+    "addons": "caching"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs",
    "page": "testing.md",
    "source": "snippets",
@@ -3685,6 +4524,26 @@
    "page": "testing.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/FileStorageBuilder.cs",
+   "page": "storage.md",
+   "source": "snippets",
+   "when": {
+    "addons": "storage"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/PingPong.cs",
+   "page": "loop-guard.md",
+   "source": "snippets",
+   "when": {
+    "addons": "loop-guard"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Shared/Domain/EventHandlerExecutorBuilder.cs",
@@ -3836,6 +4695,70 @@
     "src/{Name}.Api/Program.cs",
     "src/{Name}.Api/appsettings.json",
     "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"
+   ],
+   "soft-delete": [
+    "src/{Name}.Domain/Aggregates/Products/Product.cs",
+    "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs",
+    "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs",
+    "src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs",
+    "src/{Name}.Api/Controllers/ProductsController.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/Persistence/AppDbContext.cs",
+    "src/{Name}.Infrastructure/Persistence/PersistenceConstants.cs"
+   ],
+   "caching": [
+    "src/{Name}.Application/Products/GetProductCommand.cs",
+    "src/{Name}.Domain/Aggregates/Products/Product.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/InfrastructureModule.cs",
+    "src/{Name}.Api/appsettings.json",
+    "docker-compose.yml"
+   ],
+   "scheduler": [
+    "src/{Name}.Worker/Program.cs",
+    "src/{Name}.Worker/appsettings.json",
+    "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs",
+    "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"
+   ],
+   "storage": [
+    "src/{Name}.Domain/Aggregates/Products/Product.cs",
+    "src/{Name}.Application/Products/ProductDto.cs",
+    "src/{Name}.Domain/Aggregates/Products/ProductConstants.cs",
+    "src/{Name}.Api/Controllers/ProductsController.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/InfrastructureModule.cs",
+    "src/{Name}.Api/appsettings.json",
+    "docker-compose.yml"
+   ],
+   "secrets": [
+    "src/{Name}.Domain/Aggregates/Customers/Customer.cs",
+    "src/{Name}.Application/Customers/CustomerDto.cs",
+    "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
+    "src/{Name}.Api/Controllers/CustomersController.cs",
+    "src/{Name}.Infrastructure/Persistence/AppDbContext.cs",
+    "src/{Name}.Application/ApplicationModule.cs",
+    "src/{Name}.Infrastructure/InfrastructureModule.cs",
+    "src/{Name}.Console/Program.cs",
+    "src/{Name}.Api/appsettings.json"
+   ],
+   "loop-guard": [
+    "src/{Name}.Shared/Application/CommandContext.cs",
+    "src/{Name}.Shared/Domain/EventBase.cs",
+    "src/{Name}.Shared/Domain/EventContext.cs",
+    "src/{Name}.Shared/Application/CommandPipeline.cs",
+    "src/{Name}.Infrastructure/Logging/LogFields.cs"
+   ],
+   "contexts": [
+    "every example file: a Contexts/{Context} segment in its path and namespace"
+   ],
+   "events-project": [
+    "{Name}.slnx",
+    "src/{Name}.Domain/{Name}.Domain.csproj",
+    "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageNames.cs",
+    "src/{Name}.Domain/Aggregates/Orders/Order.cs",
+    "docs/specs/messaging-wire-format.md"
    ],
    "testing": [
     "{Name}.slnx",

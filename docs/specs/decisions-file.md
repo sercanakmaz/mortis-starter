@@ -113,7 +113,7 @@ The validator refuses a file that breaks one; the interview never offers a combi
 | R11 | `language` must be available: the schema lists which languages have references. `go` is listed as not available until it has. |
 | R12 | `database` = `mongo` does not support `keys.default` = `int` or `long`. |
 | R13 | `tenancy.mode` = `interface` requires `auth` = `jwt`: the tenant is a claim of the signed-in caller. |
-| R14 | `addons` containing `idempotent-commands` with `database` = `mongo` is not offered yet; the scaffold skips that add-on and says so (a note, never an error). |
+| R14 | `addons` containing `idempotent-commands`, `scheduler` or `secrets` with `database` = `mongo` is not offered yet; the scaffold skips those add-ons and says so (a note, never an error). |
 
 ## Interview order
 

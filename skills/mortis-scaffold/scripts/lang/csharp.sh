@@ -31,10 +31,10 @@ case "$ACTION" in
     dotnet run --no-build --project "$PROJECT/src/$NAME.Console" -- "$@" ;;
   api-start)
     port="${4:?port}"
-    (cd "$PROJECT/src/$NAME.Api" && ASPNETCORE_URLS="http://localhost:$port" exec dotnet run --no-build >"$PROJECT/.mortis/api.log" 2>&1) &
+    (cd "$PROJECT/src/$NAME.Api" && ASPNETCORE_URLS="http://localhost:$port" exec dotnet run --no-build >"${MORTIS_LOG:-$PROJECT/.mortis/api.log}" 2>&1) &
     echo $! ;;
   worker-start)
-    (cd "$PROJECT/src/$NAME.Worker" && exec dotnet run --no-build >"$PROJECT/.mortis/worker.log" 2>&1) &
+    (cd "$PROJECT/src/$NAME.Worker" && exec dotnet run --no-build >"${MORTIS_LOG:-$PROJECT/.mortis/worker.log}" 2>&1) &
     echo $! ;;
   wire-name)
     printf '%s.Domain.Aggregates.%s.Events:%s\n' "$NAME" "${4:?plural}" "${5:?event}" ;;

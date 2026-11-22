@@ -33,7 +33,7 @@ Cheap checks that do run in this phase (no generation, no build):
 | 15 | [15-authentication.md](15-authentication.md) | 04 | medium |
 | 16 | [16-api-and-observability.md](16-api-and-observability.md) | 06 | medium |
 | 17 | [17-develop-and-review-skills.md](17-develop-and-review-skills.md) | 03 to 16 | large |
-| 18 | [18-advanced-addons.md](18-advanced-addons.md) | 08 | per add-on, on demand |
+| 18 | [18-advanced-addons.md](18-advanced-addons.md) | 08 | per add-on, on demand (the schema's eight written, decision 50) |
 
 Steps 04 to 16 each add the knowledge of one option. The words "the example", "generated" and "passes" in their "Behaviour to prove in phase 2" sections describe what phase 2 will check, not something to run now.
 

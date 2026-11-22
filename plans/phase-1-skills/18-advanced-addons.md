@@ -21,3 +21,13 @@ Needs: phase 1 step 08 for most. Optional: each add-on is its own small knowledg
 Process practices that are documents, not code, and can be added to the core's `docs/` at any time: an incident log, a "where else must this change" checklist, a runbook template, a performance guide ("measure first"), agent-rule files for other assistants generated from `AGENTS.md`.
 
 Left out unless asked: Kafka, event sourcing, gRPC, GraphQL, a database or schema per tenant.
+
+## Notes (done)
+
+Written unattended as knowledge only (decision 50), for the eight add-ons the schema already offers: `soft-delete`, `caching`, `scheduler`, `storage`, `secrets`, `loop-guard`, `contexts`, `events-project`. Each has a C# page, manifest entries, naming rows, an ADR (`0024` to `0031`), a conformance script wired by `addons`, and a section of `architecture/advanced-addons.md`.
+
+- `ordered-handlers` is already in the core: sync handlers have `Sequence`.
+- `feature-flags`, `email`, `realtime` and `sagas` are not in the schema and stay on demand, as this plan says; adding one means a schema value, a page and a check like the eight above.
+- Jobs run as a configured service user per job (no system user, decision 47).
+- Caching invalidates inside the command, before the commit; the window that leaves is bounded by the entry's lifetime and stated, not closed.
+- `scheduler` and `secrets` are PostgreSQL only for now (R14 notes them with MongoDB, with `idempotent-commands`).

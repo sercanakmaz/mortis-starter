@@ -18,19 +18,19 @@ The add-ons switched on.
 
 **Choose when:** deleted data must stay for audit or undo.
 
-**Costs:** a filter on every query; unique indexes must ignore deleted rows.
+**Costs:** a named filter on every query of a soft-deletable aggregate; natural unique keys become filtered indexes; raw SQL must add the filter by hand; a restore can collide with a reused key. Written but not generated yet (`architecture/advanced-addons.md`, decision 50).
 
 ### caching
 
 **Choose when:** reads are slow and repeated.
 
-**Costs:** invalidation by handlers; stale reads possible.
+**Costs:** one invalidation handler per event that changes a cached answer; a short window (the entry's lifetime, 60 s by default) in which a concurrent read can be stale; Redis for several processes. Written but not generated yet (decision 50).
 
 ### scheduler
 
 **Choose when:** recurring jobs run on a clock.
 
-**Costs:** a worker host and a lock so one instance runs a job.
+**Costs:** a worker host, two tables (runs per tick, one-shot jobs), a service user per job; PostgreSQL only. Written but not generated yet (decision 50).
 
 **Rules:** R9.
 
@@ -38,31 +38,31 @@ The add-ons switched on.
 
 **Choose when:** files are stored or served.
 
-**Costs:** a storage service and a port to keep behind an interface.
+**Costs:** a storage service (S3 or MinIO; local disk in development), size and type limits, orphan files to clean up. Written but not generated yet (decision 50).
 
 ### secrets
 
-**Choose when:** values such as keys are stored encrypted.
+**Choose when:** values such as tax numbers or third-party API keys must be unreadable in the database and its backups.
 
-**Costs:** a key to manage and rotate.
+**Costs:** keys to keep in a secret store and rotate; secret columns cannot be searched. Written but not generated yet (decision 50).
 
 ### loop-guard
 
 **Choose when:** handlers could trigger each other forever.
 
-**Costs:** a depth counter on the context; a failure when it is exceeded.
+**Costs:** a chain of command names on the context and on every event; a 500 `loop_detected` when it grows past 16. Written but not generated yet (decision 50).
 
 ### contexts
 
 **Choose when:** groups of aggregates stop sharing a vocabulary.
 
-**Costs:** folders per context and communication by events and ids only.
+**Costs:** a `Contexts/{Context}` segment in every path, communication by events and ids only, a rule test; wire names follow the new namespaces. Written but not generated yet (decision 50).
 
 ### events-project
 
 **Choose when:** another process needs the event contracts without the domain.
 
-**Costs:** a separate project to version.
+**Costs:** a `{Name}.Contracts` project (packable) to version; renaming a contract member breaks consumers. Written but not generated yet (decision 50).
 
 ### idempotent-commands
 

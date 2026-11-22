@@ -166,12 +166,111 @@ TESTING_FILES = {
     "test/{Name}.Tests/Architecture/event-contracts.json": {"testing": "architecture"},
     "test/{Name}.Tests/TestSupport/Architecture/EventContracts.cs": {"testing": "architecture"},
 }
+EX = {"example": "true"}
+PG = {"database": "postgres"}
+ADVANCED_ADDONS = {
+    "soft-delete.md": ({"addons": "soft-delete"}, "docs/adr/0024-soft-delete.md", {
+        "src/{Name}.Shared/Domain/ISoftDeletable.cs": ({}, True),
+        "src/{Name}.Domain/Aggregates/Products/Events/Deleted.cs": (EX, False),
+        "src/{Name}.Domain/Aggregates/Products/Events/Restored.cs": (EX, False),
+        "src/{Name}.Application/Products/DeleteProductCommand.cs": (EX, False),
+        "src/{Name}.Application/Products/RestoreProductCommand.cs": (EX, False),
+        "test/{Name}.Tests/Application/Products/DeleteProductCommandHandlerTests.cs": (EX, False),
+        "test/{Name}.Tests/Application/Products/RestoreProductCommandHandlerTests.cs": (EX, False),
+        "test/{Name}.IntegrationTests/Persistence/SoftDeleteTests.cs": ({**EX, **PG, "testing": ["integration", "architecture"]}, False),
+    }),
+    "caching.md": ({"addons": "caching"}, "docs/adr/0025-caching-reads.md", {
+        "src/{Name}.Shared/Application/ICacheService.cs": ({}, True),
+        "src/{Name}.Infrastructure/Caching/HybridCacheService.cs": ({}, False),
+        "src/{Name}.Infrastructure/Caching/CachingModule.cs": ({}, False),
+        "src/{Name}.Infrastructure/Caching/CachingSettings.cs": ({}, False),
+        "src/{Name}.Application/Products/ProductCacheKeys.cs": (EX, False),
+        "src/{Name}.Application/Products/InvalidateProductCacheWhenStockDecreasedEventHandler.cs": (EX, False),
+        "src/{Name}.Application/Products/InvalidateProductCacheWhenStockIncreasedEventHandler.cs": (EX, False),
+        "src/{Name}.Application/Products/InvalidateProductCacheWhenRenamedEventHandler.cs": (EX, False),
+        "src/{Name}.Domain/Aggregates/Products/Events/Renamed.cs": (EX, False),
+        "test/{Name}.Tests/Infrastructure/Caching/HybridCacheServiceTests.cs": ({}, False),
+        "test/{Name}.Tests/TestSupport/Shared/Application/CacheServiceBuilder.cs": ({}, False),
+    }),
+    "scheduler.md": ({"addons": "scheduler", "database": "postgres"}, "docs/adr/0026-scheduled-jobs.md", {
+        "src/{Name}.Application/Scheduling/IRecurringJob.cs": ({}, False),
+        "src/{Name}.Application/Orders/CancelEmptyOrdersJob.cs": (EX, False),
+        "src/{Name}.Application/Orders/CancelEmptyOrdersCommand.cs": (EX, False),
+        "src/{Name}.Infrastructure/Scheduling/SchedulerService.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/ScheduledJobService.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/SchedulerModule.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/SchedulerSettings.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/SchedulerTicks.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/RecurringJobRegistry.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/ScheduledJobRun.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/ScheduledJobRunConfiguration.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/ScheduledJob.cs": ({}, False),
+        "src/{Name}.Infrastructure/Scheduling/ScheduledJobConfiguration.cs": ({}, False),
+        "test/{Name}.Tests/Infrastructure/Scheduling/SchedulerTicksTests.cs": ({}, False),
+        "test/{Name}.Tests/Application/Orders/CancelEmptyOrdersCommandHandlerTests.cs": (EX, False),
+        "test/{Name}.IntegrationTests/Scheduling/SchedulerClaimTests.cs": ({"testing": ["integration", "architecture"]}, False),
+    }),
+    "storage.md": ({"addons": "storage"}, "docs/adr/0027-file-storage-port.md", {
+        "src/{Name}.Shared/Application/IFileStorage.cs": ({}, True),
+        "src/{Name}.Shared/Application/StoredFile.cs": ({}, True),
+        "src/{Name}.Infrastructure/Storage/S3FileStorage.cs": ({}, False),
+        "src/{Name}.Infrastructure/Storage/LocalDiskFileStorage.cs": ({}, False),
+        "src/{Name}.Infrastructure/Storage/StorageModule.cs": ({}, False),
+        "src/{Name}.Infrastructure/Storage/StorageSettings.cs": ({}, False),
+        "src/{Name}.Infrastructure/Storage/StorageConstants.cs": ({}, False),
+        "src/{Name}.Domain/Aggregates/Products/Events/ImageAttached.cs": (EX, False),
+        "src/{Name}.Application/Products/AttachProductImageCommand.cs": (EX, False),
+        "src/{Name}.Application/Products/GetProductImageCommand.cs": (EX, False),
+        "test/{Name}.Tests/Infrastructure/Storage/LocalDiskFileStorageTests.cs": ({}, False),
+        "test/{Name}.Tests/TestSupport/Shared/Application/FileStorageBuilder.cs": ({}, False),
+        "test/{Name}.Tests/Application/Products/AttachProductImageCommandHandlerTests.cs": (EX, False),
+        "test/{Name}.IntegrationTests/Storage/S3FileStorageTests.cs": ({"testing": ["integration", "architecture"]}, False),
+    }),
+    "secrets.md": ({"addons": "secrets", "database": "postgres"}, "docs/adr/0028-secrets-at-rest.md", {
+        "src/{Name}.Shared/Application/ISecretProtector.cs": ({}, True),
+        "src/{Name}.Infrastructure/Secrets/EnvelopeSecretProtector.cs": ({}, False),
+        "src/{Name}.Infrastructure/Secrets/SecretsModule.cs": ({}, False),
+        "src/{Name}.Infrastructure/Secrets/SecretsSettings.cs": ({}, False),
+        "src/{Name}.Infrastructure/Secrets/SecretsConstants.cs": ({}, False),
+        "src/{Name}.Infrastructure/Secrets/SecretPropertyExtensions.cs": ({}, False),
+        "src/{Name}.Domain/Aggregates/Customers/Events/TaxNumberSet.cs": (EX, False),
+        "src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs": (EX, False),
+        "test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs": ({}, False),
+        "test/{Name}.IntegrationTests/Persistence/SecretColumnTests.cs": ({**EX, "testing": ["integration", "architecture"]}, False),
+    }),
+    "loop-guard.md": ({"addons": "loop-guard"}, "docs/adr/0029-loop-guard.md", {
+        "src/{Name}.Shared/Application/LoopGuardConstants.cs": ({}, True),
+        "src/{Name}.Shared/Exceptions/LoopDetectedException.cs": ({}, True),
+        "test/{Name}.Tests/TestSupport/Shared/Application/PingPong.cs": ({}, False),
+        "test/{Name}.Tests/Shared/Application/LoopGuardTests.cs": ({}, False),
+    }),
+    "contexts.md": ({"addons": "contexts"}, "docs/adr/0030-bounded-contexts.md", {
+        "test/{Name}.Tests/Architecture/ContextRulesTests.cs": ({}, False),
+        "test/{Name}.Tests/TestSupport/Architecture/ContextReferences.cs": ({}, False),
+    }),
+    "events-project.md": ({"addons": "events-project"}, "docs/adr/0031-event-contracts-project.md", {
+        "src/{Name}.Shared/Domain/MessageNameAttribute.cs": ({}, True),
+        "src/{Name}.Contracts/{Name}.Contracts.csproj": ({}, False),
+        "src/{Name}.Contracts/ContractsMarker.cs": ({}, False),
+        "src/{Name}.Contracts/Orders/LineAdded.cs": (EX, False),
+        "src/{Name}.Contracts/Orders/LineCancelled.cs": (EX, False),
+        "test/{Name}.Tests/Architecture/ContractsRulesTests.cs": ({}, False),
+    }),
+}
 OPTION_CHANGES = {
     "api-conventions": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/Middlewares/ApiConstants.cs",
                         "src/{Name}.Domain/Aggregates/Customers/Customer.cs", "src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs", "src/{Name}.Application/Customers/CustomerDto.cs",
                         "src/{Name}.Application/Customers/CreateCustomerCommand.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs",
                         "src/{Name}.Api/Controllers/CustomersController.cs"],
     "idempotent-commands": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
+    "soft-delete": ["src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs", "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs", "src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs", "src/{Name}.Api/Controllers/ProductsController.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs", "src/{Name}.Infrastructure/Persistence/PersistenceConstants.cs"],
+    "caching": ["src/{Name}.Application/Products/GetProductCommand.cs", "src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Api/appsettings.json", "docker-compose.yml"],
+    "scheduler": ["src/{Name}.Worker/Program.cs", "src/{Name}.Worker/appsettings.json", "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs", "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
+    "storage": ["src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Application/Products/ProductDto.cs", "src/{Name}.Domain/Aggregates/Products/ProductConstants.cs", "src/{Name}.Api/Controllers/ProductsController.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Api/appsettings.json", "docker-compose.yml"],
+    "secrets": ["src/{Name}.Domain/Aggregates/Customers/Customer.cs", "src/{Name}.Application/Customers/CustomerDto.cs", "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs", "src/{Name}.Api/Controllers/CustomersController.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Console/Program.cs", "src/{Name}.Api/appsettings.json"],
+    "loop-guard": ["src/{Name}.Shared/Application/CommandContext.cs", "src/{Name}.Shared/Domain/EventBase.cs", "src/{Name}.Shared/Domain/EventContext.cs", "src/{Name}.Shared/Application/CommandPipeline.cs", "src/{Name}.Infrastructure/Logging/LogFields.cs"],
+    "contexts": ["every example file: a Contexts/{Context} segment in its path and namespace"],
+    "events-project": ["{Name}.slnx", "src/{Name}.Domain/{Name}.Domain.csproj", "src/{Name}.Infrastructure/Messaging/RabbitMq/MessageNames.cs", "src/{Name}.Domain/Aggregates/Orders/Order.cs", "docs/specs/messaging-wire-format.md"],
     "testing": ["{Name}.slnx", "Directory.Packages.props", "test/{Name}.Tests/{Name}.Tests.csproj"],
     "observability": ["src/{Name}.Api/Program.cs", "src/{Name}.Worker/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Worker/appsettings.json",
                       "src/{Name}.Shared/Application/CommandPipeline.cs", "src/{Name}.Shared/Domain/EventHandlerExecutor.cs", "src/{Name}.Infrastructure/Messaging/EventPublisher.cs",
@@ -304,6 +403,10 @@ out.append({"path": "docs/adr/0022-health-traces-and-metrics.md", "page": "proje
 for path, when in TESTING_FILES.items():
     out.append({"path": path, "page": "testing-levels.md", "source": "snippets", "when": when, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0023-testing-levels.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"testing": HANDLERS_UP}, "kernel": False, "unbuilt": True})
+for page, (base, adr, files) in ADVANCED_ADDONS.items():
+    for path, (when, kernel) in files.items():
+        out.append({"path": path, "page": page, "source": "snippets", "when": {**when, **base}, "kernel": kernel, "unbuilt": True})
+    out.append({"path": adr, "page": "project-docs-adr.md", "source": "snippets", "when": base, "kernel": False, "unbuilt": True})
 for path, when in PERMISSION_FILES.items():
     out.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
 out.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})

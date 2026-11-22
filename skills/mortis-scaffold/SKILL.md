@@ -97,6 +97,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/infrastructure-mongo.md` | steps 6 and 7, when `database` is `mongo` (not built yet: hand-written snippets) |
 | `references/csharp/permissions.md` | steps 6 and 7, when `auth` is `jwt`, after asking the developer which claim carries permissions and in what form (not built yet: hand-written snippets) |
 | `references/csharp/api-conventions.md`, `idempotency.md`, `observability.md` | steps 6 and 7, when `addons` contains `api-conventions`, `idempotent-commands` (with PostgreSQL) or `observability` (not built yet: hand-written snippets) |
+| `references/csharp/soft-delete.md`, `caching.md`, `scheduler.md`, `storage.md`, `secrets.md`, `loop-guard.md`, `contexts.md`, `events-project.md` | steps 6 and 7, when `addons` contains the matching add-on (not built yet: hand-written snippets; R14 for MongoDB) |
 | `references/csharp/queries.md`, `read-models.md` | steps 6 and 7, when `queries` is not `commands` (not built yet: hand-written snippets) |
 | `references/csharp/languages.md` | steps 3, 6, 7 and 10, when `languages.mode` is not `none` |
 | `references/csharp/adopting.md` | the project already exists |
