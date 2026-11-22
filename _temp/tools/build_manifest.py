@@ -56,6 +56,50 @@ MONGO_FILES = {
     "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoRepositoryRulesTests.cs": ({}, False),
     "test/{Name}.Tests/TestSupport/SolutionFolder.cs": ({}, False),
 }
+QUERY_FILES = {
+    "src/{Name}.Shared/Application/IQuery.cs": ({}, True),
+    "src/{Name}.Shared/Application/BaseQueryHandler.cs": ({}, True),
+    "src/{Name}.Shared/Application/IQueryDispatcher.cs": ({}, True),
+    "src/{Name}.Shared/Application/QueryDispatcher.cs": ({}, True),
+    "src/{Name}.Shared/Application/QueryHandlerExtensions.cs": ({}, True),
+    "src/{Name}.Shared/Application/PageRequest.cs": ({}, True),
+    "src/{Name}.Shared/Application/PagedResult.cs": ({}, True),
+    "src/{Name}.Domain/Aggregates/Products/IProductReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Products/ProductView.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Orders/IOrderReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Orders/OrderView.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Customers/ICustomerReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Customers/CustomerView.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Categories/ICategoryReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Categories/CategoryView.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Products/GetProductQuery.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Products/ListProductsQuery.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Orders/GetOrderQuery.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Customers/GetCustomerQuery.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Categories/GetCategoryQuery.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/Persistence/Products/ProductReader.cs": ({"example": "true", "database": "postgres"}, False),
+    "src/{Name}.Infrastructure/Persistence/Orders/OrderReader.cs": ({"example": "true", "database": "postgres"}, False),
+    "src/{Name}.Infrastructure/Persistence/Customers/CustomerReader.cs": ({"example": "true", "database": "postgres"}, False),
+    "src/{Name}.Infrastructure/Persistence/Categories/CategoryReader.cs": ({"example": "true", "database": "postgres"}, False),
+    "test/{Name}.Tests/Application/QueryRulesTests.cs": ({}, False),
+    "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductReaderTests.cs": ({"example": "true", "database": "postgres"}, False),
+    "test/{Name}.Tests/Application/Products/GetProductQueryHandlerTests.cs": ({"example": "true"}, False),
+    "test/{Name}.Tests/Application/Products/ListProductsQueryHandlerTests.cs": ({"example": "true"}, False),
+    "test/{Name}.Tests/TestSupport/Domain/Products/ProductReaderBuilder.cs": ({"example": "true"}, False),
+}
+READ_MODEL_FILES = {
+    "src/{Name}.Infrastructure/ReadModels/ReadModelModule.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummary.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryConfiguration.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryProjection.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryRefresh.cs": ({"example": "true"}, False),
+    "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Orders/IOrderSummaryReader.cs": ({"example": "true"}, False),
+    "src/{Name}.Domain/Aggregates/Orders/OrderSummaryView.cs": ({"example": "true"}, False),
+    "src/{Name}.Application/Orders/ListOrderSummariesQuery.cs": ({"example": "true"}, False),
+    "test/{Name}.Tests/Infrastructure/ReadModels/ReadModelModuleTests.cs": ({"example": "true"}, False),
+}
+GET_COMMAND_FILES = [f"src/Boilerplate.Application/{folder}/Get{name}Command.cs" for folder, name in (("Products", "Product"), ("Orders", "Order"), ("Customers", "Customer"), ("Categories", "Category"))]
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
 RABBITMQ_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/RabbitMq/", "test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/")
@@ -152,14 +196,21 @@ for f in files:
         entry["when"] = OPTION_FILES[f]
         entry["kernel"] = False
         entry["page"] = "event-consumers.md" if f.startswith(EVENT_CONSUMER_FILES) else OPTION_PAGES.get(f, "correlation.md" if "Correlation" in f else "outbox.md" if "Worker" in f else "events-inprocess.md" if ("EventPublisher" in f or "MessagingConstants" in f) else "failures.md")
+    if f in GET_COMMAND_FILES:
+        entry["when"] = {**entry.get("when", {}), "queries": "commands"}
     if f.startswith(POSTGRES_PREFIXES) and f not in POSTGRES_EXCEPTIONS:
         entry["when"] = {**entry.get("when", {}), "database": "postgres"}
     in_all = all(f in present[preset] for preset in PRESETS)
     assert in_all or "when" in entry and set(entry["when"]) != {"example"}, f"{f} is in only some variants and has no option"
     out.append(entry)
 for path, (when, kernel) in MONGO_FILES.items():
-    out.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel})
-out.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False})
+    out.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel, "unbuilt": True})
+for path, (when, kernel) in QUERY_FILES.items():
+    out.append({"path": path, "page": "queries.md", "source": "snippets", "when": {**when, "queries": ["split", "read-models"]}, "kernel": kernel, "unbuilt": True})
+for path, (when, kernel) in READ_MODEL_FILES.items():
+    out.append({"path": path, "page": "read-models.md", "source": "snippets", "when": {**when, "queries": "read-models", "database": "postgres"}, "kernel": kernel, "unbuilt": True})
+out.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False, "unbuilt": True})
+out.append({"path": "docs/adr/0018-queries-and-read-models.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"queries": ["split", "read-models"]}, "kernel": False, "unbuilt": True})
 initial_when = [{"example": "true", "database": "postgres"}, {"events.outbox": OUTBOX, "database": "postgres"}]
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
@@ -189,6 +240,11 @@ manifest={
 old = json.load(open(TARGET))
 manifest["aggregate_files"] = old["aggregate_files"]
 manifest["aggregate_files"]["folders"].setdefault("src/{Name}.Infrastructure/Persistence/Mongo/{Plural}", ["{Aggregate}Repository.cs"])
+for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
+    existing = manifest["aggregate_files"]["folders"][folder]
+    for pattern in patterns:
+        if pattern not in existing:
+            existing.insert(len(existing) - 1 if existing and existing[-1] == "*.cs" else len(existing), pattern)
 manifest["always_allowed"] = old["always_allowed"]
 json.dump(manifest, open(TARGET, "w"), indent=1)
 print(len(out), "entries")

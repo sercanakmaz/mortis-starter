@@ -10,7 +10,7 @@ The markdown files a generated project gets. They are data: write each one exact
 | `README.md` | below |
 | `plans/README.md` | below |
 | `docs/architecture.md` | `project-docs-architecture.md` |
-| `docs/adr/0000` to `0008`, `0010`, `0012`, `0009` with the correlation add-on, `0011` with an outbox, `0013` with RabbitMQ, `0014` with `auth` = `jwt`, `0015` with tenancy, `0016` with translated messages or data, `0017` with MongoDB | `project-docs-adr.md` |
+| `docs/adr/0000` to `0008`, `0010`, `0012`, `0009` with the correlation add-on, `0011` with an outbox, `0013` with RabbitMQ, `0014` with `auth` = `jwt`, `0015` with tenancy, `0016` with translated messages or data, `0017` with MongoDB, `0018` with a query side | `project-docs-adr.md` |
 
 Without the example, remove from `README.md` and `AGENTS.md` §5 the lines that run `CreateProduct`; keep everything else.
 

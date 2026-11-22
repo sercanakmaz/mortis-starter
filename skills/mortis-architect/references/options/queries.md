@@ -18,13 +18,13 @@ How a read reaches its data.
 
 **Choose when:** list and report screens that need their own shape.
 
-**Costs:** a second set of types and a second kind of handler.
+**Costs:** a second set of types and a second kind of handler; a reader port and view records per aggregate that is read (`architecture/queries.md`). The C# pages are written but not built or run yet.
 
 ### read-models
 
 **Choose when:** heavy reads, separate scaling, denormalised views.
 
-**Costs:** a projection fed by events, eventual consistency, and an outbox to feed it.
+**Costs:** a table per screen, refreshed by sync handlers in the same transaction (or by event consumers, eventually consistent, with an outbox), and a rebuild command. Includes everything `split` does.
 
 **Rules:** R10.
 

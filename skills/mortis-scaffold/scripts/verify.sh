@@ -86,7 +86,7 @@ else
     PASSED=$before_passed; FAILED=$before_failed
     if [ "$result" = 0 ]; then pass "conformance: $1"; else fail "conformance: $1" "see the lines above"; fi
   }
-  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)" LANGUAGES="$(get languages.mode)"
+  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)" LANGUAGES="$(get languages.mode)" QUERIES="$(get queries)"
   # With auth = jwt the checks call the API with a development token; with tenancy that token, and every Console run, belongs to TENANT_A.
   if [ "$DRY_RUN" = 0 ] && [ "$AUTH" = "jwt" ]; then
     export TENANT_A="$(new_id)" TENANT_B="$(new_id)"
@@ -134,6 +134,7 @@ else
     [ "$AUTH" = "jwt" ] && run_conformance auth.sh
     [ "$TENANCY" = "interface" ] && run_conformance tenancy.sh
     [ "$LANGUAGES" != "none" ] && run_conformance languages.sh
+    run_conformance queries.sh
   fi
   if [ -n "${WORKER_PID:-}" ]; then kill "$WORKER_PID" 2>/dev/null; wait "$WORKER_PID" 2>/dev/null; fi
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ] && { [ "$DRY_RUN" = 1 ] || psql -d postgres -tAc "select 1" >/dev/null 2>&1; }; then

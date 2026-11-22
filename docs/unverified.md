@@ -25,5 +25,7 @@ What phase 1 has not proven. Since decision 37 every page's code is compiled, te
 | 13 | `conformance/database-mongo.sh` and its wiring in `verify.sh` | Never run; needs a replica set and `mongosh` |
 | 13 | `shape-mongo.txt` lines in `kernel-shape.txt`; the `database` gates in `manifest.json`; ADR `0017` | No MongoDB project generated yet |
 | 13 | Assumptions to check first: `AutoMap` finds the Domain's non-public constructors and `protected set` properties; a duplicate inside a transaction surfaces as `MongoCommandException` 11000; the claim's write conflict carries the `TransientTransactionError` label | From the driver's documentation, not from a run |
+| 14 | `queries.md` and `read-models.md`: every snippet (query types, dispatcher, readers, the example's queries, the read model, its projection SQL and handlers, the rebuild, the tests) | Written by hand; never compiled |
+| 14 | `conformance/queries.sh` for `split` and `read-models`; ADR `0018`; `shape-queries.txt` | Never run; the presets that choose them still build `commands` |
 | 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
 | 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

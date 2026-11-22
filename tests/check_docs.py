@@ -47,7 +47,7 @@ def manifest():
 
 
 def built_nowhere(entry):
-    return entry.get("when", {}).get("database") == "mongo"
+    return entry.get("unbuilt", False)
 
 
 def check_manifest_covers_template():

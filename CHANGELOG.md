@@ -29,6 +29,8 @@ All notable changes to the skills and the template. Newest first.
 
 - Phase 1 step 07: three error levels with one body and fixed statuses (decision 32); `ErrorReference` for unexpected failures; `ErrorCatalogue` at `catalogued`; a `Failure` block in layer 1; ADR 0010.
 
+- Phase 1 step 14 (decision 46), knowledge only: the query side. Pages `queries.md` (queries with the caller's context, reader ports and view records in Domain, typed list queries, `PagedResult`) and `read-models.md` (`OrderSummary` refreshed by sync handlers, `rebuild-order-summary`), layer 1 `architecture/queries.md`, ADR 0018, conformance `queries.sh` (its `commands` branch runs now); `"unbuilt"` manifest entries.
+
 - Phase 1 step 13 (decision 45), knowledge only: MongoDB as the database. Page `infrastructure-mongo.md` with hand-written snippets (repository with a version element, session unit of work on a replica set, outbox collection, indexes at start in Development and by `ensure-indexes`), layer 1 `architecture/documents.md`, ADR 0017, conformance `database-mongo.sh` (not run yet); EF Core files gated by `database` = `postgres` in the manifest and the kernel shape.
 
 - Phase 1 step 12 (decision 44): languages in the advanced variant: the language from the token's claim then `Accept-Language`, failures answered from `messages.<language>.json` by code and parameters, `Product.Name` as a `LocalizedText` in jsonb with `RenameProductCommand`, `Language` on every log line. Page `languages.md`, layer 1 `architecture/languages.md`, ADR 0016, conformance `languages.sh`.

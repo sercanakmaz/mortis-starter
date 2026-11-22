@@ -49,3 +49,13 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 GraphQL, OData, a separate read database, full-text search.
+
+## Notes (done)
+
+Knowledge only, as planned (decision 46), though two presets choose these values; the variants keep `commands` until phase 2.
+
+- Pages `queries.md` and `read-models.md`, layer 1 `architecture/queries.md`, ADR `0018` (the plan's `0010` was taken), `queries.sh`, `shape-queries.txt`; every piece is a line in `docs/unverified.md`.
+- Changed from the plan: the reader port is in Domain with view records, because Infrastructure must not reference Application; the list's total is a second count statement, so "one SQL statement" became "one statement for the page"; read models live in Infrastructure with their own sync handlers that write only the read model.
+- `queries.sh` checks with `commands` that no query type exists; that branch runs today (lean 14, standard 16).
+- Manifest entries no variant builds now carry `"unbuilt": true` (MongoDB's too); `build_shape.py` appends every `shape-*.txt`.
+

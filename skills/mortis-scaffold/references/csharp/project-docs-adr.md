@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -663,4 +663,41 @@ Which fields are indexed, and how a document's shape changes over time.
 ## How it is enforced
 
 `MongoClassMapsTests` (standard UUIDs, embedded lines), `MongoRepositoryRulesTests` (every query through the repository base), and `database-mongo.sh` (the example's flows read back from the documents, rollback, concurrent updates, duplicates).
+~~~~
+
+## 0018-queries-and-read-models.md
+
+~~~~markdown
+# 0018 — Reads have their own types; screens that need it get a read model
+
+- Status: accepted
+- Date: <the date the project was generated>
+- Context: List screens need paging, filters and sorting, and loading aggregates to map them is slow and couples reads to the write model. Some screens need data from several aggregates at once.
+
+## Decision
+
+A read is a query: `IQuery<TResult>` with the caller's context, a `BaseQueryHandler` with an optional validator, and an `IQueryDispatcher` the hosts use. A query handler reads through a reader port declared next to the repository in Domain, implemented in Infrastructure as a projection to a view record: no tracking, filter, sort and page in the database. List queries have typed fields and a closed sort set; `PageRequest` and `PagedResult<T>` are in Shared. With read models, a table per screen (the example's `order_summaries`) is refreshed by sync event handlers inside the command's transaction, each recomputing the whole row, and a Console command rebuilds it.
+
+## What varies
+
+Which screens need a list query, and which need a read model.
+
+## Options
+
+| Option | Cost | Why it was not chosen |
+|---|---|---|
+| Reads as commands that load aggregates | Nothing new | List screens load whole aggregates; no paging in the database |
+| A generic filter language | A parser and a closed operator set | Typed fields per query are simpler to validate and index |
+| Read models updated by event consumers | An outbox, eventual consistency | The example's screen needs to match the write at once |
+| **Queries with reader ports; read models refreshed by sync handlers** | Query types, readers, a table and its handlers | n/a |
+
+## Consequences
+
+- Gained: lists page and filter in SQL; reads never touch the unit of work; a read model is consistent with the write and can be rebuilt.
+- Lost or owed: a reader and view records per aggregate that is read; data copied into a read model from another aggregate is refreshed only by its own aggregate's events.
+- Cost of going back: low.
+
+## How it is enforced
+
+`QueryRulesTests` (no query handler depends on the unit of work, a repository or a domain service), `ProductReaderTests` (the page's SQL), `ReadModelModuleTests`, and `queries.sh`.
 ~~~~

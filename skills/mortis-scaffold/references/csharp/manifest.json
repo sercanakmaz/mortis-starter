@@ -218,7 +218,21 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "docs/adr/0018-queries-and-read-models.md",
+   "page": "project-docs-adr.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "docs/architecture.md",
@@ -390,9 +404,24 @@
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "queries": "commands"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Categories/GetCategoryQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Customers/BlockCustomerCommand.cs",
@@ -426,9 +455,24 @@
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "queries": "commands"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Customers/GetCustomerQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Customers/RegisterCompletedOrderCommand.cs",
@@ -507,9 +551,36 @@
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "queries": "commands"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Orders/GetOrderQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Application/Orders/ListOrderSummariesQuery.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Orders/OrderDto.cs",
@@ -552,9 +623,24 @@
    "page": "worked-slice.md",
    "source": "snippets",
    "when": {
-    "example": "true"
+    "example": "true",
+    "queries": "commands"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/GetProductQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Products/IncreaseProductStockCommand.cs",
@@ -573,6 +659,20 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/ListProductsQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Application/Products/ProductDto.cs",
@@ -666,6 +766,20 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Categories/CategoryView.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Categories/Events/Created.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -673,6 +787,20 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Categories/ICategoryReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Categories/ICategoryRepository.cs",
@@ -702,6 +830,20 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Customers/CustomerView.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/Blocked.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -718,6 +860,20 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerRepository.cs",
@@ -774,6 +930,20 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Orders/IOrderReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -781,6 +951,18 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/IOrderSummaryReader.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/Money.cs",
@@ -837,6 +1019,32 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderSummaryView.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Orders/OrderView.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/Created.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -864,6 +1072,20 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Domain/Aggregates/Products/IProductReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs",
    "page": "worked-slice.md",
    "source": "snippets",
@@ -889,6 +1111,20 @@
     "example": "true"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Domain/Aggregates/Products/ProductView.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Domain/DomainModule.cs",
@@ -1190,6 +1426,21 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryRepository.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
@@ -1217,6 +1468,21 @@
     "database": "postgres"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerRepository.cs",
@@ -1336,7 +1602,8 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/ConcurrencyConflictException.cs",
@@ -1345,7 +1612,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerRepository.cs",
@@ -1355,7 +1623,8 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoClassMaps.cs",
@@ -1364,7 +1633,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoExceptionHandler.cs",
@@ -1373,7 +1643,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexes.cs",
@@ -1382,7 +1653,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexesService.cs",
@@ -1391,7 +1663,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoModule.cs",
@@ -1400,7 +1673,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoRepository.cs",
@@ -1409,7 +1683,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoUnitOfWork.cs",
@@ -1418,7 +1693,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderRepository.cs",
@@ -1428,7 +1704,8 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductRepository.cs",
@@ -1438,7 +1715,8 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderConfiguration.cs",
@@ -1449,6 +1727,21 @@
     "database": "postgres"
    },
    "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs",
@@ -1486,6 +1779,21 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Infrastructure/Persistence/Products/ProductReader.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs",
    "page": "infrastructure-postgres.md",
    "source": "snippets",
@@ -1503,6 +1811,78 @@
    "when": {
     "database": "postgres"
    }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummary.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryConfiguration.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryProjection.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryReader.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryRefresh.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/ReadModels/ReadModelModule.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs",
@@ -1533,6 +1913,19 @@
    "page": "shared-application.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/BaseQueryHandler.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Application/CommandContext.cs",
@@ -1589,6 +1982,32 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Shared/Application/IQuery.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/IQueryDispatcher.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
    "path": "src/{Name}.Shared/Application/Languages.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -1599,6 +2018,58 @@
      "data"
     ]
    }
+  },
+  {
+   "path": "src/{Name}.Shared/Application/PageRequest.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/PagedResult.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/QueryDispatcher.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
+  },
+  {
+   "path": "src/{Name}.Shared/Application/QueryHandlerExtensions.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": true,
+   "unbuilt": true
   },
   {
    "path": "src/{Name}.Shared/Domain/AggregateRoot.cs",
@@ -1934,6 +2405,20 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/GetProductQueryHandlerTests.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -1952,6 +2437,20 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/ListProductsQueryHandlerTests.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/RenameProductCommandHandlerTests.cs",
    "page": "languages.md",
    "source": "snippets",
@@ -1960,6 +2459,19 @@
     "languages.mode": "data"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Application/QueryRulesTests.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs",
@@ -2129,7 +2641,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoRepositoryRulesTests.cs",
@@ -2138,7 +2651,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderConfigurationTests.cs",
@@ -2171,6 +2685,21 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductReaderTests.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "database": "postgres",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductRepositoryTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -2179,6 +2708,18 @@
     "database": "postgres"
    },
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/ReadModels/ReadModelModuleTests.cs",
+   "page": "read-models.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": "read-models",
+    "database": "postgres"
+   },
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Tenancy/TenantCommandHandlerMiddlewareTests.cs",
@@ -2331,6 +2872,20 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/Domain/Products/ProductReaderBuilder.cs",
+   "page": "queries.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ]
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
    "path": "test/{Name}.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -2469,7 +3024,8 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false
+   "kernel": false,
+   "unbuilt": true
   },
   {
    "path": "test/{Name}.Tests/{Name}.Tests.csproj",
@@ -2489,17 +3045,21 @@
   "folders": {
    "src/{Name}.Domain/Aggregates/{Plural}": [
     "*.cs",
-    "Events/*.cs"
+    "Events/*.cs",
+    "I{Aggregate}Reader.cs",
+    "*View.cs"
    ],
    "src/{Name}.Application/{Plural}": [
     "{Aggregate}Dto.cs",
     "*Command.cs",
     "*When*EventHandler.cs",
-    "*When*EventConsumer.cs"
+    "*When*EventConsumer.cs",
+    "*Query.cs"
    ],
    "src/{Name}.Infrastructure/Persistence/{Plural}": [
     "{Aggregate}Configuration.cs",
-    "{Aggregate}Repository.cs"
+    "{Aggregate}Repository.cs",
+    "{Aggregate}Reader.cs"
    ],
    "src/{Name}.Api/Controllers": [
     "{Plural}Controller.cs"
@@ -2510,15 +3070,18 @@
    "test/{Name}.Tests/Application/{Plural}": [
     "*CommandHandlerTests.cs",
     "*EventHandlerTests.cs",
-    "*EventConsumerTests.cs"
+    "*EventConsumerTests.cs",
+    "*QueryHandlerTests.cs"
    ],
    "test/{Name}.Tests/Infrastructure/Persistence/{Plural}": [
     "{Aggregate}ConfigurationTests.cs",
-    "{Aggregate}RepositoryTests.cs"
+    "{Aggregate}RepositoryTests.cs",
+    "{Aggregate}ReaderTests.cs"
    ],
    "test/{Name}.Tests/TestSupport/Domain/{Plural}": [
     "Fake*.cs",
-    "{Aggregate}RepositoryBuilder.cs"
+    "{Aggregate}RepositoryBuilder.cs",
+    "{Aggregate}ReaderBuilder.cs"
    ],
    "src/{Name}.Infrastructure/Persistence/Mongo/{Plural}": [
     "{Aggregate}Repository.cs"
