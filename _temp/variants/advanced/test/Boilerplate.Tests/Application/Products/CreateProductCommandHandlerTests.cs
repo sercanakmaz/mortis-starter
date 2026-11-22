@@ -4,6 +4,7 @@ using Boilerplate.Tests.TestSupport.Domain.Products;
 using Boilerplate.Domain.Aggregates.Products;
 using Boilerplate.Application.Products;
 using Boilerplate.Shared.Persistence;
+using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Exceptions;
 using Moq;
 
@@ -41,5 +42,17 @@ public class CreateProductCommandHandlerTests
 
         Assert.Equal([nameof(CreateProductCommand.Stock)], exception.Errors.Keys);
         productRepositoryBuilder.BuildMock().Verify(productRepository => productRepository.CreateAsync(It.IsAny<Product>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Should_StoreTheNameUnderTheCallersLanguage()
+    {
+        Product createdProduct = null;
+        var productRepository = ProductRepositoryBuilder.Create().WithCreateAsync(product => createdProduct = product).Build();
+        var commandHandler = new CreateProductCommandHandler(productRepository, CommandPipelineBuilder<CreateProductCommand>.Create().WithValidator(new CreateProductCommandValidator()).Build());
+
+        await commandHandler.Handle(new CreateProductCommand { Sku = "SKU-1", Name = "Cıvata", Stock = 1, Context = new CommandContext { Language = "tr" } });
+
+        Assert.Equal(["tr"], createdProduct.Name.Texts.Keys);
     }
 }

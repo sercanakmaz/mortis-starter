@@ -22,6 +22,7 @@ OPTION_FILES = {
     "docs/adr/0013-own-bus-compatible-with-masstransit.md": {"events.transport": "rabbitmq"},
     "docs/adr/0014-bearer-tokens-fill-the-context.md": {"auth": "jwt"},
     "docs/adr/0015-multi-tenancy-by-interface.md": {"tenancy.mode": "interface"},
+    "docs/adr/0016-languages-of-messages-and-data.md": {"languages.mode": ["messages", "data"]},
     "src/Boilerplate.Worker/Boilerplate.Worker.csproj": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/Program.cs": {"hosts.worker": "separate"},
     "src/Boilerplate.Worker/appsettings.json": {"hosts.worker": "separate"},
@@ -32,6 +33,10 @@ AUTH_PREFIXES = ("src/Boilerplate.Infrastructure/Authentication/", "src/Boilerpl
                  "test/Boilerplate.Tests/Infrastructure/Authentication/", "test/Boilerplate.Tests/TestSupport/Infrastructure/Authentication/", "test/Boilerplate.Tests/Console/ConsoleTokensTests.cs")
 TENANCY_PREFIXES = ("src/Boilerplate.Shared/Domain/IMultiTenant.cs", "src/Boilerplate.Shared/Exceptions/TenantRequiredException.cs", "src/Boilerplate.Infrastructure/Tenancy/",
                     "test/Boilerplate.Tests/Infrastructure/Tenancy/", "test/Boilerplate.Tests/TestSupport/Infrastructure/Tenancy/", "test/Boilerplate.Tests/Infrastructure/Persistence/AppDbContextTests.cs")
+MESSAGES_PREFIXES = ("src/Boilerplate.Shared/Application/Languages.cs", "src/Boilerplate.Infrastructure/Localization/", "src/Boilerplate.Api/Middlewares/RequestLanguage.cs",
+                     "test/Boilerplate.Tests/Infrastructure/Localization/", "test/Boilerplate.Tests/Shared/Application/LanguagesTests.cs")
+DATA_PREFIXES = ("src/Boilerplate.Shared/Domain/LocalizedText.cs", "src/Boilerplate.Infrastructure/Persistence/LocalizedTextConversion.cs", "test/Boilerplate.Tests/Shared/Domain/LocalizedTextTests.cs")
+DATA_EXAMPLE_FILES = ("src/Boilerplate.Application/Products/RenameProductCommand.cs", "test/Boilerplate.Tests/Application/Products/RenameProductCommandHandlerTests.cs")
 EVENT_CONSUMER_FILES = ("src/Boilerplate.Infrastructure/Messaging/EventConsumer", "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumer")
 OUTBOX_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/Outbox/", "test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/")
 RABBITMQ_PREFIXES = ("src/Boilerplate.Infrastructure/Messaging/RabbitMq/", "test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/")
@@ -39,7 +44,8 @@ OPTION_PAGES = {"src/Boilerplate.Infrastructure/Persistence/DatabaseExceptionHan
                 "docs/adr/0011-outbox-and-publishing-models.md": "project-docs-adr.md",
                 "docs/adr/0013-own-bus-compatible-with-masstransit.md": "project-docs-adr.md",
                 "docs/adr/0014-bearer-tokens-fill-the-context.md": "project-docs-adr.md",
-                "docs/adr/0015-multi-tenancy-by-interface.md": "project-docs-adr.md"}
+                "docs/adr/0015-multi-tenancy-by-interface.md": "project-docs-adr.md",
+                "docs/adr/0016-languages-of-messages-and-data.md": "project-docs-adr.md"}
 KERNEL_PAGES = {"src/Boilerplate.Api/Middlewares/ErrorReference.cs": "failures.md"}
 SKIPPED = ("MORTIS.md",)
 
@@ -109,6 +115,17 @@ for f in files:
         entry["when"] = {"tenancy.mode": "interface"}
         entry["kernel"] = False
         entry["page"] = "tenancy.md"
+    if f.startswith(MESSAGES_PREFIXES):
+        entry["when"] = {"languages.mode": ["messages", "data"]}
+        entry["kernel"] = False
+        entry["page"] = "languages.md"
+    if f.startswith(DATA_PREFIXES):
+        entry["when"] = {"languages.mode": "data"}
+        entry["kernel"] = False
+        entry["page"] = "languages.md"
+    if f in DATA_EXAMPLE_FILES:
+        entry["when"] = {"example": "true", "languages.mode": "data"}
+        entry["page"] = "languages.md"
     if f.startswith(EVENT_CONSUMER_FILES):
         entry["kernel"] = False
         entry["page"] = "event-consumers.md"

@@ -61,7 +61,7 @@ Read only what the situation needs.
 | `references/options/addons.md` | any of the twelve add-ons |
 | `references/options/example.md` | whether to generate the worked example |
 | `references/adr-template.md` | writing the decision record for a value that differs from the preset |
-| `references/architecture/` | explaining or deciding where code belongs; start with `layers.md`, then `placement-guide.md`; `building-blocks.md` for one block; `events.md` for sync, async and outbox; `tenancy.md` for the signed-in caller and tenant-owned data; `scenarios.md` for worked examples; `request-lifecycle.md` for the commit order; `pseudo-code.md` for the notation; `glossary.md` for a term |
+| `references/architecture/` | explaining or deciding where code belongs; start with `layers.md`, then `placement-guide.md`; `building-blocks.md` for one block; `events.md` for sync, async and outbox; `tenancy.md` for the signed-in caller and tenant-owned data; `languages.md` for translated messages and data; `scenarios.md` for worked examples; `request-lifecycle.md` for the commit order; `pseudo-code.md` for the notation; `glossary.md` for a term |
 
 ## Rules for this skill
 

@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Boilerplate.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261121205722_Initial")]
+    [Migration("20261121214215_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -304,8 +304,7 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("name");
 
                     b.Property<string>("Sku")

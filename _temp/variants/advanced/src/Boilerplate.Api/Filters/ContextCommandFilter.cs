@@ -16,7 +16,8 @@ public class ContextCommandFilter(IOptions<AuthSettings> authSettings, TenantSco
         {
             User = authSettings.Value.UserOf(principal),
             CorrelationId = context.HttpContext.Items[ApiConstants.CorrelationIdItem] is Guid correlationId ? correlationId : Guid.CreateVersion7(),
-            TenantId = authSettings.Value.TenantOf(principal)
+            TenantId = authSettings.Value.TenantOf(principal),
+            Language = RequestLanguage.Of(context.HttpContext, authSettings.Value)
         };
 
         tenantScope.Enter(commandContext.TenantId);

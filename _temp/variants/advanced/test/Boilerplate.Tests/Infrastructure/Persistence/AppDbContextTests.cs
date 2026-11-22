@@ -1,3 +1,4 @@
+using Boilerplate.Shared.Domain;
 using Boilerplate.Tests.TestSupport.Infrastructure.Persistence;
 using Boilerplate.Tests.TestSupport.Infrastructure.Tenancy;
 using Boilerplate.Domain.Aggregates.Categories;
@@ -33,7 +34,7 @@ public class AppDbContextTests
     {
         var context = AppDbContextBuilder.Create().Build();
 
-        context.Add(new Product(Guid.CreateVersion7(), "SKU-1", "Product", 1));
+        context.Add(new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("en", "Product"), 1));
 
         await Assert.ThrowsAsync<TenantRequiredException>(() => context.SaveChangesAsync());
     }
@@ -42,7 +43,7 @@ public class AppDbContextTests
     public async Task SaveChangesAsync_DeletingARowOfAnotherTenant_Should_ThrowForbidden()
     {
         var context = AppDbContextBuilder.Create().WithTenantScope(TenantScopeBuilder.Create().WithTenant(Guid.CreateVersion7()).Build()).Build();
-        var product = new Product(Guid.CreateVersion7(), "SKU-1", "Product", 1);
+        var product = new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("en", "Product"), 1);
 
         context.Attach(product);
         context.Remove(product);

@@ -9,14 +9,14 @@ public class Product : AggregateRoot<Guid>, IMultiTenant
 {
     public Guid TenantId { get; private set; }
     public string Sku { get; protected set; }
-    public string Name { get; protected set; }
+    public LocalizedText Name { get; protected set; }
     public int Stock { get; protected set; }
     public int? CategoryId { get; protected set; }
 
     [DebuggerStepThrough]
     protected Product() { }
 
-    public Product(Guid id, string sku, string name, int stock, AuditUser user = null, int? categoryId = null) : base(user)
+    public Product(Guid id, string sku, LocalizedText name, int stock, AuditUser user = null, int? categoryId = null) : base(user)
     {
         if (stock < 0)
         {
@@ -30,6 +30,11 @@ public class Product : AggregateRoot<Guid>, IMultiTenant
         CategoryId = categoryId;
 
         RaiseEvent(new Created(Id.ToString(), Sku));
+    }
+
+    public void Rename(string language, string name)
+    {
+        Name = Name.With(language, name);
     }
 
     public void IncreaseStock(int quantity)

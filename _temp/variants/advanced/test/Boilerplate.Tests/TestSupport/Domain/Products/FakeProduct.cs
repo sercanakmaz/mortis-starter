@@ -1,3 +1,5 @@
+using Boilerplate.Shared.Application;
+using Boilerplate.Shared.Domain;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
 using Boilerplate.Domain.Aggregates.Products;
 
@@ -5,7 +7,7 @@ namespace Boilerplate.Tests.TestSupport.Domain.Products;
 
 public class FakeProduct : Product
 {
-    private FakeProduct(Guid id, string sku, int stock) : base(id, sku, "Default Product", stock, FakeAuditUser.Create())
+    private FakeProduct(Guid id, string sku, int stock) : base(id, sku, LocalizedText.Of(Languages.Default, "Default Product"), stock, FakeAuditUser.Create())
     {
     }
 

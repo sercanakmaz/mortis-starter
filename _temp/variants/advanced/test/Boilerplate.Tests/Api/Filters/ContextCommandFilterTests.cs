@@ -85,4 +85,18 @@ public class ContextCommandFilterTests
 
         Assert.Equal(["user-1@localhost", "user-1"], [fakeContextCommand.Context.User.Id, fakeContextCommand.Context.User.Email]);
     }
+
+    [Fact]
+    public async Task OnActionExecutionAsync_Should_TakeTheLanguageFromTheClaimBeforeAcceptLanguage()
+    {
+        var fromClaim = new FakeContextCommand();
+        var fromHeader = new FakeContextCommand();
+        var withClaim = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithLanguageClaim("tr").WithAcceptLanguage("en").WithArgument("command", fromClaim).Build();
+        var withHeader = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithAcceptLanguage("de, tr;q=0.8").WithArgument("command", fromHeader).Build();
+
+        await new ContextCommandFilter(Options.Create(new AuthSettings()), TenantScopeBuilder.Create().Build()).OnActionExecutionAsync(withClaim, ActionExecutingContextBuilder.NextOf(withClaim));
+        await new ContextCommandFilter(Options.Create(new AuthSettings()), TenantScopeBuilder.Create().Build()).OnActionExecutionAsync(withHeader, ActionExecutingContextBuilder.NextOf(withHeader));
+
+        Assert.Equal(["tr", "tr"], [fromClaim.Context.Language, fromHeader.Context.Language]);
+    }
 }

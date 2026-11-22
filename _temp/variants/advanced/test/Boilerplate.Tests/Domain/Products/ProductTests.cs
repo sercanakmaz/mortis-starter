@@ -1,3 +1,4 @@
+using Boilerplate.Shared.Domain;
 using Boilerplate.Domain.Aggregates.Products.Events;
 using Boilerplate.Tests.TestSupport.Domain.Products;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
@@ -19,7 +20,7 @@ public class ProductTests
     {
         var id = Guid.CreateVersion7();
 
-        var product = new Product(id, "SKU-1", "Bolt", 10, FakeAuditUser.Create());
+        var product = new Product(id, "SKU-1", LocalizedText.Of("en", "Bolt"), 10, FakeAuditUser.Create());
 
         Assert.Equal(10, product.Stock);
         var created = Assert.IsType<Created>(Assert.Single(product.DomainEvents));
@@ -30,9 +31,19 @@ public class ProductTests
     [Fact]
     public void Constructor_WithNegativeStock_Should_ThrowInvalidParameterForStock()
     {
-        var exception = Assert.Throws<InvalidParameterException>(() => new Product(Guid.CreateVersion7(), "SKU-1", "Bolt", -1, FakeAuditUser.Create()));
+        var exception = Assert.Throws<InvalidParameterException>(() => new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("en", "Bolt"), -1, FakeAuditUser.Create()));
 
         Assert.StartsWith("stock is invalid", exception.Message);
+    }
+
+    [Fact]
+    public void Rename_Should_AddOrReplaceTheNameInThatLanguageOnly()
+    {
+        var product = new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("tr", "Cıvata"), 10, FakeAuditUser.Create());
+
+        product.Rename("en", "Bolt");
+
+        Assert.Equal(["Cıvata", "Bolt"], [product.Name.Get("tr", "en"), product.Name.Get("en", "en")]);
     }
 
     [Fact]

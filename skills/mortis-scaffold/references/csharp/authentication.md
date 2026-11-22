@@ -70,6 +70,10 @@ public string TenantClaim { get; set; } = "tenant_id";
 ```
 
 ```csharp
+public string LanguageClaim { get; set; } = "locale";
+```
+
+```csharp
 public TokenValidationParameters ValidationParameters()
 {
     return new TokenValidationParameters
@@ -101,6 +105,13 @@ public AuditUser UserOf(ClaimsPrincipal principal)
 public string TenantOf(ClaimsPrincipal principal)
 {
     return principal.FindFirst(TenantClaim)?.Value;
+}
+```
+
+```csharp
+public string LanguageOf(ClaimsPrincipal principal)
+{
+    return principal.FindFirst(LanguageClaim)?.Value;
 }
 ```
 
@@ -194,7 +205,7 @@ public async Task<CommandContext> ContextOfAsync(string token)
 {
     if (string.IsNullOrWhiteSpace(token))
     {
-        return new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail) };
+        return new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail), Language = Languages.Default };
     }
 
     var tokenValidationResult = await new JsonWebTokenHandler().ValidateTokenAsync(token, authSettings.ValidationParameters());
@@ -206,7 +217,7 @@ public async Task<CommandContext> ContextOfAsync(string token)
 
     var principal = new ClaimsPrincipal(tokenValidationResult.ClaimsIdentity);
 
-    return new CommandContext { User = authSettings.UserOf(principal), TenantId = authSettings.TenantOf(principal) };
+    return new CommandContext { User = authSettings.UserOf(principal), TenantId = authSettings.TenantOf(principal), Language = Languages.Resolve([authSettings.LanguageOf(principal)]) };
 }
 ```
 
@@ -235,6 +246,11 @@ public string WriteDevelopmentToken(string argument)
         claims[authSettings.TenantClaim] = developmentUser.Tenant;
     }
 
+    if (!string.IsNullOrEmpty(developmentUser.Language))
+    {
+        claims[authSettings.LanguageClaim] = developmentUser.Language;
+    }
+
     return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
     {
         Issuer = authSettings.Issuer,
@@ -247,7 +263,7 @@ public string WriteDevelopmentToken(string argument)
 ```
 
 ```csharp
-private sealed record DevelopmentUser(string Subject, string Email, string Tenant);
+private sealed record DevelopmentUser(string Subject, string Email, string Tenant, string Language);
 ```
 
 - Without tenancy, leave out the tenant claim and the record's `Tenant`.
@@ -350,6 +366,7 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
 using Microsoft.Extensions.DependencyInjection;
 using {Name}.Infrastructure.Authentication;
 using {Name}.Infrastructure.Tenancy;
+using {Name}.Infrastructure.Localization;
 using Microsoft.Extensions.Options;
 using {Name}.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
@@ -393,22 +410,25 @@ if (arguments.Count == 0)
 using var scope = host.Services.CreateScope();
 
 var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
+var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
+var language = Languages.Default;
 var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
-
-try
-{
-    if (arguments[0] == ConsoleConstants.DevelopmentTokenCommand)
-    {
-        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(arguments.ElementAtOrDefault(1)));
 ```
 
 The member continues:
 
 ```csharp
+try
+{
+    if (arguments[0] == ConsoleConstants.DevelopmentTokenCommand)
+    {
+        System.Console.WriteLine(consoleTokens.WriteDevelopmentToken(arguments.ElementAtOrDefault(1)));
+
         return 0;
     }
 
     var commandContext = await consoleTokens.ContextOfAsync(token);
+    language = commandContext.Language;
 
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
 
@@ -422,7 +442,7 @@ catch (ExceptionBase exception)
 {
     var errors = (exception as ValidationFailedException)?.Errors;
 
-    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }));
+    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = messageLocalizer.Get(exception.Code, exception.Parameters, language) ?? exception.Message, errors }));
 
     return 2;
 }
@@ -530,7 +550,7 @@ public async Task ContextOfAsync_WithoutAToken_Should_BeTheConsoleUserWithoutATe
 {
     var commandContext = await new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production }).ContextOfAsync(null);
 
-    Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail, null], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId]);
+    Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail, null, "en"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
 }
 ```
 
@@ -541,9 +561,9 @@ public async Task WriteDevelopmentToken_InDevelopment_Should_WriteATokenThatCont
     var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
     var tenantId = Guid.CreateVersion7().ToString();
 
-    var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken($"{{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"{tenantId}\"}}"));
+    var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken($"{{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"{tenantId}\",\"language\":\"tr\"}}"));
 
-    Assert.Equal(["user-1", "user-1@localhost", tenantId], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId]);
+    Assert.Equal(["user-1", "user-1@localhost", tenantId, "tr"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
 }
 ```
 

@@ -38,6 +38,8 @@ public static class ApplicationModule
 
         services.AddCommandHandler<CreateProductCommand, ProductDto, CreateProductCommandHandler>();
         services.AddScoped<IValidator<CreateProductCommand>, CreateProductCommandValidator>();
+        services.AddCommandHandler<RenameProductCommand, ProductDto, RenameProductCommandHandler>();
+        services.AddScoped<IValidator<RenameProductCommand>, RenameProductCommandValidator>();
         services.AddCommandHandler<GetProductCommand, ProductDto, GetProductCommandHandler>();
         services.AddCommandHandler<IncreaseProductStockCommand, ProductDto, IncreaseProductStockCommandHandler>();
         services.AddScoped<IValidator<IncreaseProductStockCommand>, IncreaseProductStockCommandValidator>();

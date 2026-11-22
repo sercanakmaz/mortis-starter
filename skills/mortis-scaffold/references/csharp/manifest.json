@@ -200,6 +200,18 @@
    }
   },
   {
+   "path": "docs/adr/0016-languages-of-messages-and-data.md",
+   "page": "project-docs-adr.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
    "path": "docs/architecture.md",
    "page": "project-docs-architecture.md",
    "source": "data",
@@ -300,6 +312,18 @@
    "page": "hosts.md",
    "source": "snippets",
    "kernel": true
+  },
+  {
+   "path": "src/{Name}.Api/Middlewares/RequestLanguage.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
   },
   {
    "path": "src/{Name}.Api/Program.cs",
@@ -547,6 +571,16 @@
    "source": "snippets",
    "when": {
     "example": "true"
+   },
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Application/Products/RenameProductCommand.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "languages.mode": "data"
    },
    "kernel": false
   },
@@ -884,6 +918,42 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Localization/MessageLocalizer.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Localization/messages.en.json",
+   "page": "languages.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Localization/messages.tr.json",
+   "page": "languages.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
    "path": "src/{Name}.Infrastructure/Logging/JsonLineFormatter.cs",
    "page": "logging.md",
    "source": "snippets",
@@ -1163,6 +1233,15 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Infrastructure/Persistence/LocalizedTextConversion.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": "data"
+   }
+  },
+  {
    "path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs",
    "page": "infrastructure-postgres.md",
    "source": "tool",
@@ -1354,6 +1433,18 @@
    "kernel": true
   },
   {
+   "path": "src/{Name}.Shared/Application/Languages.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
    "path": "src/{Name}.Shared/Domain/AggregateRoot.cs",
    "page": "shared-domain.md",
    "source": "snippets",
@@ -1408,6 +1499,15 @@
    "kernel": false,
    "when": {
     "tenancy.mode": "interface"
+   }
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/LocalizedText.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": "data"
    }
   },
   {
@@ -1696,6 +1796,16 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/RenameProductCommandHandlerTests.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "languages.mode": "data"
+   },
+   "kernel": false
+  },
+  {
    "path": "test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
@@ -1771,6 +1881,18 @@
    "kernel": false,
    "when": {
     "auth": "jwt"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Localization/MessageLocalizerTests.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
    }
   },
   {
@@ -1921,6 +2043,18 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Shared/Application/LanguagesTests.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": [
+     "messages",
+     "data"
+    ]
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Shared/Domain/AggregateRootTests.cs",
    "page": "testing-kernel.md",
    "source": "snippets",
@@ -1937,6 +2071,15 @@
    "page": "testing-kernel.md",
    "source": "snippets",
    "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Shared/Domain/LocalizedTextTests.cs",
+   "page": "languages.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "languages.mode": "data"
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Api/ActionExecutingContextBuilder.cs",

@@ -301,8 +301,7 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
+                        .HasColumnType("jsonb")
                         .HasColumnName("name");
 
                     b.Property<string>("Sku")

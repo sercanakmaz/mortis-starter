@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Boilerplate.Domain.Aggregates.Products;
 using Boilerplate.Shared.Application;
+using Boilerplate.Shared.Domain;
 using FluentValidation;
 
 namespace Boilerplate.Application.Products;
@@ -34,10 +35,10 @@ public class CreateProductCommandHandler(
 {
     protected override async Task<CommandResult<ProductDto>> OnHandle(CreateProductCommand command)
     {
-        var product = new Product(command.Id, command.Sku, command.Name, command.Stock, command.Context.User, command.CategoryId);
+        var product = new Product(command.Id, command.Sku, LocalizedText.Of(command.Context.Language ?? Languages.Default, command.Name), command.Stock, command.Context.User, command.CategoryId);
 
         await productRepository.CreateAsync(product);
 
-        return CommandResult.FromContent(ProductDto.Map(product));
+        return CommandResult.FromContent(ProductDto.Map(product, command.Context.Language));
     }
 }

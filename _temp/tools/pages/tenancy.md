@@ -47,7 +47,7 @@ File `src/{Name}.Shared/Exceptions/TenantRequiredException.cs`, answered 403 wit
 
 @@decl src/Boilerplate.Shared/Exceptions/TenantRequiredException.cs::TenantRequiredException@@
 
-With `exceptions` = `catalogued`, `ErrorCatalogue` gets `["tenant_required"] = "The record belongs to a tenant, and the caller has none."`.
+With `exceptions` = `catalogued`, `ErrorCatalogue` gets `tenant_required` (with its message `"The record belongs to a tenant, and the caller has none."`, or in the message files with `languages`).
 
 ## TenantScope
 

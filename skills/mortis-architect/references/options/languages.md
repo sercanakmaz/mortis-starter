@@ -18,7 +18,7 @@ What is translated.
 
 **Choose when:** error and validation messages are shown to users in their language.
 
-**Costs:** a code and parameters for every message, resource files per language.
+**Costs:** a code and parameters for every message, one message file per language; the language comes from the caller's claim, then `Accept-Language` (`architecture/languages.md`). Field messages of validation failures stay untranslated.
 
 **Rules:** R5.
 
@@ -26,7 +26,7 @@ What is translated.
 
 **Choose when:** stored values such as product names exist per language.
 
-**Costs:** a value per language in storage and a fallback rule.
+**Costs:** a value per language in storage and a fallback rule; includes everything `messages` does. A write sends one text in the caller's language; a read returns that language and every translation.
 
 **Rules:** R5.
 

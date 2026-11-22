@@ -37,6 +37,6 @@ public class DecreaseProductStockCommandHandler(
 
         await productRepository.UpdateAsync(product);
 
-        return CommandResult.FromContent(ProductDto.Map(product));
+        return CommandResult.FromContent(ProductDto.Map(product, command.Context.Language));
     }
 }

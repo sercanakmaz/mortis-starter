@@ -29,6 +29,18 @@ public class ActionExecutingContextBuilder
         return this;
     }
 
+    public ActionExecutingContextBuilder WithLanguageClaim(string language)
+    {
+        _claims.Add(new Claim("locale", language));
+        return this;
+    }
+
+    public ActionExecutingContextBuilder WithAcceptLanguage(string acceptLanguage)
+    {
+        _httpContext.Request.Headers.AcceptLanguage = acceptLanguage;
+        return this;
+    }
+
     public ActionExecutingContextBuilder WithCorrelationId(Guid correlationId)
     {
         _httpContext.Items[ApiConstants.CorrelationIdItem] = correlationId;

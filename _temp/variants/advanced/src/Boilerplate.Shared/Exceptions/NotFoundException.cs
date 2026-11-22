@@ -2,4 +2,4 @@ using System.Net;
 
 namespace Boilerplate.Shared.Exceptions;
 
-public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.");
+public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.", parameters: new Dictionary<string, object> { ["name"] = name });

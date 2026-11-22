@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Authentication;
 using Boilerplate.Infrastructure.Tenancy;
+using Boilerplate.Infrastructure.Localization;
 using Microsoft.Extensions.Options;
 using Boilerplate.Infrastructure.Logging;
 using Microsoft.Extensions.Hosting;
@@ -44,6 +45,8 @@ if (arguments.Count == 0)
 using var scope = host.Services.CreateScope();
 
 var consoleTokens = new ConsoleTokens(host.Services.GetRequiredService<IOptions<AuthSettings>>().Value, host.Services.GetRequiredService<IHostEnvironment>());
+var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
+var language = Languages.Default;
 var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
 
 try
@@ -56,6 +59,7 @@ try
     }
 
     var commandContext = await consoleTokens.ContextOfAsync(token);
+    language = commandContext.Language;
 
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
 
@@ -69,7 +73,7 @@ catch (ExceptionBase exception)
 {
     var errors = (exception as ValidationFailedException)?.Errors;
 
-    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = exception.Message, errors }));
+    System.Console.Error.WriteLine(JsonSerializer.Serialize(new { code = exception.Code, message = messageLocalizer.Get(exception.Code, exception.Parameters, language) ?? exception.Message, errors }));
 
     return 2;
 }

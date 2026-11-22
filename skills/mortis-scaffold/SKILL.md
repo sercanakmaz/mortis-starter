@@ -24,7 +24,7 @@ Follow these steps in order. Keep `.mortis/progress.md` in the project: one line
 | 3 | Shared: failures, persistence contracts | `shared-other.md` | build |
 | 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`) | `shared-application.md` | build |
 | 5 | Domain and Application project roots: `DomainModule`, `ApplicationModule` with empty bodies | `domain.md`, `application.md` | build |
-| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both), and `rabbitmq.md` when `events.transport` is `rabbitmq`; event consumer registration (`event-consumers.md`); `AuthSettings` when `auth` is `jwt` (`authentication.md`); the tenant scope when `tenancy.mode` is `interface` (`tenancy.md`); persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule` | `logging.md`, `events-inprocess.md` or `outbox.md`, `rabbitmq.md`, `event-consumers.md`, `authentication.md`, `tenancy.md`, `infrastructure-postgres.md`, `failures.md` | build |
+| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both), and `rabbitmq.md` when `events.transport` is `rabbitmq`; event consumer registration (`event-consumers.md`); `AuthSettings` when `auth` is `jwt` (`authentication.md`); the tenant scope when `tenancy.mode` is `interface` (`tenancy.md`); the message files and `MessageLocalizer` when `languages.mode` is not `none` (`languages.md`); persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule` | `logging.md`, `events-inprocess.md` or `outbox.md`, `rabbitmq.md`, `event-consumers.md`, `authentication.md`, `tenancy.md`, `languages.md`, `infrastructure-postgres.md`, `failures.md` | build |
 | 7 | Hosts: Api and Console, the Worker when `hosts.worker` is `separate`, `ErrorReference`, VS Code files with the first launch configuration only; the add-ons' host files (`correlation.md`); the sign-in lines and `ConsoleTokens` when `auth` is `jwt` | `hosts.md`, `outbox.md`, `authentication.md`, `failures.md` | build |
 | 8 | Test support and the kernel tests | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
 | 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
@@ -91,6 +91,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/event-consumers.md` | steps 6 and 7: registering event consumers in the hosts, and any new consumer |
 | `references/csharp/authentication.md` | steps 6 and 7, when `auth` is `jwt` |
 | `references/csharp/tenancy.md` | steps 6, 7 and 10, when `tenancy.mode` is `interface` |
+| `references/csharp/languages.md` | steps 3, 6, 7 and 10, when `languages.mode` is not `none` |
 | `references/csharp/adopting.md` | the project already exists |
 | `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |
 | `../mortis-architect/references/architecture/` | why a block is where it is: `layers.md`, `building-blocks.md`, `placement-guide.md`, `example-domain.md` |
@@ -98,6 +99,6 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 ## Limits to state when they matter
 
 - With `events.outbox` = `none`, an event consumer that had not run when the process died is lost.
-- Error messages are English only; authentication is not configured unless `auth` says so, and permissions per command are not generated yet.
+- Error messages are English only unless `languages.mode` says otherwise, and validation field messages always are; authentication is not configured unless `auth` says so, and permissions per command are not generated yet.
 - With tenancy, raw SQL and bulk updates skip the tenant filter.
 - C# is the only language with references today.

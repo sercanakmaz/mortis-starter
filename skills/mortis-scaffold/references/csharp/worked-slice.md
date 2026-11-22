@@ -304,6 +304,8 @@ public static ProductDto Map(Product product) => new()
 | `IncreaseProductStockCommand` | `Sku`, `Quantity` | sku required within length; quantity `> 0` | `FindBySkuTrackingAsync(command.Sku)` | `IncreaseStock(command.Quantity)` | `UpdateAsync` |
 | `DecreaseProductStockCommand` | `Sku`, `Quantity` | as above | `FindBySkuTrackingAsync(command.Sku)` | `DecreaseStock(command.Quantity)` | `UpdateAsync` |
 
+With `languages.mode` = `data`, `Product.Name` is a `LocalizedText`, the handler wraps the name with `LocalizedText.Of(language, command.Name)`, and the product gets `RenameProductCommand` (`languages.md`).
+
 Each handler takes `IProductRepository productRepository` and the pipeline, and follows the shapes in `application.md`. Loading by sku:
 
 ```csharp

@@ -6,7 +6,7 @@ namespace Boilerplate.Tests.Domain;
 public class ErrorCatalogueTests
 {
     [Fact]
-    public void Messages_Should_DeclareEveryRuleCodeOfTheDomain()
+    public void Codes_Should_DeclareEveryRuleCodeOfTheDomain()
     {
         var codes = typeof(ErrorCatalogue).Assembly.GetTypes()
             .Where(type => type.Name.EndsWith("Constants"))
@@ -15,12 +15,12 @@ public class ErrorCatalogueTests
             .Select(field => (string)field.GetRawConstantValue())
             .ToList();
 
-        Assert.All(codes, code => Assert.True(ErrorCatalogue.Messages.ContainsKey(code), $"{code} has no message"));
+        Assert.All(codes, code => Assert.True(ErrorCatalogue.Codes.Contains(code), $"{code} is not catalogued"));
     }
 
     [Fact]
-    public void Messages_Should_DeclareTheCodesOfTheSharedFailures()
+    public void Codes_Should_DeclareTheCodesOfTheSharedFailures()
     {
-        Assert.All(["not_found", "duplicate", "forbidden", "invalid_parameter", "reference_violation", "transaction_required", "validation_failed"], code => Assert.True(ErrorCatalogue.Messages.ContainsKey(code), code));
+        Assert.All(["not_found", "duplicate", "forbidden", "invalid_parameter", "reference_violation", "transaction_required", "tenant_required", "validation_failed"], code => Assert.True(ErrorCatalogue.Codes.Contains(code), code));
     }
 }

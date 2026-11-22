@@ -22,7 +22,7 @@ Body: `{ "code": "...", "message": "...", "errors": { "<field>": ["..."] } }`; `
 |---|---|---|
 | `minimal` | the failure family of `shared-other.md`; a database error is an unexpected failure | no `DatabaseExceptionHandler`; `UnitOfWork.SaveChangesAsync` has no `catch` (below) |
 | `coded` | database errors translated: unique → `DuplicateException`, foreign key → `ReferenceViolationException`, check and not-null → `InvalidParameterException` | `Persistence/DatabaseExceptionHandler.cs` (`infrastructure-postgres.md`) |
-| `catalogued` | every code declared once, with its default message, in `ErrorCatalogue`; a test fails when a rule code is missing from it; translated messages (the `languages` option) read from it | `src/{Name}.Domain/ErrorCatalogue.cs`, its test |
+| `catalogued` | every code declared once in `ErrorCatalogue` (with its message, or with the message files when `languages` is on); a test fails when a rule code is missing from it | `src/{Name}.Domain/ErrorCatalogue.cs`, its test |
 
 At every level: the log line of a failure is a warning for 4xx and an error for 5xx; an unexpected failure answers with a short reference (`ErrorReference`) that is also on its log line, never with its own message; the Console's exit codes are 1 for an unknown name and 2 for a failure.
 
@@ -53,13 +53,54 @@ The exception handler that uses it is in `hosts.md`.
 
 File `src/{Name}.Domain/ErrorCatalogue.cs`, namespace `{Name}.Domain`. The seven shared codes, then one line per rule code of every aggregate, by its constant. The example's lines are written only with the example.
 
-@@decl src/Boilerplate.Domain/ErrorCatalogue.cs::ErrorCatalogue@@
+With `languages.mode` = `none` it holds each code's message:
 
-@@member src/Boilerplate.Domain/ErrorCatalogue.cs::ErrorCatalogue::Messages@@
+```csharp
+public static class ErrorCatalogue
+{
+    public static readonly IReadOnlyDictionary<string, string> Messages = new Dictionary<string, string>
+    {
+        ["not_found"] = "The record was not found.",
+        ["duplicate"] = "The record already exists.",
+        ["forbidden"] = "The action is not allowed.",
+        ["invalid_parameter"] = "A value is not valid.",
+        ["reference_violation"] = "A reference points at a missing record, or the record is still referenced.",
+        ["transaction_required"] = "A write ran outside a transaction.",
+        ["validation_failed"] = "The request is not valid.",
+        [CustomerConstants.BlockedCode] = "A blocked customer cannot complete orders.",
+        [ProductConstants.InsufficientStockCode] = "The product does not have enough stock.",
+        [OrderConstants.NotOpenCode] = "The order is not open.",
+        [OrderConstants.MixedCurrencyCode] = "Every line of an order uses the same currency.",
+        [OrderConstants.NothingToFulfilCode] = "An order without an active line cannot be fulfilled.",
+        [OrderConstants.LineAlreadyCancelledCode] = "The order line is already cancelled."
+    };
+}
+```
 
-Test, `test/{Name}.Tests/Domain/ErrorCatalogueTests.cs`:
+With tenancy it also has `["tenant_required"]`. With `languages.mode` other than `none` it keeps only the codes (`Codes`, a set) and the texts live in the message files (`languages.md`).
 
-@@members test/Boilerplate.Tests/Domain/ErrorCatalogueTests.cs::ErrorCatalogueTests@@
+Test, `test/{Name}.Tests/Domain/ErrorCatalogueTests.cs`; with languages, `Messages.ContainsKey` becomes `Codes.Contains`:
+
+```csharp
+[Fact]
+public void Messages_Should_DeclareEveryRuleCodeOfTheDomain()
+{
+    var codes = typeof(ErrorCatalogue).Assembly.GetTypes()
+        .Where(type => type.Name.EndsWith("Constants"))
+        .SelectMany(type => type.GetFields(BindingFlags.Public | BindingFlags.Static))
+        .Where(field => field.IsLiteral && field.Name.EndsWith("Code"))
+        .Select(field => (string)field.GetRawConstantValue())
+        .ToList();
+
+    Assert.All(codes, code => Assert.True(ErrorCatalogue.Messages.ContainsKey(code), $"{code} has no message"));
+}
+
+[Fact]
+public void Messages_Should_DeclareTheCodesOfTheSharedFailures()
+{
+    Assert.All(["not_found", "duplicate", "forbidden", "invalid_parameter", "reference_violation", "transaction_required", "validation_failed"], code => Assert.True(ErrorCatalogue.Messages.ContainsKey(code), code));
+}
+```
 
 ## Decision record
 

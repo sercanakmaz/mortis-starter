@@ -13,7 +13,8 @@ member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorM
 type {Name}.Api.Middlewares: public static class ErrorReference
 member {Name}.Api.Middlewares.ErrorReference: public static string Of(Exception exception)
 type {Name}.Api.Middlewares: public record ErrorResponseModel(string Code, string Message, IDictionary<string, string[]> Errors = null)
-type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHandler
+[languages.mode=messages|data] type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHandler> logger, MessageLocalizer messageLocalizer, IOptions<AuthSettings> authSettings) : IExceptionHandler
+[languages.mode=none] type {Name}.Api.Middlewares: public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHandler
 member {Name}.Api.Middlewares.ExceptionHandler: public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
 type {Name}.Application: public static class ApplicationModule
 member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
@@ -182,15 +183,23 @@ type {Name}.Shared.Domain: public static class SystemUser
 member {Name}.Shared.Domain.SystemUser: public const string Id = "system"
 member {Name}.Shared.Domain.SystemUser: public const string Email = "system@localhost"
 type {Name}.Shared.Exceptions: public class BusinessRuleException(string code, string message) : ExceptionBase(code, HttpStatusCode.Conflict, message)
-type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException)
-type {Name}.Shared.Exceptions: public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null) : Exception(message, innerException)
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException, new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException)
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null, IReadOnlyDictionary<string, object> parameters = null) : Exception(message, innerException)
+[languages.mode=messages|data] member {Name}.Shared.Exceptions.ExceptionBase: public IReadOnlyDictionary<string, object> Parameters { get; }
+[languages.mode=none] type {Name}.Shared.Exceptions: public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null) : Exception(message, innerException)
 member {Name}.Shared.Exceptions.ExceptionBase: public string Code { get; }
 member {Name}.Shared.Exceptions.ExceptionBase: public HttpStatusCode HttpStatusCode { get; }
-type {Name}.Shared.Exceptions: public class ForbiddenException(string action) : ExceptionBase("forbidden", HttpStatusCode.Forbidden, $"{action} is not allowed.")
-type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException)
-type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.")
-type {Name}.Shared.Exceptions: public class ReferenceViolationException(string constraintName, Exception innerException = null) : ExceptionBase("reference_violation", HttpStatusCode.BadRequest, $"The reference {constraintName} points at a missing record, or the record is still referenced.", innerException)
-type {Name}.Shared.Exceptions: public class TransactionRequiredException(string aggregateName) : ExceptionBase("transaction_required", HttpStatusCode.InternalServerError, $"A write to {aggregateName} ran outside a transaction. The command must implement ITransactionalCommand.")
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class ForbiddenException(string action) : ExceptionBase("forbidden", HttpStatusCode.Forbidden, $"{action} is not allowed.", parameters: new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class ForbiddenException(string action) : ExceptionBase("forbidden", HttpStatusCode.Forbidden, $"{action} is not allowed.")
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException, new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException)
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.", parameters: new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.")
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class ReferenceViolationException(string constraintName, Exception innerException = null) : ExceptionBase("reference_violation", HttpStatusCode.BadRequest, $"The reference {constraintName} points at a missing record, or the record is still referenced.", innerException, new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class ReferenceViolationException(string constraintName, Exception innerException = null) : ExceptionBase("reference_violation", HttpStatusCode.BadRequest, $"The reference {constraintName} points at a missing record, or the record is still referenced.", innerException)
+[languages.mode=messages|data] type {Name}.Shared.Exceptions: public class TransactionRequiredException(string aggregateName) : ExceptionBase("transaction_required", HttpStatusCode.InternalServerError, $"A write to {aggregateName} ran outside a transaction. The command must implement ITransactionalCommand.", parameters: new Dictionary<string, object>
+[languages.mode=none] type {Name}.Shared.Exceptions: public class TransactionRequiredException(string aggregateName) : ExceptionBase("transaction_required", HttpStatusCode.InternalServerError, $"A write to {aggregateName} ran outside a transaction. The command must implement ITransactionalCommand.")
 type {Name}.Shared.Exceptions: public class ValidationFailedException(IDictionary<string, string[]> errors) : ExceptionBase("validation_failed", HttpStatusCode.UnprocessableEntity, "The request is not valid.")
 member {Name}.Shared.Exceptions.ValidationFailedException: public IDictionary<string, string[]> Errors { get; }
 type {Name}.Shared.Persistence: public interface IRepository<TAggregate, in TKey> where TAggregate : AggregateRoot<TKey>

@@ -162,3 +162,7 @@ Every write runs as the console actor; unique values get a random suffix so a fl
 |---|---|---|
 | tenants | the same sku in tenants A and B; A reads B's product; a caller without a tenant writes a product; both read a category; A orders B's only sku; orders of A and B interleaved | isolation (not found), 403 without a tenant, global data for all, the tenant-first foreign key, consumers that keep their event's tenant |
 
+## When translated data is on
+
+`Product.Name` is a localized text: a product is created with a name in the caller's language and can be renamed in another (`RenameProduct`). Reads return the caller's language, falling back to the default, and every translation. Failures answer in the caller's language at every level that has codes.
+

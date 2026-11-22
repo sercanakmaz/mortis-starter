@@ -13,7 +13,7 @@ public class ConsoleTokensTests
     {
         var commandContext = await new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Production }).ContextOfAsync(null);
 
-        Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail, null], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId]);
+        Assert.Equal([ConsoleConstants.UserId, ConsoleConstants.UserEmail, null, "en"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
     }
 
     [Fact]
@@ -22,9 +22,9 @@ public class ConsoleTokensTests
         var consoleTokens = new ConsoleTokens(FakeAuthSettings.Create(), new HostingEnvironment { EnvironmentName = Environments.Development });
         var tenantId = Guid.CreateVersion7().ToString();
 
-        var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken($"{{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"{tenantId}\"}}"));
+        var commandContext = await consoleTokens.ContextOfAsync(consoleTokens.WriteDevelopmentToken($"{{\"subject\":\"user-1\",\"email\":\"user-1@localhost\",\"tenant\":\"{tenantId}\",\"language\":\"tr\"}}"));
 
-        Assert.Equal(["user-1", "user-1@localhost", tenantId], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId]);
+        Assert.Equal(["user-1", "user-1@localhost", tenantId, "tr"], [commandContext.User.Id, commandContext.User.Email, commandContext.TenantId, commandContext.Language]);
     }
 
     [Fact]

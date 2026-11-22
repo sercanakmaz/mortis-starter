@@ -1,5 +1,8 @@
 using Boilerplate.Tests.TestSupport.Infrastructure.Messaging;
+using Boilerplate.Infrastructure.Authentication;
+using Boilerplate.Infrastructure.Localization;
 using Boilerplate.Api.Middlewares;
+using Microsoft.Extensions.Options;
 using Boilerplate.Shared.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -15,7 +18,7 @@ public class ExceptionHandlerTests
         var logger = new RecordingLogger<ExceptionHandler>();
         var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
 
-        await new ExceptionHandler(logger).TryHandleAsync(httpContext, new BusinessRuleException("order_not_open", "The order is not open."), CancellationToken.None);
+        await new ExceptionHandler(logger, new MessageLocalizer(), Options.Create(new AuthSettings())).TryHandleAsync(httpContext, new BusinessRuleException("order_not_open", "The order is not open."), CancellationToken.None);
 
         httpContext.Response.Body.Position = 0;
         var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
@@ -29,7 +32,7 @@ public class ExceptionHandlerTests
     {
         var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
 
-        await new ExceptionHandler(new RecordingLogger<ExceptionHandler>()).TryHandleAsync(httpContext, new ValidationFailedException(new Dictionary<string, string[]> { ["Lines"] = ["required"] }), CancellationToken.None);
+        await new ExceptionHandler(new RecordingLogger<ExceptionHandler>(), new MessageLocalizer(), Options.Create(new AuthSettings())).TryHandleAsync(httpContext, new ValidationFailedException(new Dictionary<string, string[]> { ["Lines"] = ["required"] }), CancellationToken.None);
 
         httpContext.Response.Body.Position = 0;
         var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
@@ -44,7 +47,7 @@ public class ExceptionHandlerTests
         var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
         var exception = new InvalidOperationException("secret detail");
 
-        await new ExceptionHandler(logger).TryHandleAsync(httpContext, exception, CancellationToken.None);
+        await new ExceptionHandler(logger, new MessageLocalizer(), Options.Create(new AuthSettings())).TryHandleAsync(httpContext, exception, CancellationToken.None);
 
         httpContext.Response.Body.Position = 0;
         var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
@@ -53,5 +56,21 @@ public class ExceptionHandlerTests
         Assert.Contains(ErrorReference.Of(exception), body.GetProperty("message").GetString());
         Assert.DoesNotContain("secret detail", body.GetProperty("message").GetString());
         Assert.Equal(LogLevel.Error, Assert.Single(logger.Entries).Level);
+    }
+
+    [Theory]
+    [InlineData("tr", "Product bulunamadı.")]
+    [InlineData("tr-TR,en;q=0.5", "Product bulunamadı.")]
+    [InlineData("de", "Product was not found.")]
+    public async Task TryHandleAsync_Should_WriteTheMessageInTheRequestedLanguageOrTheDefault(string acceptLanguage, string message)
+    {
+        var httpContext = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+        httpContext.Request.Headers.AcceptLanguage = acceptLanguage;
+
+        await new ExceptionHandler(new RecordingLogger<ExceptionHandler>(), new MessageLocalizer(), Options.Create(new AuthSettings())).TryHandleAsync(httpContext, new NotFoundException("Product"), CancellationToken.None);
+
+        httpContext.Response.Body.Position = 0;
+        var body = await JsonSerializer.DeserializeAsync<JsonElement>(httpContext.Response.Body);
+        Assert.Equal(message, body.GetProperty("message").GetString());
     }
 }

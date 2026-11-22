@@ -17,9 +17,17 @@ public class ProductsController(ICommandDispatcher commandDispatcher) : Controll
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Get([FromRoute] Guid id)
+    public async Task<IActionResult> Get([FromRoute] GetProductCommand command)
     {
-        var commandResult = await commandDispatcher.Send(new GetProductCommand(id));
+        var commandResult = await commandDispatcher.Send(command);
+
+        return Ok(commandResult.Content);
+    }
+
+    [HttpPut("{id:guid}/name")]
+    public async Task<IActionResult> Rename([FromRoute] Guid id, [FromBody] RenameProductCommand command)
+    {
+        var commandResult = await commandDispatcher.Send(command with { Id = id });
 
         return Ok(commandResult.Content);
     }

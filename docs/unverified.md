@@ -19,5 +19,7 @@ What phase 1 has not proven. Since decision 37 every page's code is compiled, te
 | 11 | Tenancy with `events.transport` = `in-process` or `database` | The pages say where `EventPublisher` and `OutboxWorker` enter the tenant; no variant builds it |
 | 11 | `tenancy.key` = `text`; `tenancy.resolver` = `header` or `subdomain` | Page notes only; no variant builds them |
 | 11 | `TenantScope.Bypass` used by a real job | Unit-tested; no example job crosses tenants |
+| 12 | `languages.mode` = `messages` without `data`, and `ErrorCatalogue` with messages (catalogued without languages) | Page snippets only; no variant builds them |
+| 12 | Translated validation field messages; searching by a translated field | Not built; the pages describe the JSON path and the per-language index |
 | 37 | Values in no preset: `int` or `long` default keys, `naming.database` = `as-code`, `hosts.worker` = `separate` with `after-command`, `in-api` with `background` | Page snippets only; no variant builds them |
 | 37 | Whether a model reading only the skills generates code equal to the variants | Phase 2 |

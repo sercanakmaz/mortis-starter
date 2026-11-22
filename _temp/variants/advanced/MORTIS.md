@@ -23,7 +23,9 @@ This project was started with mortis-starter. The table below records what was c
 | tenancy.mode | interface |  |
 | tenancy.key | guid |  |
 | tenancy.resolver | claim |  |
-| languages.mode | none | not built yet in phase 1; this variant holds only built options |
+| languages.mode | data |  |
+| languages.default | en |  |
+| languages.supported | en, tr |  |
 | testing | unit | not built yet in phase 1; this variant holds only built options |
 | auth | jwt |  |
 | hosts.worker | separate |  |

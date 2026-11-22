@@ -12,7 +12,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.AggregateConfiguration<Product, Guid>();
 
         builder.Property(product => product.Sku).HasMaxLength(ProductConstants.SkuMaxLength).IsRequired();
-        builder.Property(product => product.Name).HasMaxLength(ProductConstants.NameMaxLength).IsRequired();
+        builder.Property(product => product.Name).HasConversion(LocalizedTextConversion.Converter, LocalizedTextConversion.Comparer).HasColumnType("jsonb").IsRequired();
         builder.Property(product => product.Stock).IsRequired();
 
         builder.HasAlternateKey(product => new { product.TenantId, product.Sku });

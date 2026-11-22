@@ -13,4 +13,7 @@
     <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Localization/messages.*.json" WithCulture="false" />
+  </ItemGroup>
 </Project>

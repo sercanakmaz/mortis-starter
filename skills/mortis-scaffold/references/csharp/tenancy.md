@@ -54,10 +54,10 @@ In the example (`example-domain.md`, "when tenancy is on"): `Product`, `Customer
 File `src/{Name}.Shared/Exceptions/TenantRequiredException.cs`, answered 403 with code `tenant_required` (`failures.md`):
 
 ```csharp
-public class TenantRequiredException(string type) : ExceptionBase("tenant_required", HttpStatusCode.Forbidden, $"{type} belongs to a tenant, and the caller has none.");
+public class TenantRequiredException(string type) : ExceptionBase("tenant_required", HttpStatusCode.Forbidden, $"{type} belongs to a tenant, and the caller has none.", parameters: new Dictionary<string, object> { ["type"] = type });
 ```
 
-With `exceptions` = `catalogued`, `ErrorCatalogue` gets `["tenant_required"] = "The record belongs to a tenant, and the caller has none."`.
+With `exceptions` = `catalogued`, `ErrorCatalogue` gets `tenant_required` (with its message `"The record belongs to a tenant, and the caller has none."`, or in the message files with `languages`).
 
 ## TenantScope
 
@@ -540,7 +540,7 @@ public async Task SaveChangesAsync_AddingATenantOwnedRowWithoutATenant_Should_Th
 {
     var context = AppDbContextBuilder.Create().Build();
 
-    context.Add(new Product(Guid.CreateVersion7(), "SKU-1", "Product", 1));
+    context.Add(new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("en", "Product"), 1));
 
     await Assert.ThrowsAsync<TenantRequiredException>(() => context.SaveChangesAsync());
 }
@@ -551,7 +551,7 @@ public async Task SaveChangesAsync_AddingATenantOwnedRowWithoutATenant_Should_Th
 public async Task SaveChangesAsync_DeletingARowOfAnotherTenant_Should_ThrowForbidden()
 {
     var context = AppDbContextBuilder.Create().WithTenantScope(TenantScopeBuilder.Create().WithTenant(Guid.CreateVersion7()).Build()).Build();
-    var product = new Product(Guid.CreateVersion7(), "SKU-1", "Product", 1);
+    var product = new Product(Guid.CreateVersion7(), "SKU-1", LocalizedText.Of("en", "Product"), 1);
 
     context.Attach(product);
     context.Remove(product);
@@ -581,7 +581,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Infrastructure/Tenancy/TenantScope.cs` | `{Name}.Infrastructure.Tenancy` | Microsoft.Extensions.Logging, {Name}.Shared.Exceptions |
 | `src/{Name}.Shared/Domain/IMultiTenant.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Exceptions/TenantRequiredException.cs` | `{Name}.Shared.Exceptions` | System.Net |
-| `test/{Name}.Tests/Infrastructure/Persistence/AppDbContextTests.cs` | `{Name}.Tests.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Persistence, {Name}.Tests.TestSupport.Infrastructure.Tenancy |
+| `test/{Name}.Tests/Infrastructure/Persistence/AppDbContextTests.cs` | `{Name}.Tests.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Persistence, {Name}.Tests.TestSupport.Infrastructure.Tenancy |
 | `test/{Name}.Tests/Infrastructure/Tenancy/TenantCommandHandlerMiddlewareTests.cs` | `{Name}.Tests.Infrastructure.Tenancy` | {Name}.Infrastructure.Tenancy, {Name}.Shared.Application, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Tenancy, {Name}.Tests.TestSupport.Shared.Application |
 | `test/{Name}.Tests/Infrastructure/Tenancy/TenantScopeTests.cs` | `{Name}.Tests.Infrastructure.Tenancy` | Microsoft.Extensions.Logging, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Tenancy |
 | `test/{Name}.Tests/TestSupport/Infrastructure/Tenancy/TenantScopeBuilder.cs` | `{Name}.Tests.TestSupport.Infrastructure.Tenancy` | {Name}.Infrastructure.Tenancy, {Name}.Tests.TestSupport.Infrastructure.Messaging |

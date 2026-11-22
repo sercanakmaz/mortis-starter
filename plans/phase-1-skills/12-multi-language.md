@@ -46,3 +46,15 @@ Each item becomes a conformance check or a test snippet now. None is run in this
 ## Out of scope
 
 Translating the example's texts beyond two languages; pluralization rules; right-to-left concerns; a translation-management screen or import/export.
+
+## Notes (done)
+
+Built and verified in the advanced variant, not knowledge only (decision 37); scope by the maintainer's answers (decision 44).
+
+- The language comes from the token's `locale` claim, then `Accept-Language`, in the Api; from the token's claim in the Console (the plan's `--language` option was not built). Supported languages are generated constants.
+- Messages: `ExceptionBase.Parameters`, `MessageLocalizer` (no interface: one implementation), `messages.en.json` and `messages.tr.json`; `ErrorCatalogue` keeps only `Codes`. Found on the way: MSBuild reads `messages.en.json` as an English culture resource and moves it into a satellite assembly unless `WithCulture="false"`; and a folder named `Languages` hides the `Languages` class, so the folder is `Localization`.
+- Data: `LocalizedText` in jsonb through `LocalizedTextConversion`; `Product.Rename`, `RenameProductCommand`, `PUT /products/{id}/name`; `ProductDto.Names`. `GetProductCommand` became a context command so the host can give it a language.
+- `LogFields` writes `Language` on every command and event line, in every variant.
+- `build_shape.py` writes `languages.mode=messages|data` for the kernel lines the messages module changes; `failures.md` keeps the catalogue with messages as a hand-written snippet, since no variant has it any more.
+- Proven: `languages.sh` (6) against the running hosts and the worker; lean 13, standard 15, advanced 18 checks of `verify.sh`.
+

@@ -1,10 +1,16 @@
+using System.Text.Json.Serialization;
 using Boilerplate.Domain.Aggregates.Products;
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Exceptions;
 
 namespace Boilerplate.Application.Products;
 
-public record GetProductCommand(Guid Id) : ICommand<ProductDto>;
+public record GetProductCommand : ICommand<ProductDto>, IContextCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public Guid Id { get; set; }
+}
 
 public class GetProductCommandHandler(
     IProductRepository productRepository,
@@ -15,6 +21,6 @@ public class GetProductCommandHandler(
         var product = await productRepository.FindByIdAsync(command.Id)
             ?? throw new NotFoundException(nameof(Product));
 
-        return CommandResult.FromContent(ProductDto.Map(product));
+        return CommandResult.FromContent(ProductDto.Map(product, command.Context?.Language));
     }
 }

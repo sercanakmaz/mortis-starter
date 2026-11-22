@@ -4,7 +4,7 @@ Project `{Name}.Shared`, folders `Exceptions/` and `Persistence/`, and `SharedMo
 
 ## The failure family
 
-Folder `Exceptions/`, namespace `{Name}.Shared.Exceptions`, one file per type, each needs `using System.Net;`. Every failure a user can see is an `ExceptionBase`: a stable code, an HTTP status, a message. The host turns it into `{ code, message, errors }`.
+Folder `Exceptions/`, namespace `{Name}.Shared.Exceptions`, one file per type, each needs `using System.Net;`. Every failure a user can see is an `ExceptionBase`: a stable code, an HTTP status, a message. The host turns it into `{ code, message, errors }`. With `languages.mode` other than `none` it also carries its parameters and the host translates the message (`languages.md`).
 
 @@decl src/Boilerplate.Shared/Exceptions/ExceptionBase.cs::ExceptionBase@@
 

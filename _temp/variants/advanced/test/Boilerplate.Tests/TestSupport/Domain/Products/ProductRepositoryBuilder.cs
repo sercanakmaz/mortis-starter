@@ -15,6 +15,12 @@ public class ProductRepositoryBuilder
         return this;
     }
 
+    public ProductRepositoryBuilder WithFindByIdTrackingAsync(Product product)
+    {
+        _mock.Setup(productRepository => productRepository.FindByIdTrackingAsync(It.IsAny<Guid>())).ReturnsAsync(product);
+        return this;
+    }
+
     public ProductRepositoryBuilder WithFindBySkuTrackingAsync(Product product)
     {
         _mock.Setup(productRepository => productRepository.FindBySkuTrackingAsync(It.IsAny<string>())).ReturnsAsync(product);

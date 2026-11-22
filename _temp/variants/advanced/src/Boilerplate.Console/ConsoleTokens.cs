@@ -16,7 +16,7 @@ public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvir
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail) };
+            return new CommandContext { User = new AuditUser(ConsoleConstants.UserId, ConsoleConstants.UserEmail), Language = Languages.Default };
         }
 
         var tokenValidationResult = await new JsonWebTokenHandler().ValidateTokenAsync(token, authSettings.ValidationParameters());
@@ -28,7 +28,7 @@ public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvir
 
         var principal = new ClaimsPrincipal(tokenValidationResult.ClaimsIdentity);
 
-        return new CommandContext { User = authSettings.UserOf(principal), TenantId = authSettings.TenantOf(principal) };
+        return new CommandContext { User = authSettings.UserOf(principal), TenantId = authSettings.TenantOf(principal), Language = Languages.Resolve([authSettings.LanguageOf(principal)]) };
     }
 
     public string WriteDevelopmentToken(string argument)
@@ -55,6 +55,11 @@ public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvir
             claims[authSettings.TenantClaim] = developmentUser.Tenant;
         }
 
+        if (!string.IsNullOrEmpty(developmentUser.Language))
+        {
+            claims[authSettings.LanguageClaim] = developmentUser.Language;
+        }
+
         return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {
             Issuer = authSettings.Issuer,
@@ -65,5 +70,5 @@ public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvir
         });
     }
 
-    private sealed record DevelopmentUser(string Subject, string Email, string Tenant);
+    private sealed record DevelopmentUser(string Subject, string Email, string Tenant, string Language);
 }

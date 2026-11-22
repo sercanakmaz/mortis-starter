@@ -65,6 +65,7 @@ public static Dictionary<string, object> Of(ICommand command)
         ["CausationId"] = commandContext?.CausationId,
         ["TenantId"] = commandContext?.TenantId,
         ["UserId"] = commandContext?.User?.Id,
+        ["Language"] = commandContext?.Language,
         ["Command"] = command.GetType().Name
     };
 }
@@ -79,6 +80,7 @@ public static Dictionary<string, object> Of(EventBase @event)
         ["CausationId"] = @event.CausationId,
         ["TenantId"] = @event.TenantId,
         ["UserId"] = @event.UserId,
+        ["Language"] = @event.Language,
         ["Event"] = @event.GetType().Name,
         ["EventId"] = @event.EventId
     };

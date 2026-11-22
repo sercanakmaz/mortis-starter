@@ -32,7 +32,9 @@
 | Failure | a stable code, status and message for what went wrong; the shape is the same at every level |
 | Host | the entry point that turns the outside world into a command |
 | Inbox | records handled message ids so a repeat is skipped |
+| Localized text | a value per language with a fallback, stored as one value |
 | Message | an event or command as it travels between processes |
+| Message file | the texts of every failure code in one language |
 | Middleware | see before/after middleware |
 | None | delivery model: events stay in-process |
 | Outbox | storage of events written in the command's transaction, to be published |
@@ -45,8 +47,8 @@
 | Sweeper | releases outbox rows whose lock expired |
 | Sync handler | an event handler that runs inside the command's transaction |
 | System actor | the actor used when no user caused the work |
-| Tenant | the customer organisation whose data a row belongs to |
 | Tenant | a customer of the service whose data must stay apart from every other's |
+| Tenant | the customer organisation whose data a row belongs to |
 | Tenant scope | the tenant of one request, run or consumed message, entered by the host before any data is touched |
 | Tenant-owned | a type whose rows carry a tenant and are filtered by it; the rest is global |
 | Transaction | all-or-nothing group of writes |

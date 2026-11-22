@@ -79,7 +79,7 @@ public partial class Initial : Migration
                 id = table.Column<Guid>(type: "uuid", nullable: false),
                 tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
                 sku = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                name = table.Column<string>(type: "jsonb", nullable: false),
                 stock = table.Column<int>(type: "integer", nullable: false),
                 category_id = table.Column<int>(type: "integer", nullable: true),
                 xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),

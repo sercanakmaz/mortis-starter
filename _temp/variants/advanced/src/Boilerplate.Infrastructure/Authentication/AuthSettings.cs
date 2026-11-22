@@ -19,6 +19,7 @@ public class AuthSettings
     public string SubjectClaim { get; set; } = "sub";
     public string EmailClaim { get; set; } = "email";
     public string TenantClaim { get; set; } = "tenant_id";
+    public string LanguageClaim { get; set; } = "locale";
 
     public TokenValidationParameters ValidationParameters()
     {
@@ -45,5 +46,10 @@ public class AuthSettings
     public string TenantOf(ClaimsPrincipal principal)
     {
         return principal.FindFirst(TenantClaim)?.Value;
+    }
+
+    public string LanguageOf(ClaimsPrincipal principal)
+    {
+        return principal.FindFirst(LanguageClaim)?.Value;
     }
 }

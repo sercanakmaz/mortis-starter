@@ -1,10 +1,13 @@
+using Boilerplate.Infrastructure.Authentication;
+using Boilerplate.Infrastructure.Localization;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using Boilerplate.Shared.Exceptions;
 using System.Net;
 
 namespace Boilerplate.Api.Middlewares;
 
-public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHandler
+public class ExceptionHandler(ILogger<ExceptionHandler> logger, MessageLocalizer messageLocalizer, IOptions<AuthSettings> authSettings) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -20,7 +23,7 @@ public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHand
 
         await httpContext.Response.WriteAsJsonAsync(new ErrorResponseModel(
             code,
-            exceptionBase?.Message ?? $"{ApiConstants.UnexpectedErrorMessage} Reference {reference}.",
+            exceptionBase is null ? $"{ApiConstants.UnexpectedErrorMessage} Reference {reference}." : messageLocalizer.Get(code, exceptionBase.Parameters, RequestLanguage.Of(httpContext, authSettings.Value)) ?? exceptionBase.Message,
             (exception as ValidationFailedException)?.Errors), cancellationToken);
 
         return true;

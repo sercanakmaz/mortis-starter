@@ -15,6 +15,7 @@ public static class LogFields
             ["CausationId"] = commandContext?.CausationId,
             ["TenantId"] = commandContext?.TenantId,
             ["UserId"] = commandContext?.User?.Id,
+            ["Language"] = commandContext?.Language,
             ["Command"] = command.GetType().Name
         };
     }
@@ -27,6 +28,7 @@ public static class LogFields
             ["CausationId"] = @event.CausationId,
             ["TenantId"] = @event.TenantId,
             ["UserId"] = @event.UserId,
+            ["Language"] = @event.Language,
             ["Event"] = @event.GetType().Name,
             ["EventId"] = @event.EventId
         };
