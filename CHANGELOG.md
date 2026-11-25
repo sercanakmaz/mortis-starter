@@ -16,6 +16,7 @@ All notable changes to the skills and the template. Newest first.
 - `tests/check_interop_bus.sh` purges the Go queue first (`gobus declare --purge`): a line an earlier run left behind with the same sku was read in place of this run's.
 
 ### Removed
+- Git tags and version numbers: `main` is the release (decision 62).
 - The original hand-written solution and the copy-and-rename script (`_temp/template/`), never read by any tool, and `tests/smoke.sh`, which ran that script.
 
 ## 2026-11 (phase 2)

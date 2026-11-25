@@ -1,6 +1,6 @@
 # TODO
 
-The single list of what is left to do and what is not yet proven, ranked by what would hurt a user first. The plan's phases are finished (`docs/plans/PROGRESS.md`); this file is the backlog from v0.2.0 on. It replaces `docs/unverified.md` (merged 2026-11-25).
+The single list of what is left to do and what is not yet proven, ranked by what would hurt a user first. The plan's phases are finished (`docs/plans/PROGRESS.md`); this file is the backlog from here on. It replaces `docs/unverified.md` (merged 2026-11-25).
 
 Sizes: **S** an hour or two, **M** a session, **L** several sessions. Decisions are in [docs/decisions.md](docs/decisions.md).
 
@@ -16,7 +16,6 @@ How to keep it:
 | # | Task | Size | Notes |
 |---|---|---|---|
 | T1 | Rename the repository folder to `mortis-starter` | S | The maintainer's choice (decision 58); nothing inside the repository names the old folder |
-| T2 | Add a git remote and push `main` with its tags | S | `git push -u origin main --tags`; the CI workflow (`.github/workflows/checks.yml`) runs on the first push |
 | T3 | Run the live trigger measurement | S | `claude -p` with the skills installed (skill-creator's `run_eval.py`). The trigger tests in `tests/triggers/` are a proxy: a model chooses from the menu, where a real session also decides whether to use a skill at all |
 | T4 | Run the develop and review evals (`skills/mortis-develop/evals/`, `skills/mortis-review/evals/`) | M | Written, never run |
 
