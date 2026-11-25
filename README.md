@@ -6,10 +6,10 @@ Four Claude Code skills that start a backend project from a short interview and 
 |---|---|---|
 | `mortis-architect` | Interviews you and writes `MORTIS.md`, the project's decisions file | Written; its validator and preset writer are tested, the interview itself has not been run end to end |
 | `mortis-scaffold` | Generates the project from `MORTIS.md` and the C# reference pages, then runs `verify.sh` | Proved: a mid-size model generated lean and standard projects that pass every check (`examples/csharp/`); advanced is built and verified as a reference solution |
-| `mortis-develop` | Adds to a generated project by recipe (aggregate, child entity, command, query, event, handler, consumer, read model, tenant ownership, translated field, key type, turning an option on), test first | Written; exercised in phase 2 step 06 |
-| `mortis-review` | `review.sh` runs 14 mechanical checks of the project's rules; a checklist covers the judgement calls | Written; its fixtures pass |
+| `mortis-develop` | Adds to a generated project by recipe (aggregate, child entity, command, query, event, handler, consumer, read model, tenant ownership, translated field, key type, turning an option on), test first | Used by models in four develop runs (C# standard and advanced, the outbox on lean, Go lean) |
+| `mortis-review` | `review.sh` runs 14 mechanical checks of the project's rules; a checklist covers the judgement calls | Its fixtures pass; applied after the four develop runs |
 
-`plans/PROGRESS.md` has the exact state of every step.
+What is left and what is not yet proven: [TODO.md](TODO.md). The finished plan and the state of every step: `plans/PROGRESS.md`.
 
 ## Two-minute start
 
@@ -62,7 +62,7 @@ test/<Name>.Tests          fakes, builders, tests; test/<Name>.IntegrationTests 
 
 - Three reference solutions in `_temp/variants/` (lean, standard, advanced) are the source of truth (decision 37). Every snippet on a page is checked against them, and every one passes `verify.sh`, which builds, tests, formats and runs the conformance scripts against a real PostgreSQL (and RabbitMQ for advanced).
 - Generated projects are never fixed by hand: a defect a generation run finds is fixed in the skills and logged in `docs/generation-log.md`.
-- [docs/decisions.md](docs/decisions.md): every decision about these skills. [docs/unverified.md](docs/unverified.md): what is written but not yet proved. [CHANGELOG.md](CHANGELOG.md): what changed.
+- [docs/decisions.md](docs/decisions.md): every decision about these skills. [docs/unverified.md](docs/unverified.md): the evidence for what is written but not yet proved; [TODO.md](TODO.md) ranks it as a backlog. [CHANGELOG.md](CHANGELOG.md): what changed.
 
 ## Checking the skills themselves
 

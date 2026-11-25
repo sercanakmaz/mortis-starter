@@ -1,5 +1,7 @@
 # Unverified
 
+The evidence ledger. [../TODO.md](../TODO.md) ranks these rows as a backlog; when one is proved, delete it in both places.
+
 What phase 1 has not proven. Since decision 37 every page's code is compiled, tested and verified (`verify.sh`, conformance on PostgreSQL) in the three reference solutions in `_temp/variants/`; rows that were only about compiling and running that code were closed then. What remains: anything no variant exercises, and whether a model generates the variants' code from the skills alone (phase 2). One row per open item.
 
 | Step | Item | What awaits proof |
