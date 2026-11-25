@@ -31,7 +31,7 @@ examples/                            NOT installed; only projects the skills gen
 tests/
   check_docs.py                      the pages, the manifest and the shape file agree; one way per thing
   check_installable.sh               fails when anything under skills/ is project source, or an origin is named
-docs/unverified.md                   what has been written but never compiled or run
+TODO.md                              what is left and what has been written but never compiled or run (was docs/unverified.md)
 docs/generation-log.md               every generation run: configuration, result, time, tokens, the fix it led to
 ```
 
@@ -150,6 +150,6 @@ After phase 2, the saved examples are checked by `verify.sh` on every change. Th
 3. Its entries in the manifest, the shape file and the naming table.
 4. Its conformance checks, written but not yet run.
 5. The decision record a generated project gets for it.
-6. A line in `docs/unverified.md` for each of the above.
+6. A row in `TODO.md` for each of the above.
 
 No implementation and no generation. Phase 2 proves it.

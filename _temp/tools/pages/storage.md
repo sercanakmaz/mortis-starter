@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `storage`. Projects `{Name}.Shared` (folder `Application/`), `{Name}.Infrastructure` (folder `Storage/`), the API and, with the example, the product slice. Layer 1: `options/addons.md`, `architecture/advanced-addons.md`.
 
-**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. It is listed in the repository's `TODO.md` until a build compiles and proves it.
 
 Package, in `{Name}.Infrastructure`: `AWSSDK.S3` (S3 and MinIO).
 

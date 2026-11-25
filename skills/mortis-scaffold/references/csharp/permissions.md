@@ -2,7 +2,7 @@
 
 Applies when `auth` is `jwt`. Projects `{Name}.Shared` (folder `Application/`), `{Name}.Application`, `{Name}.Infrastructure` (folder `Authentication/`) and the hosts. Layer 1: `options/auth.md`, `architecture/tenancy.md` ("The caller"). The sign-in this builds on is on `authentication.md`.
 
-**Not built or run yet** (decision 47): hand-written snippets; the standard and advanced variants sign callers in but check no permission yet. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Not built or run yet** (decision 47): hand-written snippets; the standard and advanced variants sign callers in but check no permission yet. It is listed in the repository's `TODO.md` until a build compiles and proves it.
 
 ## Ask the developer first
 

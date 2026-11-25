@@ -62,7 +62,7 @@ test/<Name>.Tests          fakes, builders, tests; test/<Name>.IntegrationTests 
 
 - Three reference solutions in `_temp/variants/` (lean, standard, advanced) are the source of truth (decision 37). Every snippet on a page is checked against them, and every one passes `verify.sh`, which builds, tests, formats and runs the conformance scripts against a real PostgreSQL (and RabbitMQ for advanced).
 - Generated projects are never fixed by hand: a defect a generation run finds is fixed in the skills and logged in `docs/generation-log.md`.
-- [docs/decisions.md](docs/decisions.md): every decision about these skills. [docs/unverified.md](docs/unverified.md): the evidence for what is written but not yet proved; [TODO.md](TODO.md) ranks it as a backlog. [CHANGELOG.md](CHANGELOG.md): what changed.
+- [docs/decisions.md](docs/decisions.md): every decision about these skills. [TODO.md](TODO.md): what is left and what is not yet proved, with the evidence. [CHANGELOG.md](CHANGELOG.md): what changed.
 
 ## Checking the skills themselves
 

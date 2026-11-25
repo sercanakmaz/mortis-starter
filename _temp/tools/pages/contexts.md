@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `contexts`. Every project's folders change; no new runtime type is added. Layer 1: `options/addons.md`, `architecture/advanced-addons.md`.
 
-**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. It is listed in the repository's `TODO.md` until a build compiles and proves it.
 
 ## How it fits together
 
