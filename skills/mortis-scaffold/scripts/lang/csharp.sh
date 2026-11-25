@@ -11,7 +11,8 @@ export DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}" ASPNETCORE_ENVIRO
 
 case "$ACTION" in
   tools)
-    command -v dotnet >/dev/null && dotnet --version | grep -q '^10\.' ;;
+    version="$(dotnet --version 2>/dev/null)"
+    case "$version" in 10.*) ;; *) echo "dotnet --version gave '${version:-nothing}'; the .NET SDK 10 is needed" >&2; exit 1 ;; esac ;;
   build)
     (cd "$PROJECT" && dotnet build -warnaserror >"$PROJECT/.mortis/build.log" 2>&1) && grep -q "0 Warning(s)" "$PROJECT/.mortis/build.log" ;;
   test)

@@ -11,6 +11,8 @@ All notable changes to the skills and the template. Newest first.
 - `TODO.md` is the single backlog; `docs/unverified.md` is merged into it.
 
 ### Fixed
+- `examples/csharp/lean/.vscode/launch.json` passes `--user` and has the example's configuration, as the page writes it; it was generated before both.
+- The language adapters' `tools` check says what `dotnet --version` or `go version` gave when the tools are missing, without a pipe that could fail on its own.
 - `tests/check_interop_bus.sh` purges the Go queue first (`gobus declare --purge`): a line an earlier run left behind with the same sku was read in place of this run's.
 
 ### Removed

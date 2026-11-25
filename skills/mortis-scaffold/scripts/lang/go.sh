@@ -10,7 +10,8 @@ BIN="$PROJECT/.mortis/bin"
 
 case "$ACTION" in
   tools)
-    command -v go >/dev/null && go version | grep -qE 'go1\.(2[4-9]|[3-9][0-9])' ;;
+    version="$(go version 2>/dev/null)"
+    [[ "$version" =~ go1\.(2[4-9]|[3-9][0-9]) ]] || { echo "go version gave '${version:-nothing}'; Go 1.24 or later is needed" >&2; exit 1; } ;;
   build)
     mkdir -p "$BIN"
     (cd "$PROJECT" && go build ./... && go vet ./... && go build -o "$BIN/" ./cmd/... && python3 -I "$HERE/go_banned.py" "$PROJECT") >"$PROJECT/.mortis/build.log" 2>&1 ;;
