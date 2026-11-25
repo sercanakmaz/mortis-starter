@@ -6,7 +6,7 @@ Optional parts, each adding files and registration lines. Choose several; the va
 
 The add-ons switched on.
 
-**By preset:** lean `none`, standard `correlation, api-conventions`, advanced `correlation, soft-delete, caching, scheduler, secrets, loop-guard, contexts, events-project, idempotent-commands, observability, api-conventions`.
+**By preset:** lean `none`, standard `correlation, api-conventions`, advanced `correlation, soft-delete, caching, scheduler, secrets, loop-guard, events-project, idempotent-commands, observability, api-conventions`.
 
 ### correlation
 
@@ -18,19 +18,19 @@ The add-ons switched on.
 
 **Choose when:** deleted data must stay for audit or undo.
 
-**Costs:** a named filter on every query of a soft-deletable aggregate; natural unique keys become filtered indexes; raw SQL must add the filter by hand; a restore can collide with a reused key. Written but not generated yet (`architecture/advanced-addons.md`, decision 50).
+**Costs:** a named filter on every query of a soft-deletable aggregate; natural keys no other table references become filtered indexes (a referenced one stays taken); raw SQL must add the filter by hand; a restore can collide with a reused key. Built and proved in the C# advanced reference solution (decision 52).
 
 ### caching
 
 **Choose when:** reads are slow and repeated.
 
-**Costs:** one invalidation handler per event that changes a cached answer; a short window (the entry's lifetime, 60 s by default) in which a concurrent read can be stale; Redis for several processes. Written but not generated yet (decision 50).
+**Costs:** one invalidation handler per event that changes a cached answer; a short window (the entry's lifetime, 60 s by default) in which a concurrent read can be stale; Redis for several processes. Built and proved in the C# advanced reference solution (decision 52).
 
 ### scheduler
 
 **Choose when:** recurring jobs run on a clock.
 
-**Costs:** a worker host, two tables (runs per tick, one-shot jobs), a service user per job; PostgreSQL only. Written but not generated yet (decision 50).
+**Costs:** a worker host, a table of runs per tick, a service user per job; PostgreSQL only. Built and proved in the C# advanced reference solution (decision 52).
 
 **Rules:** R9.
 
@@ -38,31 +38,31 @@ The add-ons switched on.
 
 **Choose when:** files are stored or served.
 
-**Costs:** a storage service (S3 or MinIO; local disk in development), size and type limits, orphan files to clean up. Written but not generated yet (decision 50).
+**Costs:** a storage service (S3 or MinIO; local disk in development), size and type limits, orphan files to clean up. Written but never built or proved, and in no preset (decision 53).
 
 ### secrets
 
 **Choose when:** values such as tax numbers or third-party API keys must be unreadable in the database and its backups.
 
-**Costs:** keys to keep in a secret store and rotate; secret columns cannot be searched. Written but not generated yet (decision 50).
+**Costs:** keys to keep in a secret store and rotate; secret columns cannot be searched. Built and proved in the C# advanced reference solution (decision 52).
 
 ### loop-guard
 
 **Choose when:** handlers could trigger each other forever.
 
-**Costs:** a chain of command names on the context and on every event; a 500 `loop_detected` when it grows past 16. Written but not generated yet (decision 50).
+**Costs:** a chain of command names on the context and on every event; a 500 `loop_detected` when it grows past 16. Built and proved in the C# advanced reference solution (decision 52).
 
 ### contexts
 
 **Choose when:** groups of aggregates stop sharing a vocabulary.
 
-**Costs:** a `Contexts/{Context}` segment in every path, communication by events and ids only, a rule test; wire names follow the new namespaces. Written but not generated yet (decision 50).
+**Costs:** a `Contexts/{Context}` segment in every path, communication by events and ids only, a rule test; wire names follow the new namespaces. Written but never built or proved, and in no preset (decision 53): when a developer chooses it, say so before writing `MORTIS.md`.
 
 ### events-project
 
 **Choose when:** another process needs the event contracts without the domain.
 
-**Costs:** a `{Name}.Contracts` project (packable) to version; renaming a contract member breaks consumers. Written but not generated yet (decision 50).
+**Costs:** a `{Name}.Contracts` project (packable) to version; renaming a contract member breaks consumers. Built and proved in the C# advanced reference solution (decision 52).
 
 ### idempotent-commands
 

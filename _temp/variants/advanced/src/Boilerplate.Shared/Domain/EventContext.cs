@@ -46,7 +46,8 @@ public sealed class EventContext
                     CorrelationId = commandContext.CorrelationId,
                     CausationId = commandContext.CausationId,
                     TenantId = commandContext.TenantId,
-                    Language = commandContext.Language
+                    Language = commandContext.Language,
+                    Chain = commandContext.Chain
                 }
                 : @event);
         }

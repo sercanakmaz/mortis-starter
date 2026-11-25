@@ -6,7 +6,7 @@
 
 ## Decision
 
-A soft-deletable aggregate implements `ISoftDeletable` and raises `Deleted` and `Restored`. A named EF Core query filter hides deleted rows; ignoring it by name keeps the tenant filter. Natural unique keys are unique indexes filtered on `is_deleted = false`, so a deleted key can be reused; a restore that collides answers 409 `duplicate`.
+A soft-deletable aggregate implements `ISoftDeletable` and raises `Deleted` and `Restored`. A named EF Core query filter hides deleted rows; ignoring it by name keeps the tenant filter. A natural key no other table references becomes a unique index filtered on `is_deleted = false`, so a deleted key can be reused and a restore that collides answers 409 `duplicate`; a natural key another table references (the example's SKU) stays an alternate key, because a foreign key needs a real unique constraint, and stays taken.
 
 ## What varies
 
@@ -28,4 +28,4 @@ Which aggregates are soft-deletable.
 
 ## How it is enforced
 
-The domain and handler tests, `ProductConfigurationTests` (the filter and the filtered index), and `soft-delete.sh` (a deleted product is invisible, its SKU can be reused, a restore brings it back).
+The domain and handler tests, `ProductConfigurationTests` (the named filters), and `soft-delete.sh` (a deleted product is invisible, its referenced SKU stays taken, a restore brings it back).

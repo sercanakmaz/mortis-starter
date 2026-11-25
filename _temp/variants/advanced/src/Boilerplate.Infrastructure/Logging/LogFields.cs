@@ -16,7 +16,8 @@ public static class LogFields
             ["TenantId"] = commandContext?.TenantId,
             ["UserId"] = commandContext?.User?.Id,
             ["Language"] = commandContext?.Language,
-            ["Command"] = command.GetType().Name
+            ["Command"] = command.GetType().Name,
+            ["Chain"] = string.Join(LoopGuardConstants.Separator, commandContext?.Chain ?? [])
         };
     }
 
@@ -30,7 +31,8 @@ public static class LogFields
             ["UserId"] = @event.UserId,
             ["Language"] = @event.Language,
             ["Event"] = @event.GetType().Name,
-            ["EventId"] = @event.EventId
+            ["EventId"] = @event.EventId,
+            ["Chain"] = string.Join(LoopGuardConstants.Separator, @event.Chain ?? [])
         };
     }
 }

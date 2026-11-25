@@ -5,7 +5,7 @@ Markers, each on a line of its own:
   @@decl <file>::<Type>@@                 the type's declaration line(s) up to its opening brace or semicolon
   @@data <file> [lang]@@                  the whole file (only for data files)
 <file> is relative to a variant solution in _temp/variants/; the first of lean, advanced, standard that has it is read, or
-"variant:<preset>/<file>" reads one variant. "Boilerplate" becomes {Name} in the output.
+"variant:<preset>/<file>" reads one variant, and "extra:<build>/<file>" one of the option builds in _temp/variants-extra/. "Boilerplate" becomes {Name} in the output.
 """
 import re
 import sys
@@ -22,6 +22,8 @@ TARGET = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp"
 
 
 def source_file(file):
+    if file.startswith("extra:"):
+        return ROOT / "_temp" / "variants-extra" / file[len("extra:"):]
     if file.startswith("variant:"):
         preset, _, relative = file[len("variant:"):].partition("/")
         return VARIANTS / preset / relative
@@ -196,10 +198,12 @@ def usings_for(page):
             continue
         relative = entry["path"].replace("{Name}", "Boilerplate")
         if not source_file(relative).exists():
-            continue
+            relative = next((f"extra:{build.name}/{relative}" for build in sorted((ROOT / "_temp" / "variants-extra").glob("*")) if (build / relative).exists()), None)
+            if relative is None:
+                continue
         source = read_source(relative)
         usings = [l.strip()[6:-1] for l in source.splitlines() if l.startswith("using ") and not l.startswith("using var ")]
-        namespace = next((l.strip()[10:-1] for l in source.splitlines() if l.startswith("namespace ")), "")
+        namespace = next((l.strip()[10:].rstrip(";").strip() for l in source.splitlines() if l.startswith("namespace ")), "")
         rows.append((entry["path"], namespace.replace("Boilerplate", "{Name}"), ", ".join(sorted(u.replace("Boilerplate", "{Name}") for u in usings)) or "none"))
     out = ["| File | Namespace | Usings |", "|---|---|---|"]
     out += [f"| `{p}` | `{n}` | {u} |" for p, n, u in rows]
@@ -216,9 +220,10 @@ def expand(source):
         many = re.fullmatch(r"@@members ([^@]+)@@", line.strip())
         if many:
             file, type_name = many.group(1).strip().split("::")
-            out.append("```csharp")
-            out.append(decl(file, type_name))
-            out.append("```")
+            declaration = ["```csharp", decl(file, type_name), "```"]
+            emitted = [line for line in out if line.strip()][-3:]
+            if emitted != declaration:
+                out += declaration
             for name in member_names(file, type_name):
                 base, _, occ = name.partition("#")
                 out += ["", "```csharp", member(file, type_name, base, int(occ or 1)), "```"]

@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Domain.Aggregates.Orders.Events;
 using Boilerplate.Shared.Application;
 using Boilerplate.Shared.Domain;

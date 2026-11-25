@@ -11,6 +11,7 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
         builder.Property(message => message.Id).ValueGeneratedNever();
         builder.Property(message => message.TenantId).HasMaxLength(OutboxSettings.TenantIdMaxLength);
         builder.Property(message => message.Type).HasMaxLength(300).IsRequired();
+        builder.Property(message => message.TraceParent).HasMaxLength(OutboxSettings.TraceParentMaxLength);
         builder.Property(message => message.Payload).HasColumnType("jsonb").IsRequired();
 
         builder.HasIndex(message => message.NextAttemptAt);

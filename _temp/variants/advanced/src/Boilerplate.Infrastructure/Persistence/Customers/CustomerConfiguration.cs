@@ -1,3 +1,4 @@
+using Boilerplate.Infrastructure.Secrets;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Boilerplate.Domain.Aggregates.Customers;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 
         builder.Property(customer => customer.Name).HasMaxLength(CustomerConstants.NameMaxLength).IsRequired();
         builder.Property(customer => customer.Email).HasMaxLength(CustomerConstants.EmailMaxLength).IsRequired();
+        builder.Property(customer => customer.Note).HasMaxLength(CustomerConstants.NoteMaxLength);
+        builder.Property(customer => customer.TaxNumber).IsSecret();
 
         builder.HasIndex(customer => new { customer.TenantId, customer.Email }).IsUnique();
         builder.HasAlternateKey(customer => new { customer.TenantId, customer.Id });

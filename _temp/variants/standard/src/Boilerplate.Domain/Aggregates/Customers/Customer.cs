@@ -11,6 +11,7 @@ public class Customer : AggregateRoot<Guid>
     public string Email { get; protected set; }
     public bool IsBlocked { get; protected set; }
     public int CompletedOrderCount { get; protected set; }
+    public string Note { get; protected set; }
 
     [DebuggerStepThrough]
     protected Customer() { }
@@ -29,6 +30,14 @@ public class Customer : AggregateRoot<Guid>
         IsBlocked = true;
 
         RaiseEvent(new Blocked(Id.ToString()));
+    }
+
+    public void Change(string name, string note)
+    {
+        Name = name;
+        Note = note;
+
+        RaiseEvent(new Changed(Id.ToString()));
     }
 
     public void RegisterCompletedOrder()

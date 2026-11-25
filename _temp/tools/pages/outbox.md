@@ -156,9 +156,13 @@ The table is part of the project's first migration (`infrastructure-postgres.md`
 
 ## Tests
 
-File `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs`:
+File `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs`. With `events.transport` = `rabbitmq` (one row per event, `Id` is the event's id, tenant kept):
 
-@@members test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs::OutboxMessageTests@@
+@@members variant:advanced/test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs::OutboxMessageTests@@
+
+With `database` (one row per event and consumer, a fresh `Id`, the consumer's attempt limit; using `{Name}.Infrastructure.Messaging` as well):
+
+@@members variant:standard/test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs::OutboxMessageTests@@
 
 The claim, the worker and the retry need a real database; the conformance suite proves them (`scripts/conformance/outbox.sh`).
 

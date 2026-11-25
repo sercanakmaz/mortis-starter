@@ -37,12 +37,19 @@ MESSAGES_PREFIXES = ("src/Boilerplate.Shared/Application/Languages.cs", "src/Boi
                      "test/Boilerplate.Tests/Infrastructure/Localization/", "test/Boilerplate.Tests/Shared/Application/LanguagesTests.cs")
 DATA_PREFIXES = ("src/Boilerplate.Shared/Domain/LocalizedText.cs", "src/Boilerplate.Infrastructure/Persistence/LocalizedTextConversion.cs", "test/Boilerplate.Tests/Shared/Domain/LocalizedTextTests.cs")
 DATA_EXAMPLE_FILES = ("src/Boilerplate.Application/Products/RenameProductCommand.cs", "test/Boilerplate.Tests/Application/Products/RenameProductCommandHandlerTests.cs")
-POSTGRES_PREFIXES = ("src/Boilerplate.Infrastructure/Persistence/", "test/Boilerplate.Tests/Infrastructure/Persistence/", "src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs")
+POSTGRES_PREFIXES = ("src/Boilerplate.Infrastructure/Persistence/", "test/Boilerplate.Tests/Infrastructure/Persistence/", "test/Boilerplate.Tests/TestSupport/Infrastructure/Persistence/", "src/Boilerplate.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs")
 POSTGRES_EXCEPTIONS = ("src/Boilerplate.Infrastructure/Persistence/PersistenceConstants.cs",)
 MONGO_FILES = {
     "src/{Name}.Infrastructure/Persistence/Mongo/MongoModule.cs": ({}, True),
     "src/{Name}.Infrastructure/Persistence/Mongo/MongoClassMaps.cs": ({}, True),
     "src/{Name}.Infrastructure/Persistence/Mongo/MongoUnitOfWork.cs": ({}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/MongoSession.cs": ({}, True),
+    "src/{Name}.Infrastructure/Messaging/Outbox/OutboxConstants.cs": ({"events.outbox": ["background", "after-command"]}, True),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Categories/CategoryReader.cs": ({"example": "true", "queries": ["split", "read-models"]}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerReader.cs": ({"example": "true", "queries": ["split", "read-models"]}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderReader.cs": ({"example": "true", "queries": ["split", "read-models"]}, False),
+    "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductReader.cs": ({"example": "true", "queries": ["split", "read-models"]}, False),
+    "test/{Name}.Tests/Infrastructure/Persistence/Mongo/ProductReaderTests.cs": ({"example": "true", "queries": ["split", "read-models"]}, False),
     "src/{Name}.Infrastructure/Persistence/Mongo/MongoRepository.cs": ({}, True),
     "src/{Name}.Infrastructure/Persistence/Mongo/MongoExceptionHandler.cs": ({}, True),
     "src/{Name}.Infrastructure/Persistence/Mongo/ConcurrencyConflictException.cs": ({}, True),
@@ -116,11 +123,16 @@ API_CONVENTION_FILES = {
     "src/{Name}.Application/Customers/ChangeCustomerCommand.cs": ({"example": "true"}, False),
     "src/{Name}.Domain/Aggregates/Customers/Events/Changed.cs": ({"example": "true"}, False),
     "test/{Name}.Tests/Shared/Application/OptionalTests.cs": ({}, False),
+    "test/{Name}.Tests/TestSupport/Shared/Application/OptionalProbe.cs": ({}, False),
     "test/{Name}.Tests/Api/Conventions/ApiConventionsModuleTests.cs": ({}, False),
     "test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs": ({"example": "true"}, False),
 }
 IDEMPOTENCY_FILES = {
     "src/{Name}.Api/Idempotency/IdempotencyFilter.cs": {},
+    "src/{Name}.Api/Idempotency/IdempotencyHash.cs": {},
+    "src/{Name}.Api/Idempotency/IdempotencyReplay.cs": {},
+    "src/{Name}.Api/Idempotency/IdempotencyKeyReusedException.cs": {},
+    "src/{Name}.Api/Idempotency/IdempotencyInProgressException.cs": {},
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecord.cs": {},
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecordConfiguration.cs": {},
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyConstants.cs": {},
@@ -129,6 +141,8 @@ IDEMPOTENCY_FILES = {
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyCleanupService.cs": {},
     "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyModule.cs": {},
     "test/{Name}.Tests/Api/Idempotency/IdempotencyFilterTests.cs": {},
+    "test/{Name}.Tests/TestSupport/Api/Idempotency/ResourceExecutingContextBuilder.cs": {},
+    "test/{Name}.Tests/TestSupport/Api/Idempotency/IdempotencyStoreBuilder.cs": {},
     "test/{Name}.IntegrationTests/Persistence/IdempotencyStoreTests.cs": {"testing": ["integration", "architecture"]},
 }
 OBSERVABILITY_FILES = {
@@ -141,7 +155,7 @@ OBSERVABILITY_FILES = {
     "src/{Name}.Infrastructure/Diagnostics/RabbitMqHealthCheck.cs": ({"events.transport": "rabbitmq"}, False),
     "src/{Name}.Api/Middlewares/RequestLoggingMiddleware.cs": ({}, False),
     "src/{Name}.Api/Observability/HealthResponse.cs": ({}, False),
-    "test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs": ({"database": "postgres", "testing": ["integration", "architecture"]}, False),
+    "test/{Name}.Tests/TestSupport/Shared/Diagnostics/RecordedActivities.cs": ({}, False),
 }
 HANDLERS_UP = ["handlers", "integration", "architecture"]
 INTEGRATION_UP = ["integration", "architecture"]
@@ -153,12 +167,17 @@ TESTING_FILES = {
     "test/{Name}.IntegrationTests/TestSupport/PostgresFixture.cs": {"testing": INTEGRATION_UP, "database": "postgres"},
     "test/{Name}.IntegrationTests/TestSupport/RabbitMqFixture.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
     "test/{Name}.IntegrationTests/TestSupport/IntegrationConstants.cs": {"testing": INTEGRATION_UP},
-    "test/{Name}.IntegrationTests/TestSupport/IntegrationCollections.cs": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/TestSupport/PostgresCollection.cs": {"testing": INTEGRATION_UP, "database": "postgres"},
+    "test/{Name}.IntegrationTests/TestSupport/RabbitMqCollection.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
     "test/{Name}.IntegrationTests/TestSupport/IntegrationServices.cs": {"testing": INTEGRATION_UP},
-    "test/{Name}.IntegrationTests/Persistence/ProductRepositoryTests.cs": {"testing": INTEGRATION_UP, "example": "true", "database": "postgres"},
-    "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs": {"testing": INTEGRATION_UP, "database": "postgres"},
-    "test/{Name}.IntegrationTests/Messaging/OutboxClaimTests.cs": {"testing": INTEGRATION_UP, "events.outbox": OUTBOX, "database": "postgres"},
+    "test/{Name}.IntegrationTests/Persistence/ProductRepositoryTests.cs": {"testing": INTEGRATION_UP, "example": "true"},
+    "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs": {"testing": INTEGRATION_UP},
+    "test/{Name}.IntegrationTests/Messaging/OutboxClaimTests.cs": {"testing": INTEGRATION_UP, "events.outbox": OUTBOX},
+    "test/{Name}.IntegrationTests/TestSupport/MongoFixture.cs": {"testing": INTEGRATION_UP, "database": "mongo"},
+    "test/{Name}.IntegrationTests/TestSupport/MongoCollection.cs": {"testing": INTEGRATION_UP, "database": "mongo"},
+    "test/{Name}.IntegrationTests/TestSupport/OutboxRows.cs": {"testing": INTEGRATION_UP, "events.outbox": OUTBOX, "database": "postgres"},
     "test/{Name}.IntegrationTests/Messaging/RabbitMqRoundTripTests.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
+    "test/{Name}.IntegrationTests/TestSupport/RabbitMqDeliveries.cs": {"testing": INTEGRATION_UP, "events.transport": "rabbitmq"},
     "test/{Name}.Tests/Architecture/LayerRulesTests.cs": {"testing": "architecture"},
     "test/{Name}.Tests/Architecture/RegistrationRulesTests.cs": {"testing": "architecture"},
     "test/{Name}.Tests/Architecture/ServiceRulesTests.cs": {"testing": "architecture"},
@@ -177,7 +196,6 @@ ADVANCED_ADDONS = {
         "src/{Name}.Application/Products/RestoreProductCommand.cs": (EX, False),
         "test/{Name}.Tests/Application/Products/DeleteProductCommandHandlerTests.cs": (EX, False),
         "test/{Name}.Tests/Application/Products/RestoreProductCommandHandlerTests.cs": (EX, False),
-        "test/{Name}.IntegrationTests/Persistence/SoftDeleteTests.cs": ({**EX, **PG, "testing": ["integration", "architecture"]}, False),
     }),
     "caching.md": ({"addons": "caching"}, "docs/adr/0025-caching-reads.md", {
         "src/{Name}.Shared/Application/ICacheService.cs": ({}, True),
@@ -188,27 +206,26 @@ ADVANCED_ADDONS = {
         "src/{Name}.Application/Products/InvalidateProductCacheWhenStockDecreasedEventHandler.cs": (EX, False),
         "src/{Name}.Application/Products/InvalidateProductCacheWhenStockIncreasedEventHandler.cs": (EX, False),
         "src/{Name}.Application/Products/InvalidateProductCacheWhenRenamedEventHandler.cs": (EX, False),
+        "src/{Name}.Application/Products/InvalidateProductCacheWhenDeletedEventHandler.cs": ({**EX, "addons": ["caching", "soft-delete"]}, False),
+        "src/{Name}.Application/Products/InvalidateProductCacheWhenRestoredEventHandler.cs": ({**EX, "addons": ["caching", "soft-delete"]}, False),
+        "test/{Name}.Tests/Application/Products/InvalidateProductCacheEventHandlerTests.cs": (EX, False),
         "src/{Name}.Domain/Aggregates/Products/Events/Renamed.cs": (EX, False),
         "test/{Name}.Tests/Infrastructure/Caching/HybridCacheServiceTests.cs": ({}, False),
-        "test/{Name}.Tests/TestSupport/Shared/Application/CacheServiceBuilder.cs": ({}, False),
+        "test/{Name}.Tests/TestSupport/Shared/Application/PassThroughCacheService.cs": ({}, False),
     }),
     "scheduler.md": ({"addons": "scheduler", "database": "postgres"}, "docs/adr/0026-scheduled-jobs.md", {
-        "src/{Name}.Application/Scheduling/IRecurringJob.cs": ({}, False),
+        "src/{Name}.Shared/Application/IRecurringJob.cs": ({}, True),
         "src/{Name}.Application/Orders/CancelEmptyOrdersJob.cs": (EX, False),
         "src/{Name}.Application/Orders/CancelEmptyOrdersCommand.cs": (EX, False),
         "src/{Name}.Infrastructure/Scheduling/SchedulerService.cs": ({}, False),
-        "src/{Name}.Infrastructure/Scheduling/ScheduledJobService.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/SchedulerModule.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/SchedulerSettings.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/SchedulerTicks.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/RecurringJobRegistry.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/ScheduledJobRun.cs": ({}, False),
         "src/{Name}.Infrastructure/Scheduling/ScheduledJobRunConfiguration.cs": ({}, False),
-        "src/{Name}.Infrastructure/Scheduling/ScheduledJob.cs": ({}, False),
-        "src/{Name}.Infrastructure/Scheduling/ScheduledJobConfiguration.cs": ({}, False),
         "test/{Name}.Tests/Infrastructure/Scheduling/SchedulerTicksTests.cs": ({}, False),
         "test/{Name}.Tests/Application/Orders/CancelEmptyOrdersCommandHandlerTests.cs": (EX, False),
-        "test/{Name}.IntegrationTests/Scheduling/SchedulerClaimTests.cs": ({"testing": ["integration", "architecture"]}, False),
     }),
     "storage.md": ({"addons": "storage"}, "docs/adr/0027-file-storage-port.md", {
         "src/{Name}.Shared/Application/IFileStorage.cs": ({}, True),
@@ -236,12 +253,15 @@ ADVANCED_ADDONS = {
         "src/{Name}.Domain/Aggregates/Customers/Events/TaxNumberSet.cs": (EX, False),
         "src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs": (EX, False),
         "test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs": ({}, False),
-        "test/{Name}.IntegrationTests/Persistence/SecretColumnTests.cs": ({**EX, "testing": ["integration", "architecture"]}, False),
+        "src/{Name}.Worker/appsettings.Development.json": ({"hosts.worker": "separate"}, False),
+        "test/{Name}.Tests/TestSupport/Infrastructure/Secrets/FakeSecretsSettings.cs": ({}, False),
+        "test/{Name}.Tests/Application/Customers/SetCustomerTaxNumberCommandHandlerTests.cs": (EX, False),
+        "test/{Name}.Tests/Infrastructure/Persistence/Customers/CustomerConfigurationTests.cs": (EX, False),
     }),
     "loop-guard.md": ({"addons": "loop-guard"}, "docs/adr/0029-loop-guard.md", {
         "src/{Name}.Shared/Application/LoopGuardConstants.cs": ({}, True),
         "src/{Name}.Shared/Exceptions/LoopDetectedException.cs": ({}, True),
-        "test/{Name}.Tests/TestSupport/Shared/Application/PingPong.cs": ({}, False),
+        "test/{Name}.Tests/TestSupport/Shared/Application/PingPongLog.cs": ({}, False),
         "test/{Name}.Tests/Shared/Application/LoopGuardTests.cs": ({}, False),
     }),
     "contexts.md": ({"addons": "contexts"}, "docs/adr/0030-bounded-contexts.md", {
@@ -254,9 +274,15 @@ ADVANCED_ADDONS = {
         "src/{Name}.Contracts/ContractsMarker.cs": ({}, False),
         "src/{Name}.Contracts/Orders/LineAdded.cs": (EX, False),
         "src/{Name}.Contracts/Orders/LineCancelled.cs": (EX, False),
+        "src/{Name}.Contracts/Orders/Completed.cs": (EX, False),
+        "src/{Name}.Contracts/Orders/Cancelled.cs": (EX, False),
+        "src/{Name}.Contracts/Products/StockIncreased.cs": (EX, False),
+        "src/{Name}.Contracts/Products/StockDecreased.cs": (EX, False),
+        "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/PinnedProbe.cs": ({"events.transport": "rabbitmq"}, False),
         "test/{Name}.Tests/Architecture/ContractsRulesTests.cs": ({}, False),
     }),
 }
+MOVED_BY_EVENTS_PROJECT = {f"src/Boilerplate.Domain/Aggregates/{aggregate}/Events/{event}.cs" for aggregate, events in (("Orders", ("LineAdded", "LineCancelled", "Completed", "Cancelled")), ("Products", ("StockIncreased", "StockDecreased"))) for event in events}
 OPTION_CHANGES = {
     "api-conventions": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/Middlewares/ApiConstants.cs",
                         "src/{Name}.Domain/Aggregates/Customers/Customer.cs", "src/{Name}.Domain/Aggregates/Customers/CustomerConstants.cs", "src/{Name}.Application/Customers/CustomerDto.cs",
@@ -265,7 +291,7 @@ OPTION_CHANGES = {
     "idempotent-commands": ["src/{Name}.Api/Program.cs", "src/{Name}.Api/appsettings.json", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
     "soft-delete": ["src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs", "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs", "src/{Name}.Infrastructure/Persistence/Products/ProductConfiguration.cs", "src/{Name}.Api/Controllers/ProductsController.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs", "src/{Name}.Infrastructure/Persistence/PersistenceConstants.cs"],
     "caching": ["src/{Name}.Application/Products/GetProductCommand.cs", "src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Api/appsettings.json", "docker-compose.yml"],
-    "scheduler": ["src/{Name}.Worker/Program.cs", "src/{Name}.Worker/appsettings.json", "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs", "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"],
+    "scheduler": ["src/{Name}.Worker/Program.cs", "src/{Name}.Worker/appsettings.json", "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs", "src/{Name}.Domain/Aggregates/Orders/OrderConstants.cs", "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs", "src/{Name}.Application/ApplicationModule.cs"],
     "storage": ["src/{Name}.Domain/Aggregates/Products/Product.cs", "src/{Name}.Application/Products/ProductDto.cs", "src/{Name}.Domain/Aggregates/Products/ProductConstants.cs", "src/{Name}.Api/Controllers/ProductsController.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Api/appsettings.json", "docker-compose.yml"],
     "secrets": ["src/{Name}.Domain/Aggregates/Customers/Customer.cs", "src/{Name}.Application/Customers/CustomerDto.cs", "src/{Name}.Infrastructure/Persistence/Customers/CustomerConfiguration.cs", "src/{Name}.Api/Controllers/CustomersController.cs", "src/{Name}.Infrastructure/Persistence/AppDbContext.cs", "src/{Name}.Application/ApplicationModule.cs", "src/{Name}.Infrastructure/InfrastructureModule.cs", "src/{Name}.Console/Program.cs", "src/{Name}.Api/appsettings.json"],
     "loop-guard": ["src/{Name}.Shared/Application/CommandContext.cs", "src/{Name}.Shared/Domain/EventBase.cs", "src/{Name}.Shared/Domain/EventContext.cs", "src/{Name}.Shared/Application/CommandPipeline.cs", "src/{Name}.Infrastructure/Logging/LogFields.cs"],
@@ -317,6 +343,7 @@ def page_of(f):
     if f.startswith("test/"):
         if is_example(f): return "worked-slice-tests.md"
         if "Infrastructure/Messaging/EventPublisher" in f: return "events-inprocess.md"
+        if "/Console/" in f and "TestSupport" not in f: return "hosts.md"
         return "testing.md" if "/TestSupport/" in f else "testing-kernel.md"
     if "Boilerplate.Shared/Domain" in f: return "shared-domain.md"
     if "Boilerplate.Shared/Application" in f: return "shared-application.md"
@@ -334,6 +361,40 @@ def source_of(f):
     return "snippets" if f.endswith(".cs") else "data"
 
 
+pending = []
+pending.append({"path": "src/{Name}.Shared/Domain/TenancyConstants.cs", "page": "tenancy.md", "source": "snippets", "when": {"tenancy.mode": "interface", "tenancy.key": "text"}, "kernel": True})
+for path, (when, kernel) in MONGO_FILES.items():
+    pending.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel})
+for path, (when, kernel) in QUERY_FILES.items():
+    if path.endswith(("/PageRequest.cs", "/PagedResult.cs")):
+        pending.append({"path": path, "page": "queries.md", "source": "snippets", "when_any": [{"queries": ["split", "read-models"]}, {"addons": "api-conventions"}], "kernel": kernel, "unbuilt": True})
+        continue
+    pending.append({"path": path, "page": "queries.md", "source": "snippets", "when": {**when, "queries": ["split", "read-models"]}, "kernel": kernel, "unbuilt": True})
+for path, (when, kernel) in READ_MODEL_FILES.items():
+    pending.append({"path": path, "page": "read-models.md", "source": "snippets", "when": {**when, "queries": "read-models", "database": "postgres"}, "kernel": kernel, "unbuilt": True})
+for path, (when, kernel) in API_CONVENTION_FILES.items():
+    pending.append({"path": path, "page": "api-conventions.md", "source": "snippets", "when": {**when, "addons": "api-conventions"}, "kernel": kernel, "unbuilt": True})
+for path, when in IDEMPOTENCY_FILES.items():
+    pending.append({"path": path, "page": "idempotency.md", "source": "snippets", "when": {**when, "addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
+for path, (when, kernel) in OBSERVABILITY_FILES.items():
+    pending.append({"path": path, "page": "observability.md", "source": "snippets", "when": {**when, "addons": "observability"}, "kernel": kernel, "unbuilt": True})
+pending.append({"path": "docs/adr/0020-one-shape-for-requests-and-failures.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "api-conventions"}, "kernel": False, "unbuilt": True})
+pending.append({"path": "docs/adr/0021-idempotency-keys-for-post.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
+pending.append({"path": "docs/adr/0022-health-traces-and-metrics.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "observability"}, "kernel": False, "unbuilt": True})
+for path, when in TESTING_FILES.items():
+    pending.append({"path": path, "page": "testing-levels.md", "source": "snippets", "when": when, "kernel": False, "unbuilt": True})
+pending.append({"path": "docs/adr/0023-testing-levels.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"testing": HANDLERS_UP}, "kernel": False, "unbuilt": True})
+for page, (base, adr, addon_files) in ADVANCED_ADDONS.items():
+    for path, (when, kernel) in addon_files.items():
+        pending.append({"path": path, "page": page, "source": "snippets", "when": {**base, **when}, "kernel": kernel, "unbuilt": True})
+    pending.append({"path": adr, "page": "project-docs-adr.md", "source": "snippets", "when": base, "kernel": False, "unbuilt": True})
+for path, when in PERMISSION_FILES.items():
+    pending.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
+pending.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})
+pending.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False})
+pending.append({"path": "docs/adr/0018-queries-and-read-models.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"queries": ["split", "read-models"]}, "kernel": False, "unbuilt": True})
+PENDING = {entry["path"]: entry for entry in pending}
+used = set()
 out = []
 for f in files:
     entry = {"path": f.replace("Boilerplate", "{Name}"), "page": KERNEL_PAGES.get(f, page_of(f)), "source": source_of(f)}
@@ -379,39 +440,23 @@ for f in files:
         entry["when"] = {**entry.get("when", {}), "queries": "commands"}
     if f.startswith(POSTGRES_PREFIXES) and f not in POSTGRES_EXCEPTIONS:
         entry["when"] = {**entry.get("when", {}), "database": "postgres"}
+    if f == "test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs":
+        entry["when"] = {"example": "true"}
+    if f in MOVED_BY_EVENTS_PROJECT:
+        entry["when_not"] = {"addons": "events-project"}
+    known = PENDING.get(entry["path"])
+    if known is not None:
+        used.add(entry["path"])
+        entry["page"] = known["page"]
+        entry["kernel"] = known["kernel"]
+        entry.pop("when", None)
+        for key in ("when", "when_any"):
+            if key in known:
+                entry[key] = known[key]
     in_all = all(f in present[preset] for preset in PRESETS)
-    assert in_all or "when" in entry and set(entry["when"]) != {"example"}, f"{f} is in only some variants and has no option"
+    assert in_all or "when_any" in entry or "when_not" in entry or "when" in entry and set(entry["when"]) != {"example"}, f"{f} is in only some variants and has no option"
     out.append(entry)
-for path, (when, kernel) in MONGO_FILES.items():
-    out.append({"path": path, "page": "infrastructure-mongo.md", "source": "snippets", "when": {**when, "database": "mongo"}, "kernel": kernel, "unbuilt": True})
-for path, (when, kernel) in QUERY_FILES.items():
-    if path.endswith(("/PageRequest.cs", "/PagedResult.cs")):
-        out.append({"path": path, "page": "queries.md", "source": "snippets", "when_any": [{"queries": ["split", "read-models"]}, {"addons": "api-conventions"}], "kernel": kernel, "unbuilt": True})
-        continue
-    out.append({"path": path, "page": "queries.md", "source": "snippets", "when": {**when, "queries": ["split", "read-models"]}, "kernel": kernel, "unbuilt": True})
-for path, (when, kernel) in READ_MODEL_FILES.items():
-    out.append({"path": path, "page": "read-models.md", "source": "snippets", "when": {**when, "queries": "read-models", "database": "postgres"}, "kernel": kernel, "unbuilt": True})
-for path, (when, kernel) in API_CONVENTION_FILES.items():
-    out.append({"path": path, "page": "api-conventions.md", "source": "snippets", "when": {**when, "addons": "api-conventions"}, "kernel": kernel, "unbuilt": True})
-for path, when in IDEMPOTENCY_FILES.items():
-    out.append({"path": path, "page": "idempotency.md", "source": "snippets", "when": {**when, "addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
-for path, (when, kernel) in OBSERVABILITY_FILES.items():
-    out.append({"path": path, "page": "observability.md", "source": "snippets", "when": {**when, "addons": "observability"}, "kernel": kernel, "unbuilt": True})
-out.append({"path": "docs/adr/0020-one-shape-for-requests-and-failures.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "api-conventions"}, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0021-idempotency-keys-for-post.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "idempotent-commands", "database": "postgres"}, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0022-health-traces-and-metrics.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"addons": "observability"}, "kernel": False, "unbuilt": True})
-for path, when in TESTING_FILES.items():
-    out.append({"path": path, "page": "testing-levels.md", "source": "snippets", "when": when, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0023-testing-levels.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"testing": HANDLERS_UP}, "kernel": False, "unbuilt": True})
-for page, (base, adr, files) in ADVANCED_ADDONS.items():
-    for path, (when, kernel) in files.items():
-        out.append({"path": path, "page": page, "source": "snippets", "when": {**when, **base}, "kernel": kernel, "unbuilt": True})
-    out.append({"path": adr, "page": "project-docs-adr.md", "source": "snippets", "when": base, "kernel": False, "unbuilt": True})
-for path, when in PERMISSION_FILES.items():
-    out.append({"path": path, "page": "permissions.md", "source": "snippets", "when": {**when, "auth": "jwt"}, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0019-every-command-declares-a-permission.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"auth": "jwt"}, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0017-aggregates-as-documents-in-mongodb.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"database": "mongo"}, "kernel": False, "unbuilt": True})
-out.append({"path": "docs/adr/0018-queries-and-read-models.md", "page": "project-docs-adr.md", "source": "snippets", "when": {"queries": ["split", "read-models"]}, "kernel": False, "unbuilt": True})
+out += [entry for entry in pending if entry["path"] not in used]
 initial_when = [{"example": "true", "database": "postgres"}, {"events.outbox": OUTBOX, "database": "postgres"}]
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
 out.append({"path": "src/{Name}.Infrastructure/Persistence/Migrations/*_Initial.Designer.cs", "page": "infrastructure-postgres.md", "source": "tool", "when_any": initial_when, "kernel": False, "glob": True})
@@ -441,8 +486,10 @@ manifest={
 old = json.load(open(TARGET))
 manifest["aggregate_files"] = old["aggregate_files"]
 manifest["aggregate_files"]["folders"].setdefault("src/{Name}.Infrastructure/Persistence/Mongo/{Plural}", ["{Aggregate}Repository.cs"])
-for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs", "{Aggregate}Permissions.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs", "*ValidatorTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"])):
-    existing = manifest["aggregate_files"]["folders"][folder]
+manifest["aggregate_files"]["folders"]["src/{Name}.Infrastructure/Persistence/Mongo/{Plural}"] = ["{Aggregate}Repository.cs", "{Aggregate}Reader.cs"]
+manifest["aggregate_files"]["folders"]["src/{Name}.Contracts/{Plural}"] = ["*.cs"]
+for folder, patterns in (("src/{Name}.Domain/Aggregates/{Plural}", ["I{Aggregate}Reader.cs", "*View.cs"]), ("src/{Name}.Application/{Plural}", ["*Query.cs", "{Aggregate}Permissions.cs"]), ("src/{Name}.Infrastructure/Persistence/{Plural}", ["{Aggregate}Reader.cs"]), ("test/{Name}.Tests/Application/{Plural}", ["*QueryHandlerTests.cs", "*ValidatorTests.cs"]), ("test/{Name}.Tests/Infrastructure/Persistence/{Plural}", ["{Aggregate}ReaderTests.cs"]), ("test/{Name}.Tests/TestSupport/Domain/{Plural}", ["{Aggregate}ReaderBuilder.cs"]), ("test/{Name}.IntegrationTests/Persistence", ["{Aggregate}RepositoryTests.cs"])):
+    existing = manifest["aggregate_files"]["folders"].setdefault(folder, [])
     for pattern in patterns:
         if pattern not in existing:
             existing.insert(len(existing) - 1 if existing and existing[-1] == "*.cs" else len(existing), pattern)

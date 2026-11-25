@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `events-project`. A new project `src/{Name}.Contracts`; `{Name}.Domain` references it. Layer 1: `options/addons.md`, `architecture/advanced-addons.md`.
 
-**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Built** in the advanced reference solution (decision 52): compiled, tested and verified there.
 
 ## How it fits together
 
@@ -32,7 +32,7 @@ public sealed class MessageNameAttribute(string name) : Attribute
 }
 ```
 
-`MessageNames.Exchange` (`rabbitmq.md`) reads it first:
+`MessageNames.Exchange` (`rabbitmq.md`) reads it first (usings `System.Reflection`, `{Name}.Shared.Domain`):
 
 ```csharp
     public static string Exchange(Type messageType)
@@ -66,11 +66,39 @@ A project that turns this add-on on after its first release pins each moved even
 </Project>
 ```
 
-`{Name}.Domain.csproj` gains `<ProjectReference Include="../{Name}.Contracts/{Name}.Contracts.csproj" />`; `{Name}.slnx` lists the project. In the example the queue events `LineAdded` and `LineCancelled` move to `src/{Name}.Contracts/Orders/`, namespace `{Name}.Contracts.Orders`; `Order` raises them with a `using {Name}.Contracts.Orders;`. The consumers in Application already reference Domain, which brings Contracts.
+`{Name}.Domain.csproj` gains `<ProjectReference Include="../{Name}.Contracts/{Name}.Contracts.csproj" />`; `{Name}.slnx` lists the project. `src/{Name}.Contracts/ContractsMarker.cs` is `namespace {Name}.Contracts;` and `public static class ContractsMarker;`. In the example every queue event moves, unchanged but for its namespace: `LineAdded`, `LineCancelled`, `Completed` and `Cancelled` to `src/{Name}.Contracts/Orders/` (namespace `{Name}.Contracts.Orders`), `StockIncreased` and `StockDecreased` to `src/{Name}.Contracts/Products/` (namespace `{Name}.Contracts.Products`). Every file that names one of them gains the matching `using` (the aggregates, the handlers and consumers, `ApplicationModule`, the read-model module, their tests); the in-process events stay where they are. Build after the move and add the `using` each `CS0246` names. The consumers in Application already reference Domain, which brings Contracts.
+
+With an outbox and RabbitMQ, `OutboxWorker` reads a row's event type from the contracts assembly: `message.ToEvent(typeof(ContractsMarker).Assembly)` (using `{Name}.Contracts` in place of `{Name}.Domain`), because only queue events reach the outbox; left on the Domain assembly, every row fails to load and no consumer runs.
+
+The wire names follow the namespace, so they change: in a project generated with this add-on that is its first release, and nothing is pinned. Tests that spell a wire name (`MessageNamesTests`, `MessageEnvelopeTests`) use the new one, for example `{Name}.Contracts.Orders:LineAdded`.
 
 ## Tests
 
-With `testing` = `architecture`, `LayerRulesTests` (`testing-levels.md`) gains the row `[InlineData(typeof(ContractsMarker), new[] { nameof(Shared) })]`, where `ContractsMarker` is an empty `public static class` in the Contracts project's root namespace, and Domain's row allows `Contracts`. At every level, `ContractsRulesTests`:
+With `testing` = `architecture`, `LayerRulesTests` (`testing-levels.md`, using `{Name}.Contracts`) becomes
+
+```csharp
+    [InlineData(typeof(SharedModule), new string[0])]
+    [InlineData(typeof(ContractsMarker), new[] { nameof(Shared) })]
+    [InlineData(typeof(DomainModule), new[] { nameof(Shared), nameof(Contracts) })]
+    [InlineData(typeof(ApplicationModule), new[] { nameof(Shared), nameof(Contracts), nameof(Domain) })]
+```
+
+and `EventContracts.Describe` scans `typeof(ContractsMarker).Assembly` in place of the Domain assembly (using `{Name}.Contracts` in place of `{Name}.Domain`); regenerate the golden file with `MORTIS_UPDATE_CONTRACTS=1`. With RabbitMQ, `MessageNamesTests` gains a pinned-name test over `test/{Name}.Tests/TestSupport/Infrastructure/Messaging/PinnedProbe.cs`:
+
+```csharp
+[MessageName("Old.Namespace:Pinned")]
+public record PinnedProbe : EventBase, IQueueEvent;
+```
+
+```csharp
+    [Fact]
+    public void Exchange_WithAMessageName_Should_UseThePinnedName()
+    {
+        Assert.Equal("Old.Namespace:Pinned", MessageNames.Exchange(typeof(PinnedProbe)));
+    }
+```
+
+At every level, `test/{Name}.Tests/Architecture/ContractsRulesTests.cs`:
 
 ```csharp
 public class ContractsRulesTests
@@ -79,7 +107,7 @@ public class ContractsRulesTests
     public void ContractsProject_Should_HoldOnlyQueueEvents()
     {
         var offenders = typeof(ContractsMarker).Assembly.GetTypes()
-            .Where(type => type != typeof(ContractsMarker) && !typeof(IQueueEvent).IsAssignableFrom(type) && !type.IsDefined(typeof(CompilerGeneratedAttribute)))
+            .Where(type => type != typeof(ContractsMarker) && !typeof(IQueueEvent).IsAssignableFrom(type) && !type.IsDefined(typeof(CompilerGeneratedAttribute), false))
             .Select(type => type.Name);
 
         Assert.Empty(offenders);
@@ -99,7 +127,7 @@ public class ContractsRulesTests
 
 ## Files this add-on changes
 
-`{Name}.slnx`, `{Name}.Domain.csproj`, `MessageNames.cs` (with RabbitMQ), the moved events and the files that `using` their old namespace (the aggregate, the consumers, their tests), `docs/specs/messaging-wire-format.md` of the project (the wire names).
+`{Name}.slnx`, `{Name}.Domain.csproj`, `MessageNames.cs` and `OutboxWorker.cs` (with RabbitMQ), the moved events and the files that `using` their old namespace (the aggregate, the consumers, their tests), `docs/specs/messaging-wire-format.md` of the project (the wire names).
 
 ## Namespaces and usings
 

@@ -1,19 +1,1 @@
 # Kernel shape of the query side (queries = split or read-models). Hand-written, not built yet (decision 46); build_shape.py appends it.
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery
-[queries=split|read-models] member {Name}.Shared.Application.IQuery: CommandContext Context { get; set; }
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery<TResult> : IQuery;
-[queries=split|read-models] type {Name}.Shared.Application: public abstract class BaseQueryHandler<TQuery, TResult>(IEnumerable<IValidator<TQuery>> validators) where TQuery : IQuery<TResult>
-[queries=split|read-models] member {Name}.Shared.Application.BaseQueryHandler: public async Task<TResult> Handle(TQuery query)
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQueryDispatcher
-[queries=split|read-models] member {Name}.Shared.Application.IQueryDispatcher: Task<TResult> Ask<TResult>(IQuery<TResult> query);
-[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryDispatcher(IServiceProvider serviceProvider) : IQueryDispatcher
-[queries=split|read-models] member {Name}.Shared.Application.QueryDispatcher: public Task<TResult> Ask<TResult>(IQuery<TResult> query)
-[queries=split|read-models] type {Name}.Shared.Application: public abstract class QueryHandlerInvoker<TResult>
-[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryHandlerInvoker<TQuery, TResult> : QueryHandlerInvoker<TResult> where TQuery : IQuery<TResult>
-[queries=split|read-models] type {Name}.Shared.Application: public static class QueryHandlerExtensions
-[queries=split|read-models] member {Name}.Shared.Application.QueryHandlerExtensions: public static IServiceCollection AddQueryHandler<TQuery, TResult, THandler>(this IServiceCollection services)
-[queries=split|read-models] type {Name}.Shared.Application: public static class PageRequest
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int DefaultSize = 20;
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int MaxSize = 100;
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public static int Skip(int page, int size) => (page - 1) * size;
-[queries=split|read-models] type {Name}.Shared.Application: public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int Size, int Total);

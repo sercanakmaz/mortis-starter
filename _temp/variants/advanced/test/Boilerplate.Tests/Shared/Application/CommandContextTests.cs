@@ -36,4 +36,15 @@ public class CommandContextTests
         Assert.Equal(["tenant-1", "tr"], [commandContext.TenantId, commandContext.Language]);
         Assert.Equal(FakeAuditUser.Id, commandContext.User.Id);
     }
+
+    [Fact]
+    public void FromEvent_Should_CopyTheEventsChain()
+    {
+        var fakeEvent = new FakeEvent("first") { Chain = ["CreateOrderCommand"] };
+
+        var commandContext = CommandContext.FromEvent(fakeEvent, FakeAuditUser.Create());
+
+        Assert.Equal(["CreateOrderCommand"], commandContext.Chain);
+    }
+
 }

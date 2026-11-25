@@ -12,7 +12,7 @@ dotnet ef database update --project src/Boilerplate.Infrastructure
 dotnet run --project src/Boilerplate.Api
 ```
 
-`dotnet run --project src/Boilerplate.Console --` lists the scenarios and the commands you can run by name, for example `-- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'`. In VS Code, F5 on "Console: run a command or scenario" asks for the name and the JSON.
+`dotnet run --project src/Boilerplate.Console --` lists the commands you can run by name; a run names its user, for example `-- --user developer CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'`. In VS Code, F5 on "Console: run a command (asks for the name and the JSON)" asks for the user, the name and the JSON.
 
 ## Read next
 

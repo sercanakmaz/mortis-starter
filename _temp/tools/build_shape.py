@@ -31,7 +31,18 @@ def merged(shapes):
     return out
 
 
+POSTGRES_MEMBERS = ("DesignTimeConnectionString", "RowVersionColumn")
+ADDON_MEMBERS = {"InvalidRequestCode": "api-conventions", "InvalidRequestMessage": "api-conventions", "RouteNotFoundCode": "api-conventions", "RouteNotFoundMessage": "api-conventions", "MethodNotAllowedCode": "api-conventions", "MethodNotAllowedMessage": "api-conventions", "TraceId": "observability", "SpanId": "observability", "Chain": "loop-guard"}
+MEMBER_CONDITIONS = {"RebuildOrderSummaryCommand": "queries=read-models"}
+
+
 def condition(relative, line, presets):
+    for member, addon in ADDON_MEMBERS.items():
+        if f" {member} " in line:
+            return f"[addons={addon}] "
+    for member, gate in MEMBER_CONDITIONS.items():
+        if f" {member} " in line:
+            return f"[{gate}] "
     specific = [k for member, k in KEY_OF_MEMBER.items() if member in line][:1] + [k for part, k in KEY_OF_FILE.items() if part in relative]
     for keys in (specific, specific + ["events.outbox", "exceptions", "auth", "tenancy.mode", "languages.mode"]):
         for combination in [[key] for key in keys] + [[first, second] for first in keys for second in keys if first < second]:
@@ -43,17 +54,36 @@ def condition(relative, line, presets):
 
 target = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp" / "kernel-shape.txt"
 manifest = json.loads((target.parent / "manifest.json").read_text())
+sys.path.insert(0, str(ROOT / "skills" / "mortis-scaffold" / "scripts"))
+from decisions import load  # noqa: E402
+from structure import applies  # noqa: E402
+
+VALUES = {preset: load(str(VARIANTS / preset / "MORTIS.md"))[2] for preset in PRESETS}
+GATES = ("queries", "testing", "addons")
+
+
+def gate_of(entry):
+    when = {key: value for key, value in (entry.get("when") or (entry.get("when_any") or [{}])[0]).items() if key in GATES}
+    return ",".join(f"{key}={'|'.join(value) if isinstance(value, list) else value}" for key, value in when.items())
+
+
 lines = []
 for entry in manifest["files"]:
     if not entry["kernel"] or entry.get("unbuilt"):
         continue
     relative = entry["path"].replace("{Name}", "Boilerplate")
     database = entry.get("when", {}).get("database")
-    by_preset = {preset: shape_of_file(VARIANTS / preset / relative, "Boilerplate") for preset in PRESETS}
+    gate = gate_of(entry)
+    applicable = [preset for preset in PRESETS if (VARIANTS / preset / relative).exists() and (not gate or applies(entry, VALUES[preset]))]
+    by_preset = {preset: shape_of_file(VARIANTS / preset / relative, "Boilerplate") for preset in applicable}
     for line, presets in merged(by_preset):
-        marked = line if len(presets) == len(PRESETS) else condition(relative, line, presets) + line
+        marked = line if len(presets) == len(applicable) else condition(relative, line, presets) + line
+        if gate:
+            marked = f"[{gate}," + marked[1:] if marked.startswith("[") else f"[{gate}] " + marked
         if database:
             marked = f"[database={database}," + marked[1:] if marked.startswith("[") else f"[database={database}] " + marked
+        elif any(f" {member} " in line for member in POSTGRES_MEMBERS):
+            marked = "[database=postgres," + marked[1:] if marked.startswith("[") else "[database=postgres] " + marked
         lines.append(marked)
 for extra in sorted(Path(__file__).parent.glob("shape-*.txt")):
     lines += [line for line in extra.read_text().splitlines() if line and not line.startswith("#")]

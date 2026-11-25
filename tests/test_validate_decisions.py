@@ -102,7 +102,7 @@ class RuleTests(unittest.TestCase):
         self.assert_rule("R10", make("lean", queries="read-models"))
 
     def test_r11_go_is_refused_until_it_is_available(self):
-        self.assert_rule("R11", make("lean", language="go"))
+        self.assert_rule("R11", make("standard", language="go"))
 
     def test_r12_mongo_has_no_integer_keys(self):
         self.assert_rule("R12", make("standard", database="mongo", keys__default="int"))

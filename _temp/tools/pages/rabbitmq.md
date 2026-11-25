@@ -111,8 +111,8 @@ File `Messaging/RabbitMq/RabbitMqModule.cs`:
 The Worker's `Program.cs` adds one line per consumer after `.AddOutboxWorker()` (the whole file is on `outbox.md`, the `AddEventConsumer` of this transport on `event-consumers.md`):
 
 ```csharp
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 ```
 
 The Api and the Console register no consumer.

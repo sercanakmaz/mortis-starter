@@ -34,7 +34,7 @@ Keys that are always asked (`name`, `language`, `database`) and keys that only a
 | `testing` | unit | integration | architecture |
 | `auth` | none | jwt | jwt |
 | `hosts.worker` | none | in-api | separate |
-| `addons` | none | correlation, api-conventions | correlation, soft-delete, caching, scheduler, secrets, loop-guard, contexts, events-project, idempotent-commands, observability, api-conventions |
+| `addons` | none | correlation, api-conventions | correlation, soft-delete, caching, scheduler, secrets, loop-guard, events-project, idempotent-commands, observability, api-conventions |
 | `example` | true | true | false |
 
 When `tenancy.mode` is `interface` the defaults are `tenancy.key` = `guid` and `tenancy.resolver` = `claim`. When `languages.mode` is not `none` the defaults are `languages.default` = `en` and `languages.supported` = `en`.

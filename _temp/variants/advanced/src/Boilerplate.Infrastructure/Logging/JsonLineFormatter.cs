@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Logging;
@@ -46,6 +47,8 @@ public sealed class JsonLineFormatter() : ConsoleFormatter(LoggingConstants.Form
             writer.WriteString("Version", Version);
             writer.WriteString("Category", logEntry.Category);
             writer.WriteString("Message", logEntry.Formatter(logEntry.State, logEntry.Exception));
+            writer.WriteString(LoggingConstants.TraceId, Activity.Current?.TraceId.ToString());
+            writer.WriteString(LoggingConstants.SpanId, Activity.Current?.SpanId.ToString());
 
             foreach (var (key, value) in fields.Where(field => field.Key != LoggingConstants.CorrelationId))
             {

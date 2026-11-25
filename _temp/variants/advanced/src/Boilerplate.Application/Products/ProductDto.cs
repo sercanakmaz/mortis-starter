@@ -21,4 +21,14 @@ public record ProductDto
         Stock = product.Stock,
         CategoryId = product.CategoryId
     };
+
+    public static ProductDto From(ProductView view, string language) => new()
+    {
+        Id = view.Id,
+        Sku = view.Sku,
+        Name = view.Name.Get(language, Languages.Default),
+        Names = view.Name.Texts,
+        Stock = view.Stock,
+        CategoryId = view.CategoryId
+    };
 }

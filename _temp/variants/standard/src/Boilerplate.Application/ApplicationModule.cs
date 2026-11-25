@@ -16,12 +16,14 @@ public static class ApplicationModule
     {
         services.AddCommandHandler<CreateCategoryCommand, CategoryDto, CreateCategoryCommandHandler>();
         services.AddScoped<IValidator<CreateCategoryCommand>, CreateCategoryCommandValidator>();
-        services.AddCommandHandler<GetCategoryCommand, CategoryDto, GetCategoryCommandHandler>();
+        services.AddQueryHandler<GetCategoryQuery, CategoryDto, GetCategoryQueryHandler>();
 
         services.AddCommandHandler<CreateCustomerCommand, CustomerDto, CreateCustomerCommandHandler>();
         services.AddScoped<IValidator<CreateCustomerCommand>, CreateCustomerCommandValidator>();
         services.AddCommandHandler<BlockCustomerCommand, CustomerDto, BlockCustomerCommandHandler>();
-        services.AddCommandHandler<GetCustomerCommand, CustomerDto, GetCustomerCommandHandler>();
+        services.AddCommandHandler<ChangeCustomerCommand, CustomerDto, ChangeCustomerCommandHandler>();
+        services.AddScoped<IValidator<ChangeCustomerCommand>, ChangeCustomerCommandValidator>();
+        services.AddQueryHandler<GetCustomerQuery, CustomerDto, GetCustomerQueryHandler>();
         services.AddCommandHandler<RegisterCompletedOrderCommand, CustomerDto, RegisterCompletedOrderCommandHandler>();
         services.AddScoped<BaseSyncEventHandler<Completed>, RegisterCompletedOrderWhenOrderCompletedEventHandler>();
 
@@ -32,13 +34,15 @@ public static class ApplicationModule
         services.AddCommandHandler<CancelOrderLineCommand, OrderDto, CancelOrderLineCommandHandler>();
         services.AddScoped<IValidator<CancelOrderLineCommand>, CancelOrderLineCommandValidator>();
         services.AddCommandHandler<CompleteOrderCommand, OrderDto, CompleteOrderCommandHandler>();
-        services.AddCommandHandler<GetOrderCommand, OrderDto, GetOrderCommandHandler>();
+        services.AddQueryHandler<GetOrderQuery, OrderDto, GetOrderQueryHandler>();
         services.AddCommandHandler<CancelOrderWhenAllLinesCancelledCommand, OrderDto, CancelOrderWhenAllLinesCancelledCommandHandler>();
         services.AddScoped<BaseSyncEventHandler<LineCancelled>, CancelOrderWhenOrderLineCancelledEventHandler>();
 
         services.AddCommandHandler<CreateProductCommand, ProductDto, CreateProductCommandHandler>();
         services.AddScoped<IValidator<CreateProductCommand>, CreateProductCommandValidator>();
-        services.AddCommandHandler<GetProductCommand, ProductDto, GetProductCommandHandler>();
+        services.AddQueryHandler<GetProductQuery, ProductDto, GetProductQueryHandler>();
+        services.AddQueryHandler<ListProductsQuery, PagedResult<ProductDto>, ListProductsQueryHandler>();
+        services.AddScoped<IValidator<ListProductsQuery>, ListProductsQueryValidator>();
         services.AddCommandHandler<IncreaseProductStockCommand, ProductDto, IncreaseProductStockCommandHandler>();
         services.AddScoped<IValidator<IncreaseProductStockCommand>, IncreaseProductStockCommandValidator>();
         services.AddCommandHandler<DecreaseProductStockCommand, ProductDto, DecreaseProductStockCommandHandler>();

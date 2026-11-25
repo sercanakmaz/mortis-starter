@@ -20,6 +20,16 @@ public record OrderDto
         TotalAmount = order.TotalAmount,
         Lines = order.Lines.Select(orderLine => OrderLineDto.Map(orderLine)).ToList()
     };
+
+    public static OrderDto From(OrderView view) => new()
+    {
+        Id = view.Id,
+        OrderNumber = view.OrderNumber,
+        CustomerId = view.CustomerId,
+        Status = view.Status,
+        TotalAmount = view.TotalAmount,
+        Lines = view.Lines.Select(OrderLineDto.From).ToList()
+    };
 }
 
 public record OrderLineDto
@@ -41,5 +51,16 @@ public record OrderLineDto
         Quantity = orderLine.Quantity,
         IsCancelled = orderLine.IsCancelled,
         CancellationReason = orderLine.CancellationReason
+    };
+
+    public static OrderLineDto From(OrderLineView view) => new()
+    {
+        Id = view.Id,
+        Sku = view.Sku,
+        Price = view.Price,
+        Currency = view.Currency,
+        Quantity = view.Quantity,
+        IsCancelled = view.IsCancelled,
+        CancellationReason = view.CancellationReason
     };
 }

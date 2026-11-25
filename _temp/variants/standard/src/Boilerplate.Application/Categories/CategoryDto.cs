@@ -12,4 +12,10 @@ public record CategoryDto
         Id = category.Id,
         Name = category.Name
     };
+
+    public static CategoryDto From(CategoryView view) => new()
+    {
+        Id = view.Id,
+        Name = view.Name
+    };
 }

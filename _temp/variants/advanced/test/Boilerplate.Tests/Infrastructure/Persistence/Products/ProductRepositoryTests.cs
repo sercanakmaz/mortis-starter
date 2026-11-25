@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Products;
 using Boilerplate.Tests.TestSupport.Infrastructure.Persistence;
 using Boilerplate.Infrastructure.Persistence.Products;
 using Boilerplate.Tests.TestSupport.Shared.Persistence;

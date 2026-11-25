@@ -10,6 +10,8 @@ public static class ConsoleConstants
     public const string LanguageOption = "--language";
     public const string OptionPrefix = "--";
     public const string CommandSuffix = "Command";
+    public const string QuerySuffix = "Query";
+    public const string RebuildOrderSummaryCommand = "rebuild-order-summary";
     public const string FilePrefix = "@";
     public const string DevelopmentTokenCommand = "dev-token";
     public const int DevelopmentTokenHours = 8;

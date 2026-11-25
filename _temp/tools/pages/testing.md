@@ -81,6 +81,8 @@ File `RecordingEventConsumer.cs` holds two consumers of `FakeQueueEvent`; each r
 
 @@members test/Boilerplate.Tests/TestSupport/Infrastructure/Persistence/AppDbContextBuilder.cs::AppDbContextBuilder@@
 
+With `naming.database` = `as-code` the `.UseSnakeCaseNamingConvention()` line is left out here too. With `database` = `mongo` this builder is not written (`infrastructure-mongo.md`).
+
 @@members test/Boilerplate.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs::RecordingLogger@@
 
 `EventPublisherBuilder` is on `events-inprocess.md`.

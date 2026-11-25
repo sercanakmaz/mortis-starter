@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `api-conventions`. Projects `{Name}.Shared` (folder `Application/`), `{Name}.Api` (folder `Conventions/`) and, with the example, the customer slice. Layer 1: `architecture/http-and-operations.md`, `options/addons.md`.
 
-**Not built or run yet** (decision 48): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Built** in the standard reference solution (decision 52): compiled, tested and verified there.
 
 ## How it fits together
 
@@ -223,6 +223,8 @@ public class ChangeCustomerCommandHandler(
 }
 ```
 
+Its `Id` is `[JsonIgnore]`, unlike a command the Console runs (`worked-slice.md`): the route gives it, and a body member must never change which customer is changed. So the Console cannot run `ChangeCustomer`; a partial change is an HTTP operation.
+
 Registered next to the other customer handlers in `ApplicationModule`. `CustomersController`:
 
 ```csharp
@@ -244,17 +246,23 @@ public record CreateCustomerCommand : ICommand<CustomerDto>, IContextCommand, IT
 
 ## Tests
 
+This option adds four test files: `OptionalProbe.cs`, `OptionalTests.cs`, `ApiConventionsModuleTests.cs`, `ChangeCustomerCommandHandlerTests.cs` (the last with the example). The manifest lists each; leaving one out fails the structure check.
+
+`test/{Name}.Tests/TestSupport/Shared/Application/OptionalProbe.cs`, the record the tests deserialize (a test class holds only tests):
+
+```csharp
+public record OptionalProbe(Optional<string> Note);
+```
+
 `test/{Name}.Tests/Shared/Application/OptionalTests.cs`:
 
 ```csharp
 public class OptionalTests
 {
-    private record Change(Optional<string> Note);
-
     [Fact]
     public void Deserialize_WithTheMemberAbsent_Should_LeaveItUnset()
     {
-        var change = JsonSerializer.Deserialize<Change>("{}");
+        var change = JsonSerializer.Deserialize<OptionalProbe>("{}");
 
         Assert.False(change.Note.HasValue);
         Assert.Equal("kept", change.Note.Or("kept"));
@@ -263,7 +271,7 @@ public class OptionalTests
     [Fact]
     public void Deserialize_WithNull_Should_SetItToNull()
     {
-        var change = JsonSerializer.Deserialize<Change>("""{"Note":null}""");
+        var change = JsonSerializer.Deserialize<OptionalProbe>("""{"Note":null}""");
 
         Assert.True(change.Note.HasValue);
         Assert.Null(change.Note.Or("kept"));
@@ -272,7 +280,7 @@ public class OptionalTests
     [Fact]
     public void Deserialize_WithAValue_Should_SetIt()
     {
-        var change = JsonSerializer.Deserialize<Change>("""{"Note":"new"}""");
+        var change = JsonSerializer.Deserialize<OptionalProbe>("""{"Note":"new"}""");
 
         Assert.Equal("new", change.Note.Or("kept"));
     }
@@ -313,46 +321,76 @@ public class ApiConventionsModuleTests
 }
 ```
 
-`test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs`, in the style of `BlockCustomerCommandHandlerTests`:
+`test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs`, the whole class (the validation test sends through a pipeline built with the real validator):
 
 ```csharp
-    [Fact]
-    public async Task Handle_WithOnlyANullNote_Should_ClearTheNoteAndKeepTheName()
-    {
-        Customer writtenCustomer = null;
-        var customer = FakeCustomer.Create().WithoutEvents();
-        customer.Change("Ada", "call before noon");
-        var customerRepository = CustomerRepositoryBuilder.Create()
-            .WithFindByIdTrackingAsync(customer)
-            .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer)
-            .Build();
-        var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().Build());
-
-        await commandHandler.Handle(new ChangeCustomerCommand { Id = customer.Id, Note = Optional<string>.Of(null), Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
-
-        Assert.Equal("Ada", writtenCustomer.Name);
-        Assert.Null(writtenCustomer.Note);
-    }
-
-    [Fact]
-    public async Task Handle_WithNoMembers_Should_KeepEverything()
-    {
-        Customer writtenCustomer = null;
-        var customer = FakeCustomer.Create().WithoutEvents();
-        customer.Change("Ada", "call before noon");
-        var customerRepository = CustomerRepositoryBuilder.Create()
-            .WithFindByIdTrackingAsync(customer)
-            .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer)
-            .Build();
-        var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().Build());
-
-        await commandHandler.Handle(new ChangeCustomerCommand { Id = customer.Id, Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
-
-        Assert.Equal(("Ada", "call before noon"), (writtenCustomer.Name, writtenCustomer.Note));
-    }
+public class ChangeCustomerCommandHandlerTests
 ```
 
-Plus the unknown-customer test as in `BlockCustomerCommandHandlerTests`, a validator test that `Name = Optional<string>.Of(null)` fails on `Name` (a required member cannot be cleared), and a `CustomerTests` test for `Change`. `scripts/conformance/api-conventions.sh` proves the rest over HTTP.
+```csharp
+[Fact]
+public async Task Handle_WithOnlyANullNote_Should_ClearTheNoteAndKeepTheName()
+{
+    Customer writtenCustomer = null;
+    var customer = FakeCustomer.Create().WithoutEvents();
+    customer.Change("Ada", "call before noon");
+    var customerRepository = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(customer)
+        .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer)
+        .Build();
+    var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().WithValidator(new ChangeCustomerCommandValidator()).Build());
+
+    await commandHandler.Handle(new ChangeCustomerCommand { Id = customer.Id, Note = Optional<string>.Of(null), Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.Equal("Ada", writtenCustomer.Name);
+    Assert.Null(writtenCustomer.Note);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithNoMembers_Should_KeepEverything()
+{
+    Customer writtenCustomer = null;
+    var customer = FakeCustomer.Create().WithoutEvents();
+    customer.Change("Ada", "call before noon");
+    var customerRepository = CustomerRepositoryBuilder.Create()
+        .WithFindByIdTrackingAsync(customer)
+        .WithUpdateAsync(updatedCustomer => writtenCustomer = updatedCustomer)
+        .Build();
+    var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().WithValidator(new ChangeCustomerCommandValidator()).Build());
+
+    await commandHandler.Handle(new ChangeCustomerCommand { Id = customer.Id, Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+    Assert.Equal(("Ada", "call before noon"), (writtenCustomer.Name, writtenCustomer.Note));
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithANullName_Should_FailValidationOnName()
+{
+    var customerRepository = CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(FakeCustomer.Create().WithoutEvents()).Build();
+    var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().WithValidator(new ChangeCustomerCommandValidator()).Build());
+
+    var exception = await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new ChangeCustomerCommand { Id = Guid.CreateVersion7(), Name = Optional<string>.Of(null) }));
+
+    Assert.Contains(nameof(ChangeCustomerCommand.Name), exception.Errors.Keys);
+}
+```
+
+```csharp
+[Fact]
+public async Task Handle_WithAnUnknownCustomer_Should_ThrowNotFound()
+{
+    var customerRepository = CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(null).Build();
+    var commandHandler = new ChangeCustomerCommandHandler(customerRepository, CommandPipelineBuilder<ChangeCustomerCommand>.Create().Build());
+
+    await Assert.ThrowsAsync<NotFoundException>(() => commandHandler.Handle(new ChangeCustomerCommand { Id = Guid.CreateVersion7(), Context = new CommandContext() }));
+}
+```
+
+`scripts/conformance/api-conventions.sh` proves the rest over HTTP.
 
 ## Namespaces and usings
 

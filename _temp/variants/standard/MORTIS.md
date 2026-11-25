@@ -19,13 +19,13 @@ This project was started with mortis-starter. The table below records what was c
 | naming.routes | kebab-case |  |
 | naming.events | bare |  |
 | exceptions | coded |  |
-| queries | commands | not built yet in phase 1; this variant holds only built options |
+| queries | split |  |
 | tenancy.mode | none |  |
 | languages.mode | none |  |
-| testing | unit | not built yet in phase 1; this variant holds only built options |
+| testing | integration |  |
 | auth | jwt |  |
 | hosts.worker | in-api |  |
-| addons | correlation | not built yet in phase 1; this variant holds only built options |
+| addons | correlation, api-conventions |  |
 | example | true |  |
 
 ## Working in this project

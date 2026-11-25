@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Products;
 using Boilerplate.Domain.Aggregates.Products.Events;
 using Boilerplate.Shared.Exceptions;
 using Boilerplate.Shared.Domain;
@@ -5,13 +6,16 @@ using System.Diagnostics;
 
 namespace Boilerplate.Domain.Aggregates.Products;
 
-public class Product : AggregateRoot<Guid>, IMultiTenant
+public class Product : AggregateRoot<Guid>, IMultiTenant, ISoftDeletable
 {
     public Guid TenantId { get; private set; }
     public string Sku { get; protected set; }
     public LocalizedText Name { get; protected set; }
     public int Stock { get; protected set; }
     public int? CategoryId { get; protected set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public string DeletedUserId { get; private set; }
 
     [DebuggerStepThrough]
     protected Product() { }
@@ -32,9 +36,40 @@ public class Product : AggregateRoot<Guid>, IMultiTenant
         RaiseEvent(new Created(Id.ToString(), Sku));
     }
 
+    public void Delete(AuditUser user)
+    {
+        if (IsDeleted)
+        {
+            return;
+        }
+
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedUserId = user?.Id;
+
+        RaiseEvent(new Deleted(Id.ToString(), Sku));
+    }
+
+    public void Restore(AuditUser user)
+    {
+        if (!IsDeleted)
+        {
+            return;
+        }
+
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedUserId = null;
+        SetUpdatedAudit(user);
+
+        RaiseEvent(new Restored(Id.ToString(), Sku));
+    }
+
     public void Rename(string language, string name)
     {
         Name = Name.With(language, name);
+
+        RaiseEvent(new Renamed(Id.ToString(), Sku));
     }
 
     public void IncreaseStock(int quantity)

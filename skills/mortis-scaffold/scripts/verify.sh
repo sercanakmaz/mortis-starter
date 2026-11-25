@@ -63,10 +63,10 @@ step "house rules: no comments, names match files, one context line per command,
 shape_matches() {
   local database
   database="$(printf '%s' "$NAME" | tr 'A-Z' 'a-z' | tr -d '.')"
-  diff <(python3 -I "$HERE/shape_for.py" "$SHAPE_FILE" "$PROJECT/MORTIS.md" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g") <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g")
+  diff <(python3 -I "$HERE/shape_for.py" "$SHAPE_FILE" "$PROJECT/MORTIS.md" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g" | LC_ALL=C sort) <("$LANG_SH" shape "$PROJECT" "$NAME" | sed -e "s/{Name}/$NAME/g" -e "s/{database}/$database/g" | LC_ALL=C sort)
 }
 step "kernel shape: every public kernel type and member is exactly as in kernel-shape.txt" shape_matches
-step "editor files: the launch configurations ask for the arguments and point at this project" "$LANG_SH" editor-checks "$PROJECT" "$NAME"
+step "editor files: the launch configurations pass --user, ask for the arguments and point at this project" "$LANG_SH" editor-checks "$PROJECT" "$NAME"
 
 if [ "$TOOLS" = 0 ]; then
   for name in "build: 0 warnings, 0 errors" "tests pass" "format: the formatter changes nothing" "conformance"; do skip "$name" "the language's tools are not installed"; done
@@ -84,12 +84,22 @@ else
     . "$script" | sed 's/^/      /'
     local result="${PIPESTATUS[0]}"
     PASSED=$before_passed; FAILED=$before_failed
-    if [ "$result" = 0 ]; then pass "conformance: $1"; else fail "conformance: $1" "see the lines above"; fi
+    if [ "$result" = 0 ]; then pass "conformance: $1"; else
+      for log in "$PROJECT/.mortis/api.log" "$PROJECT/.mortis/worker.log"; do
+        [ -s "$log" ] && { echo "      last lines of ${log#$PROJECT/}:"; tail -n 15 "$log" | cut -c1-300 | sed 's/^/        /'; }
+      done
+      fail "conformance: $1" "see the lines above"
+    fi
   }
-  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)" LANGUAGES="$(get languages.mode)" QUERIES="$(get queries)"
+  export OUTBOX="$(get events.outbox)" TRANSPORT="$(get events.transport)" WORKER="$(get hosts.worker)" AUTH="$(get auth)" TENANCY="$(get tenancy.mode)" LANGUAGES="$(get languages.mode)" QUERIES="$(get queries)" NAMING_DATABASE="$(get naming.database)" NAMING_JSON="$(get naming.json)" NAMING_EVENTS="$(get naming.events)" KEYS="$(get keys.default)" DATABASE_KIND
   # With auth = jwt the checks call the API with a development token; with tenancy that token, and every Console run (--tenant), belong to TENANT_A.
   if [ "$DRY_RUN" = 0 ] && [ "$AUTH" = "jwt" ]; then
-    export TENANT_A="$(new_id)" TENANT_B="$(new_id)"
+    export TENANCY_KEY="$(get tenancy.key)"
+    if [ "$TENANCY_KEY" = "text" ]; then
+      export TENANT_A="acme-$(new_id | cut -c1-8)" TENANT_B="globex-$(new_id | cut -c1-8)"
+    else
+      export TENANT_A="$(new_id)" TENANT_B="$(new_id)"
+    fi
     if [ "$TENANCY" = "interface" ]; then
       export TOKEN="$(dev_token "{\"subject\":\"conformance\",\"email\":\"conformance@example.com\",\"tenant\":\"$TENANT_A\"}")"
       export CONSOLE_TENANT="$TENANT_A"
@@ -101,7 +111,7 @@ else
 
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
     export PGHOST="${PGHOST:-localhost}" PGPORT="${PGPORT:-5432}" PGUSER="${PGUSER:-postgres}" PGPASSWORD="${PGPASSWORD:-postgres}"
-    export DATABASE="mortis_verify_$(printf '%s' "$NAME" | tr 'A-Z.' 'a-z_')"
+    export DATABASE="${MORTIS_DATABASE:-mortis_verify_$(printf '%s' "$NAME" | tr 'A-Z.' 'a-z_')}"
     export API_PORT="${MORTIS_API_PORT:-5099}"
     export ConnectionStrings__Default="Host=$PGHOST;Port=$PGPORT;Database=$DATABASE;Username=$PGUSER;Password=$PGPASSWORD"
     if [ "$DRY_RUN" = 0 ] && ! psql -d postgres -tAc "select 1" >/dev/null 2>&1; then
@@ -127,7 +137,7 @@ else
     fi
   fi
 
-  ADDONS=",$(get addons),"
+  ADDONS=",$(get addons | tr -d " "),"
   export EXAMPLE API_PORT="${API_PORT:-${MORTIS_API_PORT:-5099}}"
   case "$ADDONS" in *",correlation,"*) run_conformance addon-correlation.sh ;; esac
   if [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
@@ -157,7 +167,7 @@ else
         skip "conformance: transport-rabbitmq.sh" "RabbitMQ is not reachable at localhost:5672"
       fi
     fi
-  elif [ "$EXAMPLE" = "true" ]; then
+  elif [ "$EXAMPLE" = "true" ] && [ "$DATABASE_KIND" = "postgres" ]; then
     skip "conformance: outbox.sh" "PostgreSQL is not reachable"
   fi
 fi

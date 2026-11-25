@@ -35,9 +35,6 @@ File `src/{Name}.Shared/Application/Languages.cs`, written from `MORTIS.md`:
 public static class Languages
 ```
 
-```csharp
-public static class Languages
-```
 
 ```csharp
 public const string Default = "en";
@@ -70,9 +67,6 @@ public static string Resolve(IEnumerable<string> candidates)
 public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null, IReadOnlyDictionary<string, object> parameters = null) : Exception(message, innerException)
 ```
 
-```csharp
-public abstract class ExceptionBase(string code, HttpStatusCode httpStatusCode, string message, Exception innerException = null, IReadOnlyDictionary<string, object> parameters = null) : Exception(message, innerException)
-```
 
 ```csharp
 public IReadOnlyDictionary<string, object> Parameters { get; } = parameters ?? new Dictionary<string, object>();
@@ -113,6 +107,9 @@ public static readonly IReadOnlySet<string> Codes = new HashSet<string>
     "transaction_required",
     "tenant_required",
     "validation_failed",
+    "idempotency_key_reused",
+    "idempotency_in_progress",
+    LoopGuardConstants.LoopDetectedCode,
     CustomerConstants.BlockedCode,
     ProductConstants.InsufficientStockCode,
     OrderConstants.NotOpenCode,
@@ -133,6 +130,9 @@ Folder `src/{Name}.Infrastructure/Localization/`, one file per supported languag
   "forbidden": "{action} is not allowed.",
   "invalid_parameter": "{name} is invalid: {reason}",
   "reference_violation": "The reference {name} points at a missing record, or the record is still referenced.",
+  "idempotency_key_reused": "This idempotency key was used for another request.",
+  "idempotency_in_progress": "A request with this idempotency key is still running.",
+  "loop_detected": "Commands triggered each other too many times: {chain}.",
   "transaction_required": "A write to {name} ran outside a transaction.",
   "tenant_required": "{type} belongs to a tenant, and the caller has none.",
   "validation_failed": "The request is not valid.",
@@ -152,6 +152,9 @@ Folder `src/{Name}.Infrastructure/Localization/`, one file per supported languag
   "forbidden": "{action} işlemine izin verilmiyor.",
   "invalid_parameter": "{name} geçersiz: {reason}",
   "reference_violation": "{name} başvurusu olmayan bir kaydı gösteriyor ya da kayıt hâlâ kullanılıyor.",
+  "idempotency_key_reused": "Bu idempotency anahtarı başka bir istek için kullanıldı.",
+  "idempotency_in_progress": "Bu idempotency anahtarıyla gelen bir istek hâlâ çalışıyor.",
+  "loop_detected": "Komutlar birbirini çok fazla kez tetikledi: {chain}.",
   "transaction_required": "{name} kaydına bir işlem (transaction) dışında yazıldı.",
   "tenant_required": "{type} bir kiracıya ait, çağıranın ise kiracısı yok.",
   "validation_failed": "İstek geçerli değil.",
@@ -178,9 +181,6 @@ File `MessageLocalizer.cs`, a singleton registered by `AddInfrastructureModule` 
 public class MessageLocalizer
 ```
 
-```csharp
-public class MessageLocalizer
-```
 
 ```csharp
 private readonly Dictionary<string, Dictionary<string, string>> _messages = Languages.Supported.ToDictionary(language => language, Load);
@@ -226,9 +226,6 @@ File `src/{Name}.Api/Middlewares/RequestLanguage.cs`:
 public static class RequestLanguage
 ```
 
-```csharp
-public static class RequestLanguage
-```
 
 ```csharp
 public static string Of(HttpContext httpContext, AuthSettings authSettings)
@@ -279,9 +276,6 @@ The Console: `ConsoleTokens` sets `Language` from the token (`Languages.Default`
 public sealed class LocalizedText
 ```
 
-```csharp
-public sealed class LocalizedText
-```
 
 ```csharp
 private readonly Dictionary<string, string> _texts;
@@ -334,9 +328,6 @@ Stored as one `jsonb` column through a converter, file `src/{Name}.Infrastructur
 public static class LocalizedTextConversion
 ```
 
-```csharp
-public static class LocalizedTextConversion
-```
 
 ```csharp
 public static readonly ValueConverter<LocalizedText, string> Converter = new(text => Write(text), json => Read(json));
@@ -377,6 +368,8 @@ Searching or sorting by a translated field uses the language's JSON path (`name 
 public void Rename(string language, string name)
 {
     Name = Name.With(language, name);
+
+    RaiseEvent(new Renamed(Id.ToString(), Sku));
 }
 ```
 
@@ -399,9 +392,6 @@ protected override async Task<CommandResult<ProductDto>> OnHandle(CreateProductC
 public record ProductDto
 ```
 
-```csharp
-public record ProductDto
-```
 
 ```csharp
 public Guid Id { get; set; }
@@ -439,11 +429,30 @@ public static ProductDto Map(Product product, string language) => new()
 };
 ```
 
-`GetProductCommand` carries the context, and the controller binds it from the route so the filter fills it:
+```csharp
+public static ProductDto From(ProductView view, string language) => new()
+{
+    Id = view.Id,
+    Sku = view.Sku,
+    Name = view.Name.Get(language, Languages.Default),
+    Names = view.Name.Texts,
+    Stock = view.Stock,
+    CategoryId = view.CategoryId
+};
+```
+
+With `queries` = `commands`, `GetProductCommand` carries the context, and the controller binds it from the route so the filter fills it (with `split` or `read-models`, `GetProductQuery` does the same, `queries.md`):
 
 ```csharp
 public record GetProductCommand : ICommand<ProductDto>, IContextCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public Guid Id { get; set; }
+}
 ```
+
+Its handler returns `ProductDto.Map(product, command.Context?.Language)`.
 
 ```csharp
     [HttpGet("{id:guid}")]

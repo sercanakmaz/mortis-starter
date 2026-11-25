@@ -9,9 +9,9 @@ This skill changes an existing project. It never decides architecture: `MORTIS.m
 
 ## Before anything
 
-1. **Read `MORTIS.md`** with `python3 -I ../mortis-scaffold/scripts/decisions.py MORTIS.md get <key>` (or read the table). The values decide which lines of a recipe apply. Without a `MORTIS.md`, say so in the first line of the answer and follow the recipes as for the lean preset (`events.outbox` = `none`, `tenancy.mode` = `none`, `languages.mode` = `none`, `queries` = `commands`, `testing` = `unit`, no add-ons).
+1. **Read `MORTIS.md`** with `python3 -I <skills>/mortis-scaffold/scripts/decisions.py <project>/MORTIS.md get <key>` (or read the table; `<skills>` is the folder holding this skill, `<project>` the project's; use absolute paths, since the work happens in the project). With `language` = `go`, read `references/go/recipes.md` next: it maps every recipe row to the Go project and says which recipes Go does not have. The values decide which lines of a recipe apply. Without a `MORTIS.md`, say so in the first line of the answer and follow the recipes as for the lean preset (`events.outbox` = `none`, `tenancy.mode` = `none`, `languages.mode` = `none`, `queries` = `commands`, `testing` = `unit`, no add-ons).
 2. **Read the project's `AGENTS.md`.** Its §2 rules are the ones a recipe cites as `AGENTS n`. Where this skill and `AGENTS.md` disagree, `AGENTS.md` wins and the difference is reported.
-3. **Pick the recipe** from the table below. A request that needs several (an aggregate with a child entity, a command and a consumer) runs them in the table's order, one at a time, each green before the next.
+3. **Pick the recipe** from the table below. A request that needs several (an aggregate with a child entity, a command and a consumer) runs them in the table's order, one at a time, each green before the next; for an aggregate whose create command takes its children, `add-aggregate.md` rows 1 to 9, then `add-child-entity.md`, then the remaining rows. A reaction the request does not qualify ("something that reacts to it") is a consumer when it may happen after the command and a sync handler when it must succeed or fail with it; say which you chose and why.
 
 ## Recipes
 
@@ -56,10 +56,10 @@ Rules for every change:
 
 ## Finish
 
-1. `dotnet build` with 0 warnings, `dotnet test` green.
+1. `dotnet build` with 0 warnings, `dotnet test` green (Go: `references/go/recipes.md`).
 2. A migration when the recipe changed the schema (`references/csharp/recipes.md` has the command).
-3. `bash ../mortis-scaffold/scripts/verify.sh <project-dir>`: every check passes or is skipped with its reason.
-4. `bash ../mortis-review/scripts/review.sh <project-dir>`: no error left.
+3. `bash <skills>/mortis-scaffold/scripts/verify.sh <project>`: every check passes or is skipped with its reason. It takes minutes; give it a long timeout. A failure that follows from what a recipe told you to do (a file the recipe places where the manifest does not allow it) is the skills' defect: keep the recipe's code and report the check and the recipe row, rather than bending the project to the check.
+4. `bash <skills>/mortis-review/scripts/review.sh <project>`: no error left.
 5. Report the files touched, the tests added, and anything skipped or written down instead of fixed.
 
 ## References

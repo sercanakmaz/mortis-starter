@@ -151,7 +151,30 @@ A foreign key from a tenant-owned type to a global one (`Product.CategoryId`) st
 
 ## tenancy.key = text
 
-The same code with `string` in place of `Guid`: `IMultiTenant.TenantId` is a `string` with a maximum length, `TenantScope` keeps the claim as it is (no parsing), and `Required` returns `string`. The tenant id is whatever the identity provider puts in the claim, so validate its format there.
+Built and verified on the advanced preset with `tenancy.key` = `text` (`verify.sh` all green, tenants `acme-…` and `globex-…`). The same code with `string` in place of `Guid`:
+
+- `IMultiTenant.TenantId` is a `string`; every tenant-owned class declares it `= string.Empty`, because EF cannot track an added row whose alternate key (`TenantId`, `Sku`) is null, and `SaveChangesAsync` stamps the tenant only when it is empty (`string.IsNullOrEmpty(entry.Entity.TenantId)` in place of `== Guid.Empty`):
+
+```csharp
+public string TenantId { get; private set; } = string.Empty;
+```
+
+- File `src/{Name}.Shared/Domain/TenancyConstants.cs`, the column's length:
+
+@@members extra:advanced-t/src/Boilerplate.Shared/Domain/TenancyConstants.cs::TenancyConstants@@
+
+- `AppDbContext.FilterByTenant` gives the column its length, and `CurrentTenantId` is a `string`:
+
+@@member extra:advanced-t/src/Boilerplate.Infrastructure/Persistence/AppDbContext.cs::AppDbContext::FilterByTenant@@
+
+- `TenantScope` keeps the claim as it is, refuses a value with white space or longer than the column, and `Required` returns `string` (`null` when bypassed without a tenant):
+
+@@member extra:advanced-t/src/Boilerplate.Infrastructure/Tenancy/TenantScope.cs::TenantScope::Enter@@
+
+@@member extra:advanced-t/src/Boilerplate.Infrastructure/Tenancy/TenantScope.cs::TenantScope::Required@@
+
+- Tests use readable ids (`"acme"`, `"globex"`): `TenantScopeBuilder.WithTenant(string)`, `IntegrationServices.TenantA = "acme"`; the "not an id" test sends `"acme corp"` and a value one character too long; the bypass test asserts `Required` is `null`.
+- The rest (the middleware, the hosts, the consumers, the outbox's `tenant_id`, the RabbitMQ header) already carries the tenant as a string and does not change. The identity provider decides the format beyond this; validate it there.
 
 ## Decision record
 

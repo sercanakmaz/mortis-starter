@@ -10,6 +10,12 @@ member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdHea
 member {Name}.Api.Middlewares.ApiConstants: public const string CorrelationIdItem = "CorrelationId"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorCode = "unexpected_error"
 member {Name}.Api.Middlewares.ApiConstants: public const string UnexpectedErrorMessage = "An unexpected error occurred."
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string InvalidRequestCode = "invalid_request"
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string InvalidRequestMessage = "The request could not be read."
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string RouteNotFoundCode = "route_not_found"
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string RouteNotFoundMessage = "No endpoint answers this address."
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string MethodNotAllowedCode = "method_not_allowed"
+[addons=api-conventions] member {Name}.Api.Middlewares.ApiConstants: public const string MethodNotAllowedMessage = "This endpoint does not answer this method."
 type {Name}.Api.Middlewares: public static class ErrorReference
 member {Name}.Api.Middlewares.ErrorReference: public static string Of(Exception exception)
 type {Name}.Api.Middlewares: public record ErrorResponseModel(string Code, string Message, IDictionary<string, string[]> Errors = null)
@@ -20,7 +26,8 @@ type {Name}.Application: public static class ApplicationModule
 member {Name}.Application.ApplicationModule: public static IServiceCollection AddApplicationModule(this IServiceCollection services)
 type {Name}.Console: public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
 member {Name}.Console.ConsoleArguments: public static ConsoleArguments Parse(IReadOnlyList<string> args)
-type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
+[auth=jwt] type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly, IQueryDispatcher queryDispatcher = null)
+[auth=none] type {Name}.Console: public class ConsoleCommandRunner(ICommandDispatcher commandDispatcher, Assembly commandAssembly)
 member {Name}.Console.ConsoleCommandRunner: public async Task<object> RunAsync(string name, string argument, CommandContext commandContext)
 type {Name}.Console: public static class ConsoleConstants
 member {Name}.Console.ConsoleConstants: public const string UserOption = "--user"
@@ -29,6 +36,8 @@ member {Name}.Console.ConsoleConstants: public const string TenantOption = "--te
 member {Name}.Console.ConsoleConstants: public const string LanguageOption = "--language"
 member {Name}.Console.ConsoleConstants: public const string OptionPrefix = "--"
 member {Name}.Console.ConsoleConstants: public const string CommandSuffix = "Command"
+[auth=jwt] member {Name}.Console.ConsoleConstants: public const string QuerySuffix = "Query"
+[queries=read-models] member {Name}.Console.ConsoleConstants: public const string RebuildOrderSummaryCommand = "rebuild-order-summary"
 member {Name}.Console.ConsoleConstants: public const string FilePrefix = "@"
 [auth=jwt] member {Name}.Console.ConsoleConstants: public const string DevelopmentTokenCommand = "dev-token"
 [auth=jwt] member {Name}.Console.ConsoleConstants: public const int DevelopmentTokenHours = 8
@@ -50,10 +59,12 @@ type {Name}.Infrastructure.Logging: public static class LoggingConstants
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string FormatterName = "json-line"
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string Service = "{Name}"
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string CorrelationId = "CorrelationId"
+[addons=observability] member {Name}.Infrastructure.Logging.LoggingConstants: public const string TraceId = "TraceId"
+[addons=observability] member {Name}.Infrastructure.Logging.LoggingConstants: public const string SpanId = "SpanId"
 member {Name}.Infrastructure.Logging.LoggingConstants: public const string OriginalFormat = "{OriginalFormat}"
 type {Name}.Infrastructure.Logging: public static class LoggingModule
 member {Name}.Infrastructure.Logging.LoggingModule: public static ILoggingBuilder AddJsonLogging(this ILoggingBuilder logging, bool toStandardError = false)
-[database=postgres,tenancy.mode=interface] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
+[database=postgres,tenancy.mode=interface] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope, ISecretProtector secretProtector) : DbContext(options)
 [database=postgres,tenancy.mode=none] type {Name}.Infrastructure.Persistence: public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 [database=postgres] member {Name}.Infrastructure.Persistence.AppDbContext: protected override void OnModelCreating(ModelBuilder modelBuilder)
 [database=postgres,tenancy.mode=interface] member {Name}.Infrastructure.Persistence.AppDbContext: public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -76,11 +87,13 @@ member {Name}.Infrastructure.Logging.LoggingModule: public static ILoggingBuilde
 type {Name}.Infrastructure.Persistence: public static class PersistenceConstants
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringName = "Default"
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string ConnectionStringVariable = "ConnectionStrings__Default"
-member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string DesignTimeConnectionString = "Host=localhost;Port=5432;Database={database};Username=postgres;Password=postgres"
+[database=postgres] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string DesignTimeConnectionString = "Host=localhost;Port=5432;Database={database};Username=postgres;Password=postgres"
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserIdMaxLength = 64
 member {Name}.Infrastructure.Persistence.PersistenceConstants: public const int UserNameMaxLength = 256
-member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
+[database=postgres] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string RowVersionColumn = "xmin"
 [tenancy.mode=interface] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string TenantOwnedData = "Tenant-owned data"
+[tenancy.mode=interface] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string TenantFilter = "Tenant"
+[tenancy.mode=interface] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string SoftDeleteFilter = "SoftDelete"
 [database=postgres] type {Name}.Infrastructure.Persistence: public static class PersistenceModule
 [database=postgres] member {Name}.Infrastructure.Persistence.PersistenceModule: public static IServiceCollection AddPersistenceModule(this IServiceCollection services)
 [database=postgres,events.outbox=background] type {Name}.Infrastructure.Persistence: public class UnitOfWork(AppDbContext context, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository) : IUnitOfWork
@@ -96,12 +109,16 @@ member {Name}.Infrastructure.Persistence.PersistenceConstants: public const stri
 type {Name}.Shared.Application: public abstract class BaseCommandHandler<TCommand, TContent>(CommandPipeline<TCommand> commandPipeline) where TCommand : ICommand<TContent>
 member {Name}.Shared.Application.BaseCommandHandler: protected abstract Task<CommandResult<TContent>> OnHandle(TCommand command)
 member {Name}.Shared.Application.BaseCommandHandler: public Task<CommandResult<TContent>> Handle(TCommand command)
+[queries=split|read-models] type {Name}.Shared.Application: public abstract class BaseQueryHandler<TQuery, TResult>(IEnumerable<IValidator<TQuery>> validators) where TQuery : IQuery<TResult>
+[queries=split|read-models] member {Name}.Shared.Application.BaseQueryHandler: public async Task<TResult> Handle(TQuery query)
+[queries=split|read-models] member {Name}.Shared.Application.BaseQueryHandler: protected abstract Task<TResult> OnHandle(TQuery query)
 type {Name}.Shared.Application: public sealed record CommandContext
 member {Name}.Shared.Application.CommandContext: public AuditUser User { get; init; }
 member {Name}.Shared.Application.CommandContext: public Guid CorrelationId { get; init; }
 member {Name}.Shared.Application.CommandContext: public Guid? CausationId { get; init; }
 member {Name}.Shared.Application.CommandContext: public string TenantId { get; init; }
 member {Name}.Shared.Application.CommandContext: public string Language { get; init; }
+[addons=loop-guard] member {Name}.Shared.Application.CommandContext: public IReadOnlyList<string> Chain { get; init; }
 member {Name}.Shared.Application.CommandContext: public static CommandContext Complete(CommandContext commandContext)
 member {Name}.Shared.Application.CommandContext: public static CommandContext FromEvent(EventBase @event, AuditUser user)
 type {Name}.Shared.Application: public sealed class CommandDispatcher(IServiceProvider serviceProvider) : ICommandDispatcher
@@ -119,6 +136,9 @@ member {Name}.Shared.Application.CommandResult: public Dictionary<string, object
 member {Name}.Shared.Application.CommandResult: public static CommandResult<TContent> FromContent<TContent>(TContent content)
 type {Name}.Shared.Application: public sealed class CommandResult<TContent>(TContent content) : CommandResult
 member {Name}.Shared.Application.CommandResult: public TContent Content { get; }
+[addons=caching] type {Name}.Shared.Application: public interface ICacheService
+[addons=caching] member {Name}.Shared.Application.ICacheService: Task<T> GetOrCreateAsync<T>(string key, IReadOnlyCollection<string> tags, Func<CancellationToken, Task<T>> load, CancellationToken cancellationToken = default)
+[addons=caching] member {Name}.Shared.Application.ICacheService: Task RemoveByTagAsync(string tag, CancellationToken cancellationToken = default)
 type {Name}.Shared.Application: public interface ICommand
 type {Name}.Shared.Application: public interface ICommand<TContent> : ICommand
 type {Name}.Shared.Application: public interface ITransactionalCommand
@@ -129,6 +149,57 @@ member {Name}.Shared.Application.ICommandHandlerMiddleware: void Before(ICommand
 member {Name}.Shared.Application.ICommandHandlerMiddleware: void After(ICommand command, CommandResult commandResult)
 type {Name}.Shared.Application: public interface IContextCommand
 member {Name}.Shared.Application.IContextCommand: CommandContext Context { get; set; }
+[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery
+[queries=split|read-models] member {Name}.Shared.Application.IQuery: CommandContext Context { get; set; }
+[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery<TResult> : IQuery
+[queries=split|read-models] type {Name}.Shared.Application: public interface IQueryDispatcher
+[queries=split|read-models] member {Name}.Shared.Application.IQueryDispatcher: Task<TResult> Ask<TResult>(IQuery<TResult> query)
+[database=postgres,addons=scheduler] type {Name}.Shared.Application: public interface IRecurringJob
+[database=postgres,addons=scheduler] member {Name}.Shared.Application.IRecurringJob: static abstract string Name { get; }
+[database=postgres,addons=scheduler] member {Name}.Shared.Application.IRecurringJob: static abstract string DefaultCron { get; }
+[database=postgres,addons=scheduler] member {Name}.Shared.Application.IRecurringJob: Task RunAsync(CommandContext commandContext, CancellationToken cancellationToken)
+[database=postgres,addons=secrets] type {Name}.Shared.Application: public interface ISecretProtector
+[database=postgres,addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Protect(string plaintext)
+[database=postgres,addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Unprotect(string envelope)
+[addons=loop-guard] type {Name}.Shared.Application: public static class LoopGuardConstants
+[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const int MaxChain = 16
+[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const string Separator = " -> "
+[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const string LoopDetectedCode = "loop_detected"
+[addons=api-conventions] type {Name}.Shared.Application: public readonly record struct Optional<T>
+[addons=api-conventions] member {Name}.Shared.Application.struct: public bool HasValue { get; }
+[addons=api-conventions] member {Name}.Shared.Application.struct: public T Value { get; }
+[addons=api-conventions] member {Name}.Shared.Application.struct: public static Optional<T> None
+[addons=api-conventions] member {Name}.Shared.Application.struct: public static Optional<T> Of(T value)
+[addons=api-conventions] member {Name}.Shared.Application.struct: public T Or(T current)
+[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override bool HandleNull
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override Optional<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override void Write(Utf8JsonWriter writer, Optional<T> value, JsonSerializerOptions options)
+[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverterFactory : JsonConverterFactory
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override bool CanConvert(Type typeToConvert)
+[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+[queries=split|read-models] type {Name}.Shared.Application: public static class PageRequest
+[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int DefaultSize = 20
+[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int MaxSize = 100
+[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public static int Skip(int page, int size)
+[queries=split|read-models] type {Name}.Shared.Application: public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int Size, int Total)
+[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryDispatcher(IServiceProvider serviceProvider) : IQueryDispatcher
+[queries=split|read-models] member {Name}.Shared.Application.QueryDispatcher: public Task<TResult> Ask<TResult>(IQuery<TResult> query)
+[queries=split|read-models] type {Name}.Shared.Application: public abstract class QueryHandlerInvoker<TResult>
+[queries=split|read-models] member {Name}.Shared.Application.QueryHandlerInvoker: public abstract Task<TResult> Invoke(IServiceProvider serviceProvider, IQuery<TResult> query)
+[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryHandlerInvoker<TQuery, TResult> : QueryHandlerInvoker<TResult> where TQuery : IQuery<TResult>
+[queries=split|read-models] member {Name}.Shared.Application.QueryHandlerInvoker: public override Task<TResult> Invoke(IServiceProvider serviceProvider, IQuery<TResult> query)
+[queries=split|read-models] type {Name}.Shared.Application: public static class QueryHandlerExtensions
+[queries=split|read-models] member {Name}.Shared.Application.QueryHandlerExtensions: public static IServiceCollection AddQueryHandler<TQuery, TResult, THandler>(this IServiceCollection services) where TQuery : IQuery<TResult> where THandler : BaseQueryHandler<TQuery, TResult>
+[addons=observability] type {Name}.Shared.Diagnostics: public static class Telemetry
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Name = "{Name}"
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Succeeded = "succeeded"
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Refused = "refused"
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Failed = "failed"
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly ActivitySource Source = new(Name)
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Meter Meter = new(Name)
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Histogram<double> CommandDuration = Meter.CreateHistogram<double>("commands.duration", "ms", "Time a command took, by command and outcome.")
+[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Counter<long> ConsumerFailures = Meter.CreateCounter<long>("consumers.failures", description: "Event consumer runs that threw, by consumer.")
 type {Name}.Shared.Domain: public abstract class AggregateRoot<TKey> : Entity<TKey>
 member {Name}.Shared.Domain.AggregateRoot: public DateTime CreatedAt { get; protected set; }
 member {Name}.Shared.Domain.AggregateRoot: public string CreatedUserId { get; protected set; }
@@ -169,6 +240,7 @@ member {Name}.Shared.Domain.EventBase: public string TenantId { get; init; }
 member {Name}.Shared.Domain.EventBase: public string Language { get; init; }
 member {Name}.Shared.Domain.EventBase: public string UserId { get; init; }
 member {Name}.Shared.Domain.EventBase: public string UserEmail { get; init; }
+[addons=loop-guard] member {Name}.Shared.Domain.EventBase: public IReadOnlyList<string> Chain { get; init; }
 type {Name}.Shared.Domain: public interface IQueueEvent
 type {Name}.Shared.Domain: public sealed class EventContext
 member {Name}.Shared.Domain.EventContext: public int RaisedCount { get; }
@@ -181,6 +253,12 @@ member {Name}.Shared.Domain.EventContext: public EventBase TakeDispatched()
 member {Name}.Shared.Domain.EventContext: public void Clear()
 type {Name}.Shared.Domain: public sealed class EventHandlerExecutor(IServiceProvider serviceProvider, EventContext eventContext)
 member {Name}.Shared.Domain.EventHandlerExecutor: public async Task ExecuteRaisedAsync()
+[addons=soft-delete] type {Name}.Shared.Domain: public interface ISoftDeletable
+[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: bool IsDeleted { get; }
+[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: DateTime? DeletedAt { get; }
+[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: string DeletedUserId { get; }
+[addons=events-project] type {Name}.Shared.Domain: public sealed class MessageNameAttribute(string name) : Attribute
+[addons=events-project] member {Name}.Shared.Domain.MessageNameAttribute: public string Name { get; }
 type {Name}.Shared.Exceptions: public class BusinessRuleException(string code, string message) : ExceptionBase(code, HttpStatusCode.Conflict, message)
 [languages.mode=messages|data] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException, new Dictionary<string, object>
 [languages.mode=none] type {Name}.Shared.Exceptions: public class DuplicateException(string name, Exception innerException = null) : ExceptionBase("duplicate", HttpStatusCode.Conflict, $"{name} already exists.", innerException)
@@ -193,6 +271,7 @@ member {Name}.Shared.Exceptions.ExceptionBase: public HttpStatusCode HttpStatusC
 [languages.mode=none] type {Name}.Shared.Exceptions: public class ForbiddenException(string action) : ExceptionBase("forbidden", HttpStatusCode.Forbidden, $"{action} is not allowed.")
 [languages.mode=messages|data] type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException, new Dictionary<string, object>
 [languages.mode=none] type {Name}.Shared.Exceptions: public class InvalidParameterException(string name, string reason, Exception innerException = null) : ExceptionBase("invalid_parameter", HttpStatusCode.BadRequest, $"{name} is invalid: {reason}", innerException)
+[addons=loop-guard] type {Name}.Shared.Exceptions: public class LoopDetectedException(IReadOnlyList<string> chain) : ExceptionBase(LoopGuardConstants.LoopDetectedCode, HttpStatusCode.InternalServerError, $"Commands triggered each other more than {LoopGuardConstants.MaxChain} times: {string.Join(LoopGuardConstants.Separator, chain)}.", null, new Dictionary<string, object>
 [languages.mode=messages|data] type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.", parameters: new Dictionary<string, object>
 [languages.mode=none] type {Name}.Shared.Exceptions: public class NotFoundException(string name) : ExceptionBase("not_found", HttpStatusCode.NotFound, $"{name} was not found.")
 [languages.mode=messages|data] type {Name}.Shared.Exceptions: public class ReferenceViolationException(string constraintName, Exception innerException = null) : ExceptionBase("reference_violation", HttpStatusCode.BadRequest, $"The reference {constraintName} points at a missing record, or the record is still referenced.", innerException, new Dictionary<string, object>
@@ -216,61 +295,48 @@ member {Name}.Shared.Persistence.IUnitOfWork: Task RollbackTransactionAsync()
 member {Name}.Shared.Persistence.IUnitOfWork: void OnCommitted(Func<Task> action)
 type {Name}.Shared: public static class SharedModule
 member {Name}.Shared.SharedModule: public static IServiceCollection AddSharedModule(this IServiceCollection services)
-[addons=soft-delete] type {Name}.Shared.Domain: public interface ISoftDeletable
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: bool IsDeleted { get; }
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: DateTime? DeletedAt { get; }
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: string DeletedUserId { get; }
-[addons=caching] type {Name}.Shared.Application: public interface ICacheService
-[addons=caching] member {Name}.Shared.Application.ICacheService: Task<T> GetOrCreateAsync<T>(string key, IReadOnlyCollection<string> tags, Func<CancellationToken, Task<T>> load, CancellationToken cancellationToken = default);
-[addons=caching] member {Name}.Shared.Application.ICacheService: Task RemoveByTagAsync(string tag, CancellationToken cancellationToken = default);
 [addons=storage] type {Name}.Shared.Application: public interface IFileStorage
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default);
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task<StoredFile> OpenAsync(string key, CancellationToken cancellationToken = default);
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 [addons=storage] type {Name}.Shared.Application: public sealed record StoredFile(Stream Content, string ContentType, long Length);
-[addons=secrets] type {Name}.Shared.Application: public interface ISecretProtector
-[addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Protect(string plaintext);
-[addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Unprotect(string envelope);
-[addons=loop-guard] type {Name}.Shared.Application: public static class LoopGuardConstants
-[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const int MaxChain = 16;
-[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const string Separator = " -> ";
-[addons=loop-guard] type {Name}.Shared.Exceptions: public class LoopDetectedException(IReadOnlyList<string> chain) : ExceptionBase
-[addons=events-project] type {Name}.Shared.Domain: public sealed class MessageNameAttribute(string name) : Attribute
-[addons=events-project] member {Name}.Shared.Domain.MessageNameAttribute: public string Name { get; } = name;
-[addons=api-conventions] type {Name}.Shared.Application: public readonly record struct Optional<T>
-[addons=api-conventions] member {Name}.Shared.Application.Optional: public bool HasValue { get; }
-[addons=api-conventions] member {Name}.Shared.Application.Optional: public T Value { get; }
-[addons=api-conventions] member {Name}.Shared.Application.Optional: public static Optional<T> None => default;
-[addons=api-conventions] member {Name}.Shared.Application.Optional: public static Optional<T> Of(T value) => new(value);
-[addons=api-conventions] member {Name}.Shared.Application.Optional: public T Or(T current) => HasValue ? Value : current;
-[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverterFactory : JsonConverterFactory
-[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override bool CanConvert(Type typeToConvert)
-[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverterFactory: public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
-[addons=api-conventions] type {Name}.Shared.Application: public sealed class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
-[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override bool HandleNull => true;
-[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override Optional<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-[addons=api-conventions] member {Name}.Shared.Application.OptionalJsonConverter: public override void Write(Utf8JsonWriter writer, Optional<T> value, JsonSerializerOptions options)
-[addons=observability] type {Name}.Shared.Diagnostics: public static class Telemetry
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Name = "{Name}";
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Succeeded = "succeeded";
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Refused = "refused";
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public const string Failed = "failed";
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly ActivitySource Source = new(Name);
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Meter Meter = new(Name);
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Histogram<double> CommandDuration
-[addons=observability] member {Name}.Shared.Diagnostics.Telemetry: public static readonly Counter<long> ConsumerFailures
 [queries=commands,addons=api-conventions] type {Name}.Shared.Application: public static class PageRequest
 [queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public const int DefaultSize = 20;
 [queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public const int MaxSize = 100;
 [queries=commands,addons=api-conventions] member {Name}.Shared.Application.PageRequest: public static int Skip(int page, int size) => (page - 1) * size;
 [queries=commands,addons=api-conventions] type {Name}.Shared.Application: public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int Size, int Total);
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoModule
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoModule: public static IServiceCollection AddMongoModule(this IServiceCollection services, IConfiguration configuration)
+[database=mongo] member {Name}.Console.ConsoleConstants: public const string EnsureIndexesCommand = "ensure-indexes"
+[database=mongo,events.outbox=background|after-command] type {Name}.Infrastructure.Messaging.Outbox: public static class OutboxConstants
+[database=mongo,events.outbox=background|after-command] member {Name}.Infrastructure.Messaging.Outbox.OutboxConstants: public const string TransientTransactionErrorLabel = "TransientTransactionError"
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class ConcurrencyConflictException(string name) : Exception($"{name} was changed by someone else since it was loaded.")
 [database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoClassMaps
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoClassMaps: public static void Register()
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoUnitOfWork(IMongoClient mongoClient, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public IClientSessionHandle Session { get; private set; }
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public bool HasTransaction => Session?.IsInTransaction == true;
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoExceptionHandler
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static async Task<T> Run<T>(Func<Task<T>> write)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static Task Run(Func<Task> write)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexes(IMongoDatabase database)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexes: public async Task EnsureAsync()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexesService(MongoIndexes mongoIndexes, IHostEnvironment hostEnvironment) : IHostedService
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StartAsync(CancellationToken cancellationToken)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StopAsync(CancellationToken cancellationToken)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoModule
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoModule: public static IServiceCollection AddMongoModule(this IServiceCollection services, IConfiguration configuration)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public abstract class MongoRepository<TAggregate, TKey>(IMongoDatabase database, MongoUnitOfWork unitOfWork, EventContext eventContext, string collectionName) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task CreateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task UpdateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task DeleteAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task<TAggregate> FindByIdAsync(TKey id)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected async Task<TAggregate> FindOneTrackingAsync(FilterDefinition<BsonDocument> filter)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected async Task<IReadOnlyList<TAggregate>> FindManyAsync(FilterDefinition<BsonDocument> filter)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected IFindFluent<BsonDocument, BsonDocument> Find(FilterDefinition<BsonDocument> filter)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoSession(IMongoClient mongoClient) : IDisposable
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public IClientSessionHandle Handle { get; private set; }
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public async Task<IClientSessionHandle> StartAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public void Dispose()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoUnitOfWork(MongoSession mongoSession, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public IClientSessionHandle Session
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public bool HasTransaction
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public Task<int> SaveChangesAsync()
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
@@ -278,36 +344,8 @@ member {Name}.Shared.SharedModule: public static IServiceCollection AddSharedMod
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void OnCommitted(Func<Task> action)
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void Remember(object aggregate, long version)
 [database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public long VersionOf(object aggregate)
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public abstract class MongoRepository<TAggregate, TKey>(IMongoDatabase database, MongoUnitOfWork unitOfWork, EventContext eventContext, string collectionName) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task CreateAsync(TAggregate aggregate)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task UpdateAsync(TAggregate aggregate)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task DeleteAsync(TAggregate aggregate)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task<TAggregate> FindByIdAsync(TKey id)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoExceptionHandler
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static async Task<T> Run<T>(Func<Task<T>> write)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static Task Run(Func<Task> write)
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class ConcurrencyConflictException(string name) : Exception($"{name} was changed by someone else since it was loaded.");
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexes(IMongoDatabase database)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexes: public async Task EnsureAsync()
-[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexesService(MongoIndexes mongoIndexes, IHostEnvironment hostEnvironment) : IHostedService
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StartAsync(CancellationToken cancellationToken)
-[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StopAsync(CancellationToken cancellationToken)
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery
-[queries=split|read-models] member {Name}.Shared.Application.IQuery: CommandContext Context { get; set; }
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQuery<TResult> : IQuery;
-[queries=split|read-models] type {Name}.Shared.Application: public abstract class BaseQueryHandler<TQuery, TResult>(IEnumerable<IValidator<TQuery>> validators) where TQuery : IQuery<TResult>
-[queries=split|read-models] member {Name}.Shared.Application.BaseQueryHandler: public async Task<TResult> Handle(TQuery query)
-[queries=split|read-models] type {Name}.Shared.Application: public interface IQueryDispatcher
-[queries=split|read-models] member {Name}.Shared.Application.IQueryDispatcher: Task<TResult> Ask<TResult>(IQuery<TResult> query);
-[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryDispatcher(IServiceProvider serviceProvider) : IQueryDispatcher
-[queries=split|read-models] member {Name}.Shared.Application.QueryDispatcher: public Task<TResult> Ask<TResult>(IQuery<TResult> query)
-[queries=split|read-models] type {Name}.Shared.Application: public abstract class QueryHandlerInvoker<TResult>
-[queries=split|read-models] type {Name}.Shared.Application: public sealed class QueryHandlerInvoker<TQuery, TResult> : QueryHandlerInvoker<TResult> where TQuery : IQuery<TResult>
-[queries=split|read-models] type {Name}.Shared.Application: public static class QueryHandlerExtensions
-[queries=split|read-models] member {Name}.Shared.Application.QueryHandlerExtensions: public static IServiceCollection AddQueryHandler<TQuery, TResult, THandler>(this IServiceCollection services)
-[queries=split|read-models] type {Name}.Shared.Application: public static class PageRequest
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int DefaultSize = 20;
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public const int MaxSize = 100;
-[queries=split|read-models] member {Name}.Shared.Application.PageRequest: public static int Skip(int page, int size) => (page - 1) * size;
-[queries=split|read-models] type {Name}.Shared.Application: public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int Size, int Total);
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string VersionElement = "version"
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string CountersCollection = "counters"
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string OutboxCollection = "outbox_messages"
+[tenancy.mode=interface,tenancy.key=text] type {Name}.Shared.Domain: public static class TenancyConstants
+[tenancy.mode=interface,tenancy.key=text] member {Name}.Shared.Domain.TenancyConstants: public const int TenantIdMaxLength = 64

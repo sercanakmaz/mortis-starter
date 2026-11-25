@@ -1,0 +1,96 @@
+# Every exported declaration of the Go kernel, in order. Generated from the reference solution; verify.sh compares a project against it.
+internal/shared/aggregate.go: type Audit struct
+internal/shared/aggregate.go:   CreatedAt time.Time
+internal/shared/aggregate.go:   CreatedUserID string
+internal/shared/aggregate.go:   CreatedUserName string
+internal/shared/aggregate.go:   UpdatedAt time.Time
+internal/shared/aggregate.go:   UpdatedUserID string
+internal/shared/aggregate.go:   UpdatedUserName string
+internal/shared/aggregate.go: type AggregateRoot struct
+internal/shared/aggregate.go: func (a *AggregateRoot) Raise(event Event)
+internal/shared/aggregate.go: func (a *AggregateRoot) Events() []Event
+internal/shared/aggregate.go: func (a *AggregateRoot) ClearEvents()
+internal/shared/aggregate.go: func (a *AggregateRoot) SetCreatedAudit(user AuditUser)
+internal/shared/aggregate.go: func (a *AggregateRoot) SetUpdatedAudit(user AuditUser)
+internal/shared/aggregate.go: type Aggregate interface
+internal/shared/audit.go: type AuditUser struct
+internal/shared/audit.go:   ID string
+internal/shared/audit.go:   Email string
+internal/shared/commandcontext.go: type CommandContext struct
+internal/shared/commandcontext.go:   CorrelationID uuid.UUID
+internal/shared/commandcontext.go:   CausationID uuid.UUID
+internal/shared/commandcontext.go:   User AuditUser
+internal/shared/commandcontext.go:   TenantID string
+internal/shared/commandcontext.go:   Language string
+internal/shared/commandcontext.go: func (c CommandContext) Complete() CommandContext
+internal/shared/commandcontext.go: func FromEvent(event Event) CommandContext
+internal/shared/commandcontext.go: type Contextual interface
+internal/shared/commandcontext.go: type WithContext struct
+internal/shared/commandcontext.go:   Context CommandContext `json:"-"`
+internal/shared/commandcontext.go: func (w *WithContext) CommandContext() *CommandContext
+internal/shared/dispatcher.go: type Handler[C any, R any] interface
+internal/shared/dispatcher.go: type Middleware func
+internal/shared/dispatcher.go: type Dispatcher struct
+internal/shared/dispatcher.go: func NewDispatcher(unitOfWork UnitOfWork, middlewares ...Middleware) *Dispatcher
+internal/shared/dispatcher.go: func Register[C any, R any](dispatcher *Dispatcher, handler Handler[C, R])
+internal/shared/dispatcher.go: func Send[R any](ctx context.Context, dispatcher *Dispatcher, command any) (R, error)
+internal/shared/dispatcher.go: func (d *Dispatcher) New(name string) (any, bool)
+internal/shared/dispatcher.go: func (d *Dispatcher) Names() []string
+internal/shared/dispatcher.go: func (d *Dispatcher) Dispatch(ctx context.Context, command any) (any, error)
+internal/shared/errors.go: type Error struct
+internal/shared/errors.go:   Code string
+internal/shared/errors.go:   Status int
+internal/shared/errors.go:   Message string
+internal/shared/errors.go:   Params map[string]any
+internal/shared/errors.go:   Fields map[string][]string
+internal/shared/errors.go:   Cause error
+internal/shared/errors.go: func (e *Error) Error() string
+internal/shared/errors.go: func (e *Error) Unwrap() error
+internal/shared/errors.go: func AsError(err error) *Error
+internal/shared/errors.go: func NotFound(name string) *Error
+internal/shared/errors.go: func Duplicate(name string, cause error) *Error
+internal/shared/errors.go: func InvalidParameter(name string, reason string) *Error
+internal/shared/errors.go: func BusinessRule(code string, message string) *Error
+internal/shared/errors.go: func ValidationFailed(fields map[string][]string) *Error
+internal/shared/errors.go: func ReferenceViolation(name string, cause error) *Error
+internal/shared/eventcontext.go: type EventContext struct
+internal/shared/eventcontext.go: func WithEventContext(ctx context.Context) context.Context
+internal/shared/eventcontext.go: func EventContextOf(ctx context.Context) *EventContext
+internal/shared/eventcontext.go: func (e *EventContext) EnterCommand(commandContext CommandContext)
+internal/shared/eventcontext.go: func (e *EventContext) LeaveCommand()
+internal/shared/eventcontext.go: func (e *EventContext) AddRaised(event Event)
+internal/shared/eventcontext.go: func (e *EventContext) TakeRaised() Event
+internal/shared/eventcontext.go: func (e *EventContext) AddDispatched(event Event)
+internal/shared/eventcontext.go: func (e *EventContext) TakeDispatched() []Event
+internal/shared/eventcontext.go: func (e *EventContext) Clear()
+internal/shared/events.go: type EventBase struct
+internal/shared/events.go:   EventID uuid.UUID
+internal/shared/events.go:   OccurredAt time.Time
+internal/shared/events.go:   CorrelationID uuid.UUID
+internal/shared/events.go:   CausationID uuid.UUID
+internal/shared/events.go:   TenantID string
+internal/shared/events.go:   Language string
+internal/shared/events.go:   UserID string
+internal/shared/events.go:   UserEmail string
+internal/shared/events.go: func (b *EventBase) Base() *EventBase
+internal/shared/events.go: func NewEventBase() EventBase
+internal/shared/events.go: type Event interface
+internal/shared/handlers.go: type SyncHandler interface
+internal/shared/handlers.go: type Consumer interface
+internal/shared/handlers.go: type EventHandlers struct
+internal/shared/handlers.go: func NewEventHandlers() *EventHandlers
+internal/shared/handlers.go: func (h *EventHandlers) AddSync(eventName string, sequence int, handler SyncHandler)
+internal/shared/handlers.go: func (h *EventHandlers) AddConsumer(eventName string, consumer Consumer)
+internal/shared/handlers.go: func (h *EventHandlers) ConsumersOf(eventName string) []Consumer
+internal/shared/handlers.go: func (h *EventHandlers) ExecuteRaised(ctx context.Context) error
+internal/shared/ids.go: func NewID() uuid.UUID
+internal/shared/unitofwork.go: type UnitOfWork interface
+internal/shared/unitofwork.go: type Transactional interface
+internal/shared/unitofwork.go: type InTransaction struct
+internal/shared/unitofwork.go: func (InTransaction) Transactional() {}
+internal/shared/validation.go: type FieldErrors m
+internal/shared/validation.go: func (f FieldErrors) Add(field string, message string)
+internal/shared/validation.go: func (f FieldErrors) Check(ok bool, field string, message string)
+internal/shared/validation.go: type Validatable interface
+internal/shared/validation.go: func (f FieldErrors) NotEmpty(field string, value string)
+internal/shared/validation.go: func (f FieldErrors) MaxLength(field string, value string, maximum int)

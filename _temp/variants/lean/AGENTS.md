@@ -13,7 +13,7 @@ src/
   Boilerplate.Application/     <Plural>/ : commands (command + validator + handler in one file), event handlers, DTOs
   Boilerplate.Infrastructure/  Persistence/ : AppDbContext, EfRepository, UnitOfWork, <Plural>/ repository + EF configuration, Migrations/
   Boilerplate.Api/             HTTP host: controllers, middlewares
-  Boilerplate.Console/         manual-testing host: runs one command, `dotnet run --project src/Boilerplate.Console -- <Command> '<json>'`
+  Boilerplate.Console/         manual-testing host: runs one command, `dotnet run --project src/Boilerplate.Console -- --user <id> <Command> '<json>'`
 test/
   Boilerplate.Tests/           TestSupport/ (every fake, builder and mock) + tests, named after the type under test
 ```
@@ -27,7 +27,7 @@ Dependencies point one way: `Shared ← Domain ← Application ← Api / Console
 | 1 | **All business logic lives in the aggregate.** Properties are `protected set`, collections are a private `List<T>` exposed as `IReadOnlyCollection<T>`, state changes through named methods (`Complete`, `AddLine`, `Override`). A rule that needs several entities or another system goes to a domain service in `Services/`; command handlers only coordinate: load, call, save. | Review |
 | 2 | **Child entities and value objects are reached only through their aggregate root.** A child's constructor and mutating methods are `internal`. A child gets no repository and no command. A value object is an immutable `record` that validates itself in its constructor. | Compiler (`internal`) |
 | 3 | **Events are raised inside the aggregate method that changes the state.** Event records are past-tense names (`Created`, `Completed`) in `Aggregates/<Plural>/Events/` and carry ids as strings, never entities. | Compiler (`RaiseEvent` is `protected`), repository tests |
-| 4 | **Ids are `Guid.CreateVersion7()` and are assigned in the domain, never by the database.** Time is `DateTime.UtcNow`. No `.Result`, no `.Wait()`. | Build fails (`BannedSymbols.txt`, RS0030); `ValueGeneratedNever()` in the configuration extensions |
+| 4 | **Ids are `Guid.CreateVersion7()` and are assigned in the domain, never by the database, except the key of an aggregate that chose `int` or `long` (ADR 0008).** Time is `DateTime.UtcNow`. No `.Result`, no `.Wait()`. | Build fails (`BannedSymbols.txt`, RS0030); `ValueGeneratedNever()` in the configuration extensions |
 | 5 | **Every command that writes implements `ITransactionalCommand`.** | A repository write outside a transaction throws `TransactionRequiredException` |
 | 6 | **Load with `FindByIdTrackingAsync` before you change an aggregate**, then call `UpdateAsync`. | `UpdateAsync` throws for an untracked aggregate |
 | 7 | **A repository write is sent to the database immediately.** Statement order inside a handler is behaviour, not style. | Review |
@@ -76,7 +76,7 @@ dotnet build
 dotnet test
 docker compose up -d postgres
 dotnet ef database update --project src/Boilerplate.Infrastructure
-dotnet run --project src/Boilerplate.Console -- <Command> '<json>'  # runs one command; F5 in VS Code asks for both
+dotnet run --project src/Boilerplate.Console -- --user <id> <Command> '<json>'  # runs one command; F5 in VS Code asks for both
 dotnet ef migrations add <Name> --project src/Boilerplate.Infrastructure --output-dir Persistence/Migrations
 ```
 

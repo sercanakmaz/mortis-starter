@@ -120,5 +120,5 @@ public void Messages_Should_DeclareTheCodesOfTheSharedFailures()
 | File | Namespace | Usings |
 |---|---|---|
 | `src/{Name}.Api/Middlewares/ErrorReference.cs` | `{Name}.Api.Middlewares` | System.Security.Cryptography, System.Text |
-| `src/{Name}.Domain/ErrorCatalogue.cs` | `{Name}.Domain` | {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products |
+| `src/{Name}.Domain/ErrorCatalogue.cs` | `{Name}.Domain` | {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Shared.Application |
 | `test/{Name}.Tests/Domain/ErrorCatalogueTests.cs` | `{Name}.Tests.Domain` | System.Reflection, {Name}.Domain |

@@ -10,6 +10,7 @@ public abstract record EventBase
     public string Language { get; init; }
     public string UserId { get; init; }
     public string UserEmail { get; init; }
+    public IReadOnlyList<string> Chain { get; init; }
 }
 
 public interface IQueueEvent;

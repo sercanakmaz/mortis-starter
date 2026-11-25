@@ -1,0 +1,35 @@
+using Acme.Domain.Aggregates.Categories.Events;
+using Acme.Tests.TestSupport.Domain.Categories;
+
+namespace Acme.Tests.Domain.Categories;
+
+public class CategoryTests
+{
+    [Fact]
+    public void Constructor_Should_RaiseNothingBecauseTheIdIsNotKnownYet()
+    {
+        var fakeCategory = FakeCategory.Create(" Tools ");
+
+        Assert.Equal("Tools", fakeCategory.Name);
+        Assert.Equal(0, fakeCategory.Id);
+        Assert.Empty(fakeCategory.DomainEvents ?? []);
+    }
+
+    [Fact]
+    public void MarkCreated_WithTheDatabaseId_Should_RaiseCreatedCarryingIt()
+    {
+        var fakeCategory = FakeCategory.Create().WithId(42);
+
+        fakeCategory.MarkCreated();
+
+        Assert.Equal("42", Assert.IsType<Created>(Assert.Single(fakeCategory.DomainEvents)).Id);
+    }
+
+    [Fact]
+    public void MarkCreated_BeforeTheDatabaseAssignedAnId_Should_Throw()
+    {
+        var fakeCategory = FakeCategory.Create();
+
+        Assert.Throws<InvalidOperationException>(() => fakeCategory.MarkCreated());
+    }
+}

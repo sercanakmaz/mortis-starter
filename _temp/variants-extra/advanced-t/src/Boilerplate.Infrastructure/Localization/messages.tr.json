@@ -1,0 +1,19 @@
+{
+  "not_found": "{name} bulunamadı.",
+  "duplicate": "{name} zaten var.",
+  "forbidden": "{action} işlemine izin verilmiyor.",
+  "invalid_parameter": "{name} geçersiz: {reason}",
+  "reference_violation": "{name} başvurusu olmayan bir kaydı gösteriyor ya da kayıt hâlâ kullanılıyor.",
+  "idempotency_key_reused": "Bu idempotency anahtarı başka bir istek için kullanıldı.",
+  "idempotency_in_progress": "Bu idempotency anahtarıyla gelen bir istek hâlâ çalışıyor.",
+  "loop_detected": "Komutlar birbirini çok fazla kez tetikledi: {chain}.",
+  "transaction_required": "{name} kaydına bir işlem (transaction) dışında yazıldı.",
+  "tenant_required": "{type} bir kiracıya ait, çağıranın ise kiracısı yok.",
+  "validation_failed": "İstek geçerli değil.",
+  "customer_blocked": "Engellenmiş bir müşteri sipariş tamamlayamaz.",
+  "product_insufficient_stock": "Ürünün stoğu yeterli değil.",
+  "order_not_open": "Sipariş açık değil.",
+  "order_mixed_currency": "Bir siparişin tüm satırları aynı para birimini kullanır.",
+  "order_nothing_to_fulfil": "Etkin satırı olmayan bir sipariş tamamlanamaz.",
+  "order_line_already_cancelled": "Sipariş satırı zaten iptal edilmiş."
+}

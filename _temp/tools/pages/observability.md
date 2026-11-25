@@ -2,9 +2,9 @@
 
 Applies when `addons` contains `observability`. Projects `{Name}.Shared` (folder `Diagnostics/`), `{Name}.Infrastructure` (folder `Diagnostics/`, and the messaging and logging files it changes) and the hosts. Layer 1: `architecture/http-and-operations.md`, `options/addons.md`.
 
-**Not built or run yet** (decision 48): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Built** in the advanced reference solution (decision 52; RabbitMQ, background outbox, separate Worker): compiled, tested and verified there. The in-process (`EventPublisher`) and database-transport lines follow the same pattern and are proved by `observability.sh` when such a project is generated.
 
-Packages, in `{Name}.Infrastructure`: `OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Exporter.OpenTelemetryProtocol`, `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`; in `{Name}.Api`: `OpenTelemetry.Instrumentation.AspNetCore`; in the tests: `OpenTelemetry.Exporter.InMemory`. The shared kernel uses only `System.Diagnostics`, which needs no package.
+Packages (versions in `Directory.Packages.props`), in `{Name}.Infrastructure`: `OpenTelemetry.Extensions.Hosting` 1.21.0, `OpenTelemetry.Exporter.OpenTelemetryProtocol` 1.21.0, `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` 10.0.15; in `{Name}.Api`: `OpenTelemetry.Instrumentation.AspNetCore` 1.21.0. The tests need none: a plain `ActivityListener` records spans. The shared kernel uses only `System.Diagnostics`, which needs no package.
 
 ## How it fits together
 
@@ -43,7 +43,7 @@ logs                     every JSON line gains TraceId and SpanId; RequestLoggin
 | `src/{Name}.Shared/Domain/EventHandlerExecutor.cs` | a span per sync handler |
 | `src/{Name}.Infrastructure/Messaging/EventPublisher.cs` (events.outbox = none) | a span per consumer, the failure counter |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs`, `OutboxMessageConfiguration.cs`, `OutboxWorker.cs` | `TraceParent`; the publish span; with the database transport the consumer's failures; a migration adds `outbox_messages.trace_parent` |
-| `src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs`, `ReceiveEndpointService.cs`, `RabbitMqConstants.cs` | the `traceparent` header; the consume span and the failure counter |
+| `src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs`, `ReceiveEndpointService.cs`, `RabbitMqConstants.cs` (using `System.Diagnostics` and `{Name}.Shared.Diagnostics` where a span starts) | the `traceparent` header; the consume span and the failure counter |
 | `src/{Name}.Infrastructure/Logging/JsonLineFormatter.cs`, `LoggingConstants.cs` | `TraceId` and `SpanId` |
 
 ## Telemetry
@@ -69,7 +69,7 @@ public static class Telemetry
 
 ## The command span
 
-`CommandPipeline.ExecuteAsync` keeps its body as a private `RunAsync` and wraps it:
+`CommandPipeline.ExecuteAsync` keeps its body as a private `RunAsync` and wraps it (usings `{Name}.Shared.Diagnostics`, `System.Diagnostics`, `System.Net`):
 
 ```csharp
     public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
@@ -111,7 +111,7 @@ public static class Telemetry
 
 ## The outbox and the bus
 
-`OutboxMessage` gains `public string TraceParent { get; private set; }`, set in `From` with `TraceParent = Activity.Current?.Id`; `OutboxMessageConfiguration` gives it `HasMaxLength(OutboxSettings.TraceParentMaxLength)` (`55`, the length of a W3C `traceparent`).
+`OutboxMessage` gains `public string TraceParent { get; private set; }`, set in `From` with `TraceParent = Activity.Current?.Id`; `OutboxMessageConfiguration` gives it `HasMaxLength(OutboxSettings.TraceParentMaxLength)` (`public const int TraceParentMaxLength = 55;` in `OutboxSettings`, the length of a W3C `traceparent`). Regenerate the `Initial` migration (`infrastructure-postgres.md`).
 
 `OutboxWorker.PublishAsync`, right after the event is read from the row:
 
@@ -219,7 +219,7 @@ public static class ObservabilityModule
 File `src/{Name}.Infrastructure/Diagnostics/OutboxLagProbe.cs`, the one place that measures the outbox:
 
 ```csharp
-public class OutboxLagProbe(IServiceScopeFactory serviceScopeFactory) : BackgroundService
+public class OutboxLagProbe(IServiceScopeFactory serviceScopeFactory, ILogger<OutboxLagProbe> logger) : BackgroundService
 {
     private const int RefreshSeconds = 15;
 
@@ -248,14 +248,22 @@ public class OutboxLagProbe(IServiceScopeFactory serviceScopeFactory) : Backgrou
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await RefreshAsync(stoppingToken);
+            try
+            {
+                await RefreshAsync(stoppingToken);
+            }
+            catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogWarning(exception, "Measuring the outbox failed; readiness reports it, and the probe tries again");
+            }
+
             await Task.Delay(TimeSpan.FromSeconds(RefreshSeconds), stoppingToken);
         }
     }
 }
 ```
 
-With tenancy the outbox has no tenant filter (it is not `IMultiTenant`), so the probe sees every tenant's rows.
+A failed measurement never stops the host (an exception escaping a `BackgroundService` would): the probe logs and tries again, and readiness reports the outbox as unhealthy. With tenancy the outbox has no tenant filter (it is not `IMultiTenant`), so the probe sees every tenant's rows.
 
 File `src/{Name}.Infrastructure/Diagnostics/OutboxHealthCheck.cs`:
 
@@ -264,7 +272,14 @@ public class OutboxHealthCheck(OutboxLagProbe outboxLagProbe, IOptions<Observabi
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        await outboxLagProbe.RefreshAsync(cancellationToken);
+        try
+        {
+            await outboxLagProbe.RefreshAsync(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            return HealthCheckResult.Unhealthy("The outbox cannot be measured.", exception);
+        }
 
         return outboxLagProbe.OldestAgeSeconds > settings.Value.OutboxLagThresholdSeconds
             ? HealthCheckResult.Unhealthy($"The oldest unpublished event is {outboxLagProbe.OldestAgeSeconds:F0} s old.")
@@ -302,65 +317,38 @@ Health endpoints are not MVC endpoints, so the global `AuthorizeFilter` does not
 
 ## Tests
 
-`CommandPipelineTests` gains a span test, with a plain `ActivityListener` (no package):
+`test/{Name}.Tests/TestSupport/Shared/Diagnostics/RecordedActivities.cs` records the spans of the project's source and of a test source. It is an instance with a `TestSource`, not a static one: a static `ActivitySource` field in a class that also listens fails its type initializer.
 
-```csharp
-    [Fact]
-    public async Task ExecuteAsync_Should_RecordOneSpanNamedAfterTheCommandWithErrorStatusOnFailure()
-    {
-        var stopped = new List<Activity>();
-        using var activityListener = new ActivityListener
-        {
-            ShouldListenTo = activitySource => activitySource.Name == Telemetry.Name,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = stopped.Add
-        };
-        ActivitySource.AddActivityListener(activityListener);
-        var commandPipeline = CommandPipelineBuilder<FakeCommand>.Create().Build();
+@@members variant:advanced/test/Boilerplate.Tests/TestSupport/Shared/Diagnostics/RecordedActivities.cs::RecordedActivities@@
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => commandPipeline.ExecuteAsync<string>(new FakeCommand(), _ => throw new InvalidOperationException()));
+`CommandPipelineTests` gains:
 
-        var activity = Assert.Single(stopped, activity => activity.DisplayName == nameof(FakeCommand));
-        Assert.Equal(ActivityStatusCode.Error, activity.Status);
-    }
-```
+@@member variant:advanced/test/Boilerplate.Tests/Shared/Application/CommandPipelineTests.cs::CommandPipelineTests::ExecuteAsync_Should_RecordOneSpanNamedAfterTheCommandWithErrorStatusOnFailure@@
 
-`OutboxMessageTests` gains: `From` inside a started activity stores that activity's `Id` as `TraceParent`, and outside any activity stores null. `MessageEnvelopeTests` gains the same for the `traceparent` header. `ReceiveEndpointService` and `OutboxWorker` are covered by the trace test:
+With an outbox, `OutboxMessageTests` gains:
 
-`test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs` (the integration project, `testing` = `integration` or above; PostgreSQL, the database transport shown; the RabbitMQ variant publishes and consumes through the broker like `transport-rabbitmq.sh`):
+@@member variant:advanced/test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs::OutboxMessageTests::From_InsideAnActivity_Should_StoreThatActivitysIdAsTraceParent@@
 
-```csharp
-    [Fact]
-    public async Task OneRequest_Should_ShareOneTraceIdAcrossCommandPublishAndConsumer()
-    {
-        var spans = new List<Activity>();
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder().AddSource(Telemetry.Name, RequestSource.Name).AddInMemoryExporter(spans).Build();
-        using var serviceProvider = IntegrationServices.Create();
+@@member variant:advanced/test/Boilerplate.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs::OutboxMessageTests::From_OutsideAnyActivity_Should_StoreNoTraceParent@@
 
-        using (RequestSource.StartActivity("POST /orders", ActivityKind.Server))
-        {
-            await serviceProvider.Send(FakeCreateOrderCommand.ForStockedProduct());
-        }
-        await serviceProvider.GetRequiredService<OutboxWorker>().PublishPendingAsync();
+With RabbitMQ, `MessageEnvelopeTests` gains:
 
-        var traceIds = spans.Where(span => span.DisplayName is "POST /orders" or nameof(CreateOrderCommand) || span.DisplayName.StartsWith("publish ") || span.DisplayName == nameof(DecreaseProductStockCommand))
-            .Select(span => span.TraceId).Distinct();
-        Assert.Single(traceIds);
-    }
-```
+@@member variant:advanced/test/Boilerplate.Tests/Infrastructure/Messaging/RabbitMq/MessageEnvelopeTests.cs::MessageEnvelopeTests::From_InsideAnActivity_Should_CarryItsIdInTheTraceParentHeader@@
 
-`RequestSource` is a test-only `ActivitySource` standing in for the ASP.NET span; `IntegrationServices` is the integration project's support (`testing-levels.md`); `PublishPendingAsync` drains the outbox like the conformance checks do. `scripts/conformance/observability.sh` proves the same link across processes, for every transport, through the `TraceId` of the log lines.
+Each of these test files adds the usings `System.Diagnostics` and `{Name}.Tests.TestSupport.Shared.Diagnostics`. The link from a request to the consumer's command, across the API and the Worker, is proved by `scripts/conformance/observability.sh` through the `TraceId` of the log lines, for every transport; there is no in-process trace test.
 
 ## Namespaces and usings
 
 | File | Namespace | Usings |
 |---|---|---|
 | `Telemetry.cs` | `{Name}.Shared.Diagnostics` | `System.Diagnostics`, `System.Diagnostics.Metrics` |
-| `ObservabilityModule.cs`, `ObservabilitySettings.cs`, `ObservabilityConstants.cs` | `{Name}.Infrastructure.Diagnostics` | `{Name}.Infrastructure.Persistence`, `{Name}.Shared.Diagnostics`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `OpenTelemetry`, `OpenTelemetry.Exporter`, `OpenTelemetry.Metrics`, `OpenTelemetry.Resources`, `OpenTelemetry.Trace` |
+| `ObservabilityModule.cs` | `{Name}.Infrastructure.Diagnostics` | `{Name}.Infrastructure.Persistence`, `{Name}.Shared.Diagnostics`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `OpenTelemetry`, `OpenTelemetry.Exporter`, `OpenTelemetry.Metrics`, `OpenTelemetry.Resources`, `OpenTelemetry.Trace` |
 | `OutboxLagProbe.cs`, `OutboxHealthCheck.cs`, `RabbitMqHealthCheck.cs` | `{Name}.Infrastructure.Diagnostics` | `{Name}.Infrastructure.Messaging.Outbox`, `{Name}.Infrastructure.Messaging.RabbitMq`, `{Name}.Infrastructure.Persistence`, `{Name}.Shared.Diagnostics`, `Microsoft.EntityFrameworkCore`, `Microsoft.Extensions.Diagnostics.HealthChecks`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Hosting`, `Microsoft.Extensions.Options` |
 | `RequestLoggingMiddleware.cs` | `{Name}.Api.Middlewares` | `{Name}.Infrastructure.Diagnostics`, `System.Diagnostics` |
+| `ObservabilitySettings.cs`, `ObservabilityConstants.cs` | `{Name}.Infrastructure.Diagnostics` | none |
 | `HealthResponse.cs` | `{Name}.Api.Observability` | `Microsoft.Extensions.Diagnostics.HealthChecks` |
-| `TraceLinkTests.cs` | `{Name}.IntegrationTests.Diagnostics` | `{Name}.Shared.Diagnostics`, `OpenTelemetry`, `OpenTelemetry.Trace`, `System.Diagnostics` |
+| `RecordedActivities.cs` | `{Name}.Tests.TestSupport.Shared.Diagnostics` | `System.Diagnostics`, `{Name}.Shared.Diagnostics` |
+| `Program.cs` (API) | | adds `{Name}.Api.Observability`, `{Name}.Infrastructure.Diagnostics`, `Microsoft.AspNetCore.Diagnostics.HealthChecks`, `OpenTelemetry.Trace` |
 
 ## Decision record
 

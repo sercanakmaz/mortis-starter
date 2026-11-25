@@ -49,4 +49,15 @@ public class ProductConfigurationTests
         Assert.Equal([nameof(Product.TenantId), nameof(Product.Sku)], foreignKey.PrincipalKey.Properties.Select(property => property.Name));
         Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
+
+    [Fact]
+    public void Model_Should_FilterDeletedProductsByANamedFilterNextToTheTenantFilter()
+    {
+        var entityType = AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(Product));
+
+        var filterNames = entityType.GetDeclaredQueryFilters().Select(queryFilter => queryFilter.Key);
+
+        Assert.Equal([PersistenceConstants.TenantFilter, PersistenceConstants.SoftDeleteFilter], filterNames.Order(StringComparer.Ordinal).Reverse());
+    }
+
 }

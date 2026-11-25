@@ -1,0 +1,19 @@
+{
+  "not_found": "{name} was not found.",
+  "duplicate": "{name} already exists.",
+  "forbidden": "{action} is not allowed.",
+  "invalid_parameter": "{name} is invalid: {reason}",
+  "reference_violation": "The reference {name} points at a missing record, or the record is still referenced.",
+  "idempotency_key_reused": "This idempotency key was used for another request.",
+  "idempotency_in_progress": "A request with this idempotency key is still running.",
+  "loop_detected": "Commands triggered each other too many times: {chain}.",
+  "transaction_required": "A write to {name} ran outside a transaction.",
+  "tenant_required": "{type} belongs to a tenant, and the caller has none.",
+  "validation_failed": "The request is not valid.",
+  "customer_blocked": "A blocked customer cannot complete orders.",
+  "product_insufficient_stock": "The product does not have enough stock.",
+  "order_not_open": "The order is not open.",
+  "order_mixed_currency": "Every line of an order uses the same currency.",
+  "order_nothing_to_fulfil": "An order without an active line cannot be fulfilled.",
+  "order_line_already_cancelled": "The order line is already cancelled."
+}

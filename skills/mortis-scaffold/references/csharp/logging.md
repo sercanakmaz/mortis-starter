@@ -22,9 +22,6 @@ File `Logging/LoggingConstants.cs`. `Service` is the project's `name`:
 public static class LoggingConstants
 ```
 
-```csharp
-public static class LoggingConstants
-```
 
 ```csharp
 public const string FormatterName = "json-line";
@@ -50,9 +47,6 @@ File `Logging/LogFields.cs`, the scope fields of a command and of an event:
 public static class LogFields
 ```
 
-```csharp
-public static class LogFields
-```
 
 ```csharp
 public static Dictionary<string, object> Of(ICommand command)
@@ -93,6 +87,10 @@ File `Logging/JsonLineFormatter.cs`, the console formatter that writes the line:
 
 ```csharp
 public sealed class JsonLineFormatter() : ConsoleFormatter(LoggingConstants.FormatterName)
+```
+
+```csharp
+private static readonly string Version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
 ```
 
 ```csharp
@@ -200,6 +198,12 @@ File `Logging/LoggingCommandHandlerMiddleware.cs`. Opens the command's scope, so
 ```csharp
 public class LoggingCommandHandlerMiddleware(ILogger<LoggingCommandHandlerMiddleware> logger) : ICommandHandlerMiddleware
 ```
+
+```csharp
+private readonly Stack<IDisposable> _scopes = new();
+```
+
+The middleware keeps a stack of scopes because `Before` and `After` are separate calls; it is registered scoped (`services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>()` in `InfrastructureModule`), so a nested command in the same request pushes onto the same stack and pops its own scope.
 
 ```csharp
 public void Before(ICommand command)

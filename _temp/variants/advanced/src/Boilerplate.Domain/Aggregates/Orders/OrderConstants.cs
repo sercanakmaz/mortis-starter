@@ -10,4 +10,5 @@ public static class OrderConstants
     public const int SkuMaxLength = 64;
     public const int CurrencyLength = 3;
     public const int ReasonMaxLength = 500;
+    public const int SweepBatchSize = 100;
 }

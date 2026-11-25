@@ -5,7 +5,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Boilerplate.Shared.Persistence;
-using Boilerplate.Domain;
+using Boilerplate.Contracts;
+using Boilerplate.Shared.Diagnostics;
+using System.Diagnostics;
 
 namespace Boilerplate.Infrastructure.Messaging.Outbox;
 
@@ -46,7 +48,10 @@ public class OutboxWorker(IServiceScopeFactory serviceScopeFactory, RabbitMqPubl
             return false;
         }
 
-        var @event = message.ToEvent(typeof(DomainModule).Assembly);
+        var @event = message.ToEvent(typeof(ContractsMarker).Assembly);
+
+        ActivityContext.TryParse(message.TraceParent, null, out var parent);
+        using var activity = Telemetry.Source.StartActivity($"publish {@event.GetType().Name}", ActivityKind.Producer, parent);
 
         using var logScope = logger.BeginScope(LogFields.Of(@event));
 

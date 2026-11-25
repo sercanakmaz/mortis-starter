@@ -9,6 +9,7 @@ public sealed record CommandContext
     public Guid? CausationId { get; init; }
     public string TenantId { get; init; }
     public string Language { get; init; }
+    public IReadOnlyList<string> Chain { get; init; } = [];
 
     public static CommandContext Complete(CommandContext commandContext)
     {
@@ -25,7 +26,8 @@ public sealed record CommandContext
             CorrelationId = @event.CorrelationId,
             CausationId = @event.EventId,
             TenantId = @event.TenantId,
-            Language = @event.Language
+            Language = @event.Language,
+            Chain = @event.Chain ?? []
         };
     }
 }

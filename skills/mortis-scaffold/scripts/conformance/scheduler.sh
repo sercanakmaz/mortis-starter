@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Conformance: the scheduler add-on. With two hosts running the scheduler, a job fires once per schedule tick.
-# NOT RUN YET (decision 50): written in phase 1 from scheduler.md, first run in phase 2.
 # Needs: PROJECT NAME LANG_SH WORK DATABASE API_PORT WORKER, a migrated PostgreSQL, psql. Runs about two minutes.
 # Applies when: addons contains scheduler, database = postgres (R9: hosts.worker is not none)
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 JOB="cancel-empty-orders"
-JOB_ENV=("Scheduler__PollSeconds=2" "Scheduler__Jobs__${JOB}__Cron=* * * * *" "Scheduler__Jobs__${JOB}__UserId=scheduler-conformance" "Scheduler__Jobs__${JOB}__UserEmail=scheduler@example.com")
+JOB_ENV=("Scheduler__PollSeconds=2" "Scheduler__Jobs__${JOB}__Cron=* * * * *" "Scheduler__Jobs__${JOB}__UserId=scheduler-conformance" "Scheduler__Jobs__${JOB}__UserEmail=scheduler@example.com" "Scheduler__Jobs__${JOB}__TenantId=0197a0a0-0000-7000-8000-0000000000c1")
 START="$(sql "select now() at time zone 'utc'")"
 PIDS=()
 for n in 1 2; do

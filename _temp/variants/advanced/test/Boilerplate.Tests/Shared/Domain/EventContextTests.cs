@@ -63,4 +63,16 @@ public class EventContextTests
 
         Assert.Equal(outerContext.CorrelationId, eventContext.TakeRaised().CorrelationId);
     }
+
+    [Fact]
+    public void AddRaised_InsideACommand_Should_CarryTheCommandsChain()
+    {
+        var eventContext = new EventContext();
+        eventContext.EnterCommand(new CommandContext { Chain = ["CreateOrderCommand"] });
+
+        eventContext.AddRaised(new FakeEvent("first"));
+
+        Assert.Equal(["CreateOrderCommand"], eventContext.TakeRaised().Chain);
+    }
+
 }

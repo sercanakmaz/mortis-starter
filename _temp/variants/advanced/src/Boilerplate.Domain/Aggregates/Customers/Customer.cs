@@ -12,6 +12,8 @@ public class Customer : AggregateRoot<Guid>, IMultiTenant
     public string Email { get; protected set; }
     public bool IsBlocked { get; protected set; }
     public int CompletedOrderCount { get; protected set; }
+    public string Note { get; protected set; }
+    public string TaxNumber { get; private set; }
 
     [DebuggerStepThrough]
     protected Customer() { }
@@ -25,11 +27,26 @@ public class Customer : AggregateRoot<Guid>, IMultiTenant
         RaiseEvent(new Created(Id.ToString(), Email));
     }
 
+    public void SetTaxNumber(string taxNumber)
+    {
+        TaxNumber = taxNumber;
+
+        RaiseEvent(new TaxNumberSet(Id.ToString()));
+    }
+
     public void Block()
     {
         IsBlocked = true;
 
         RaiseEvent(new Blocked(Id.ToString()));
+    }
+
+    public void Change(string name, string note)
+    {
+        Name = name;
+        Note = note;
+
+        RaiseEvent(new Changed(Id.ToString()));
     }
 
     public void RegisterCompletedOrder()

@@ -6,7 +6,7 @@
 
 ## Decision
 
-A reaction is in the Application layer, next to the commands, and its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync event handler** (`<Action>When<Aggregate><Event>EventHandler : BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. It is registered in `ApplicationModule`. An **event consumer** (`<Action>When<Aggregate><Event>EventConsumer : BaseEventConsumer<T>`) runs after the commit in its own scope and transaction. It is registered with one line in the host that runs it, `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(3))`, and `Retry(n)` is its number of retries in every publishing model. Nothing is found by scanning.
+A reaction is in the Application layer, next to the commands, and its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync event handler** (`<Action>When<Aggregate><Event>EventHandler : BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. It is registered in `ApplicationModule`. An **event consumer** (`<Action>When<Aggregate><Event>EventConsumer : BaseEventConsumer<T>`) runs after the commit in its own scope and transaction. It is registered with one line in the host that runs it, `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(10))`, and `Retry(n)` is its number of retries in every publishing model. Nothing is found by scanning.
 
 ## What varies
 

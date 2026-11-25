@@ -14,10 +14,11 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 ```
 
+- The file needs `using {Name}.Infrastructure.Messaging;` (the extension) and the `using` of each consumer's namespace (`{Name}.Application.Products`).
 - Nothing is found by scanning: a consumer without its line never runs. `ApplicationModule` registers no consumer.
 - Which host runs the consumers depends on the publishing model:
 
@@ -29,7 +30,7 @@ builder.Services
 
 - With `database`, a host writes outbox rows only for the consumers it registers, so every host in that row lists the same consumers.
 - The endpoint's settings are code, never settings files: `Retry(n)` and, with `rabbitmq`, `Named(queue)`.
-- `Retry(n)` means n retries after the first attempt, so `Retry(3)` is four attempts. It replaces every global retry setting:
+- `Retry(n)` means n retries after the first attempt, so `Retry(10)` is eleven attempts. It replaces every global retry setting:
 
 | Model | What `Retry(n)` controls |
 |---|---|
@@ -73,11 +74,11 @@ File `Messaging/EventConsumerRegistry.cs`, only with `in-process` or `database`:
 
 ## Tests
 
-File `test/{Name}.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs`, with `RecordingEventConsumer` and `OtherRecordingEventConsumer` in `TestSupport/Shared/Domain/` (`testing.md`). The first test differs by transport:
+File `test/{Name}.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs`, with `RecordingEventConsumer` and `OtherRecordingEventConsumer` in `TestSupport/Shared/Domain/` (`testing.md`). It uses the example's events, so it is written at step 10 and only when `example` is `true`. The whole class for `events.transport` = `in-process` or `database`:
 
 @@members variant:lean/test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs::EventConsumerModuleTests@@
 
-With `rabbitmq` the first test counts the receive endpoints instead of reading a registry:
+**Only with `events.transport` = `rabbitmq`**, this test replaces the first test above (same position, different name); it counts the receive endpoints instead of reading a registry:
 
 @@member variant:advanced/test/Boilerplate.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs::EventConsumerModuleTests::AddEventConsumer_Should_RegisterTheConsumerAndOneReceiveEndpointPerConsumer@@
 

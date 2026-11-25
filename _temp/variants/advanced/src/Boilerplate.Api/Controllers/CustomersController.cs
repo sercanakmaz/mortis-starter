@@ -6,7 +6,7 @@ namespace Boilerplate.Api.Controllers;
 
 [ApiController]
 [Route("customers")]
-public class CustomersController(ICommandDispatcher commandDispatcher) : ControllerBase
+public class CustomersController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCustomerCommand command)
@@ -17,9 +17,15 @@ public class CustomersController(ICommandDispatcher commandDispatcher) : Control
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Get([FromRoute] Guid id)
+    public async Task<IActionResult> Get([FromRoute] GetCustomerQuery query)
     {
-        var commandResult = await commandDispatcher.Send(new GetCustomerCommand(id));
+        return Ok(await queryDispatcher.Ask(query));
+    }
+
+    [HttpPatch("{id:guid}")]
+    public async Task<IActionResult> Change([FromRoute] Guid id, [FromBody] ChangeCustomerCommand command)
+    {
+        var commandResult = await commandDispatcher.Send(command with { Id = id });
 
         return Ok(commandResult.Content);
     }
@@ -28,6 +34,14 @@ public class CustomersController(ICommandDispatcher commandDispatcher) : Control
     public async Task<IActionResult> Block([FromRoute] Guid id)
     {
         var commandResult = await commandDispatcher.Send(new BlockCustomerCommand(id));
+
+        return Ok(commandResult.Content);
+    }
+
+    [HttpPut("{id:guid}/tax-number")]
+    public async Task<IActionResult> SetTaxNumber([FromRoute] Guid id, [FromBody] SetCustomerTaxNumberCommand command)
+    {
+        var commandResult = await commandDispatcher.Send(command with { Id = id });
 
         return Ok(commandResult.Content);
     }

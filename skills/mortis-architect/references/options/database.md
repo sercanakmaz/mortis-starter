@@ -18,7 +18,7 @@ The one database the aggregates live in.
 
 **Choose when:** an aggregate fits one document and you do not want a relational mapping.
 
-**Costs:** a multi-document transaction needs a replica set, so the compose file starts a single-node one and a standalone server is not supported; integer keys are not supported as the default; no foreign keys; unique indexes instead of migrations (`architecture/documents.md`). The C# pages are written but not built or run yet.
+**Costs:** a multi-document transaction needs a replica set, so the compose file starts a single-node one and a standalone server is not supported; integer keys are not supported as the default; no foreign keys; unique indexes instead of migrations (`architecture/documents.md`). Built and verified in C# on the standard preset (phase 2); tenancy on MongoDB and the RabbitMQ transport with it are not built yet.
 
 **Rules:** R8, R12.
 

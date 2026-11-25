@@ -51,7 +51,10 @@ def source_files(project):
 
 
 def changed_files(project, git_range):
-    output = subprocess.run(["git", "-C", str(project), "diff", "--name-only", git_range], capture_output=True, text=True, check=True).stdout
+    result = subprocess.run(["git", "-C", str(project), "diff", "--name-only", git_range], capture_output=True, text=True)
+    if result.returncode != 0:
+        sys.exit(f"--diff {git_range}: git cannot diff {project} ({result.stderr.strip().splitlines()[0] if result.stderr.strip() else 'not a repository'}). A project that is not a git repository yet is reviewed without --diff; run 'git init && git add -A && git commit' before the change to review it as a diff later.")
+    output = result.stdout
     return {line.strip() for line in output.splitlines() if line.strip()}
 
 

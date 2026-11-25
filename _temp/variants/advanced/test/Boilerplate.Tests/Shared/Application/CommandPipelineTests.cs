@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using Boilerplate.Tests.TestSupport.Shared.Diagnostics;
+using FluentValidation;
 using Boilerplate.Shared.Domain;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
 using Boilerplate.Tests.TestSupport.Shared.Application;
@@ -127,4 +130,44 @@ public class CommandPipelineTests
 
         Assert.Equal(Guid.Empty, eventContext.TakeRaised().CorrelationId);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_WithAContextCommand_Should_EndTheChainWithTheCommandsName()
+    {
+        var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create().Build();
+        var fakeContextCommand = new FakeContextCommand { Context = new CommandContext { Chain = ["CreateOrderCommand"] } };
+
+        await commandPipeline.ExecuteAsync(fakeContextCommand, command => Task.FromResult(CommandResult.FromContent(command.Name)));
+
+        Assert.Equal(["CreateOrderCommand", nameof(FakeContextCommand)], fakeContextCommand.Context.Chain);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithAFullChain_Should_ThrowLoopDetectedBeforeAnyValidatorRuns()
+    {
+        var validated = false;
+        var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create()
+            .WithValidator(new InlineValidator<FakeContextCommand> { validator => validator.RuleFor(command => command.Name).Must(_ => validated = true) })
+            .Build();
+        var fakeContextCommand = new FakeContextCommand { Context = new CommandContext { Chain = Enumerable.Repeat("PingCommand", LoopGuardConstants.MaxChain).ToList() } };
+
+        var exception = await Assert.ThrowsAsync<LoopDetectedException>(() => commandPipeline.ExecuteAsync(fakeContextCommand, command => Task.FromResult(CommandResult.FromContent(command.Name))));
+
+        Assert.False(validated);
+        Assert.Equal(LoopGuardConstants.LoopDetectedCode, exception.Code);
+        Assert.EndsWith($"PingCommand{LoopGuardConstants.Separator}{nameof(FakeContextCommand)}.", exception.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Should_RecordOneSpanNamedAfterTheCommandWithErrorStatusOnFailure()
+    {
+        using var recordedActivities = new RecordedActivities();
+        var commandPipeline = CommandPipelineBuilder<FakeCommand>.Create().Build();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => commandPipeline.ExecuteAsync<string>(new FakeCommand(), _ => throw new InvalidOperationException()));
+
+        var activity = Assert.Single(recordedActivities.Stopped, activity => activity.DisplayName == nameof(FakeCommand));
+        Assert.Equal(ActivityStatusCode.Error, activity.Status);
+    }
+
 }

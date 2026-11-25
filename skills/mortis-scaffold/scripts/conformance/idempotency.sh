@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Conformance: the idempotent-commands add-on. A repeated POST with the same key returns the first response and writes once.
-# NOT RUN YET (decision 48): written in phase 1 from idempotency.md, first run in phase 2.
 # Needs: PROJECT NAME LANG_SH WORK DATABASE API_PORT, TOKEN with auth = jwt, a migrated PostgreSQL, psql, curl.
 # Applies when: addons contains idempotent-commands, example = true, database = postgres; after example-http.sh
 set -uo pipefail
@@ -22,7 +21,7 @@ expect_equal "idempotency: ... and one row exists" "1" "$(sql "select count(*) f
 expect_equal "idempotency: the same key with another body is a 422 idempotency_key_reused" "422|idempotency_key_reused" "$(post other "key-$S" "{\"sku\":\"IDM2-$S\",\"name\":\"Other\",\"stock\":1}")|$(json_field "$(cat "$WORK/idempotency.other.json")" "['code']")"
 DUP_STATUS="$([ "${EXCEPTIONS:-coded}" = "minimal" ] && echo 500 || echo 409)"
 expect_equal "idempotency: a POST without the header runs as before (the duplicate sku is refused by the command itself)" "$DUP_STATUS" "$(api_curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST -d "$PRODUCT" "http://localhost:$PORT/products")"
-expect_equal "idempotency: a failed request frees its key, so a corrected retry with the same key runs" "400|201" "$(post bad "fix-$S" '{"sku":"","stock":-1}')|$(post fixed "fix-$S" "{\"sku\":\"IDM3-$S\",\"name\":\"Fixed\",\"stock\":1}")"
+expect_equal "idempotency: a failed request frees its key, so a corrected retry with the same key runs" "422|201" "$(post bad "fix-$S" '{"sku":"","stock":-1}')|$(post fixed "fix-$S" "{\"sku\":\"IDM3-$S\",\"name\":\"Fixed\",\"stock\":1}")"
 
 kill "$API_PID" 2>/dev/null
 wait "$API_PID" 2>/dev/null

@@ -16,7 +16,7 @@ fi
 API_PID="$("$LANG_SH" api-start "$PROJECT" "$NAME" "$API_PORT")"
 for _ in $(seq 1 60); do curl -fs "http://localhost:$API_PORT/health" >/dev/null 2>&1 && break; sleep 0.5; done
 
-request() { api_curl -s -o "$WORK/body.json" -w "%{http_code}" -X "$1" "http://localhost:$API_PORT$2" -H "Content-Type: application/json" ${3:+-d "$3"}; }
+request() { local status; status="$(api_curl -s -o "$WORK/body.json" -w "%{http_code}" -X "$1" "http://localhost:$API_PORT$2" -H "Content-Type: application/json" ${3:+-d "$(api_body "$3")"})"; cp "$WORK/body.json" "$WORK/body.raw.json" 2>/dev/null; api_read "$WORK/body.json"; printf '%s' "$status"; }
 body_field() { python3 -c "import json,sys; d=json.load(open('$WORK/body.json')); print(d$1)"; }
 
 expect_equal "api: POST /categories creates a category" "201" "$(request POST /categories '{"name":"Tools"}')"
@@ -32,20 +32,21 @@ CUSTOMER_ID="$(body_field "['id']")"
 expect_equal "api: the email was normalized by the aggregate" "ada@example.com" "$(body_field "['email']")"
 expect_equal "api: the same email again is a $DUP_STATUS" "$DUP_STATUS" "$(request POST /customers '{"name":"Ada","email":"ada@example.com"}')"
 expect_equal "api: ... with the code $DUP_CODE" "$DUP_CODE" "$(body_field "['code']")"
-expect_equal "api: an order without lines is a 422" "422" "$(request POST /orders "{\"orderNumber\":\"API-1\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[]}")"
+expect_equal "api: an order without lines is a 422" "422" "$(request POST /orders "{\"orderNumber\":\"API-1\",\"customerId\":$(jid "$CUSTOMER_ID"),\"lines\":[]}")"
 expect_equal "api: ... that names the failing field" "Lines" "$(body_field "['errors'].__iter__().__next__()")"
-expect_equal "api: an order for a missing customer is refused by the foreign key: $REF_STATUS" "$REF_STATUS" "$(request POST /orders '{"orderNumber":"API-2","customerId":"01900000-0000-7000-8000-000000000000","lines":[{"sku":"S","price":1,"currency":"EUR","quantity":1}]}')"
+expect_equal "api: an order for a missing customer is refused by the foreign key: $REF_STATUS" "$REF_STATUS" "$(request POST /orders '{"orderNumber":"API-2","customerId":'"$(jid "$(missing_id)")"',"lines":[{"sku":"S","price":1,"currency":"EUR","quantity":1}]}')"
 expect_equal "api: ... with the code $REF_CODE" "$REF_CODE" "$(body_field "['code']")"
 expect_equal "api: ... and no order row was left behind" "0" "$(sql "select count(*) from orders where order_number = 'API-2'")"
-expect_equal "api: an order line with an unknown sku is refused by the foreign key: $REF_STATUS" "$REF_STATUS" "$(request POST /orders "{\"orderNumber\":\"API-4\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[{\"sku\":\"NO-SUCH-SKU\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}")"
+expect_equal "api: an order line with an unknown sku is refused by the foreign key: $REF_STATUS" "$REF_STATUS" "$(request POST /orders "{\"orderNumber\":\"API-4\",\"customerId\":$(jid "$CUSTOMER_ID"),\"lines\":[{\"sku\":\"NO-SUCH-SKU\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}")"
 expect_equal "api: ... with the code $REF_CODE" "$REF_CODE" "$(body_field "['code']")"
-expect_equal "api: a valid order is created" "201" "$(request POST /orders "{\"orderNumber\":\"API-3\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[{\"sku\":\"S\",\"price\":2.5,\"currency\":\"eur\",\"quantity\":2}]}")"
+expect_equal "api: a valid order is created" "201" "$(request POST /orders "{\"orderNumber\":\"API-3\",\"customerId\":$(jid "$CUSTOMER_ID"),\"lines\":[{\"sku\":\"S\",\"price\":2.5,\"currency\":\"eur\",\"quantity\":2}]}")"
+expect_equal "api: the response names its fields by naming.json (${NAMING_JSON:-camelCase})" "yes" "$(case "${NAMING_JSON:-camelCase}" in snake_case) grep -q '"order_number"' "$WORK/body.raw.json" && ! grep -q '"orderNumber"' "$WORK/body.raw.json" && echo yes || echo no ;; *) grep -q '"orderNumber"' "$WORK/body.raw.json" && echo yes || echo no ;; esac)"
 ORDER_ID="$(body_field "['id']")"
 expect_equal "api: PUT /orders/{id}/complete completes it" "200" "$(request PUT "/orders/$ORDER_ID/complete")"
 expect_equal "api: completing it twice is a 409 business rule" "409|order_not_open" "$(request PUT "/orders/$ORDER_ID/complete")|$(body_field "['code']")"
-expect_equal "api: GET of an unknown order is a 404" "404" "$(request GET /orders/01900000-0000-7000-8000-000000000001)"
+expect_equal "api: GET of an unknown order is a 404" "404" "$(request GET "/orders/$(missing_id)")"
 
-request POST /orders "{\"orderNumber\":\"API-5\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[{\"sku\":\"S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" >/dev/null
+request POST /orders "{\"orderNumber\":\"API-5\",\"customerId\":$(jid "$CUSTOMER_ID"),\"lines\":[{\"sku\":\"S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" >/dev/null
 CANCEL_ORDER_ID="$(body_field "['id']")"
 CANCEL_LINE_ID="$(body_field "['lines'][0]['id']")"
 expect_equal "api: cancelling the only line answers 200" "200" "$(request PUT "/orders/$CANCEL_ORDER_ID/lines/$CANCEL_LINE_ID/cancel" '{"reason":"changed mind"}')"
@@ -57,7 +58,7 @@ request POST /products '{"sku":"HOT","name":"Hot item","stock":8}' >/dev/null
 CONCURRENT_PIDS=()
 for index in $(seq 1 8); do
   api_curl -s -o /dev/null -X POST "http://localhost:$API_PORT/orders" -H "Content-Type: application/json" \
-    -d "{\"orderNumber\":\"CON-$index\",\"customerId\":\"$CUSTOMER_ID\",\"lines\":[{\"sku\":\"HOT\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" &
+    -d "$(api_body "{\"orderNumber\":\"CON-$index\",\"customerId\":$(jid "$CUSTOMER_ID"),\"lines\":[{\"sku\":\"HOT\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}")" &
   CONCURRENT_PIDS+=($!)
 done
 wait "${CONCURRENT_PIDS[@]}"

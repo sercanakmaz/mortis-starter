@@ -6,7 +6,7 @@ namespace Boilerplate.Api.Controllers;
 
 [ApiController]
 [Route("products")]
-public class ProductsController(ICommandDispatcher commandDispatcher) : ControllerBase
+public class ProductsController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
@@ -17,10 +17,14 @@ public class ProductsController(ICommandDispatcher commandDispatcher) : Controll
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Get([FromRoute] Guid id)
+    public async Task<IActionResult> Get([FromRoute] GetProductQuery query)
     {
-        var commandResult = await commandDispatcher.Send(new GetProductCommand(id));
+        return Ok(await queryDispatcher.Ask(query));
+    }
 
-        return Ok(commandResult.Content);
+    [HttpGet]
+    public async Task<IActionResult> List([FromQuery] ListProductsQuery query)
+    {
+        return Ok(await queryDispatcher.Ask(query));
     }
 }

@@ -1,0 +1,38 @@
+using Boilerplate.Shared.Domain;
+using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
+
+namespace Boilerplate.Infrastructure.Messaging.Outbox;
+
+public class OutboxMessage
+{
+    public Guid Id { get; private set; }
+    public string TenantId { get; private set; }
+    public string Type { get; private set; }
+    public string Payload { get; private set; }
+    public DateTime OccurredAt { get; private set; }
+    public int Attempts { get; private set; }
+    public DateTime NextAttemptAt { get; private set; }
+    public string LastError { get; private set; }
+    public string TraceParent { get; private set; }
+
+    public static OutboxMessage From(EventBase @event)
+    {
+        return new OutboxMessage
+        {
+            Id = @event.EventId,
+            TenantId = @event.TenantId,
+            Type = @event.GetType().FullName,
+            Payload = JsonSerializer.Serialize(@event, @event.GetType()),
+            OccurredAt = @event.OccurredAt,
+            NextAttemptAt = @event.OccurredAt,
+            TraceParent = Activity.Current?.Id
+        };
+    }
+
+    public EventBase ToEvent(Assembly eventAssembly)
+    {
+        return (EventBase)JsonSerializer.Deserialize(Payload, eventAssembly.GetType(Type, throwOnError: true));
+    }
+}

@@ -58,9 +58,9 @@ Layer 1 names roles (see `mortis-architect/references/architecture/glossary.md`)
 | testing levels (`testing` above `unit`) | `{Command}ValidatorTests`, `{Command-without-suffix}ScenarioTests` in `Scenarios/`; the integration project `{Name}.IntegrationTests` with `*Fixture`, `IntegrationConstants`, `IntegrationServices` in `TestSupport/`; rules `*RulesTests` and `EventContractTests` in `Architecture/`, golden file `event-contracts.json` (`testing-levels.md`) | `test/{Name}.Tests/`, `test/{Name}.IntegrationTests/` |
 | soft delete (`addons` contains `soft-delete`) | `ISoftDeletable`; events `Deleted`, `Restored`; `Delete{Aggregate}Command`, `Restore{Aggregate}Command`; filter `SoftDelete`; columns `is_deleted`, `deleted_at`, `deleted_user_id` (`soft-delete.md`) | `src/{Name}.Shared/Domain/`, `src/{Name}.Application/{Plural}/` |
 | caching (`addons` contains `caching`) | `{Aggregate}CacheKeys` with `ById` and `Tag`; keys `{plural}:{tenant}:{id}:{language}`, tags `{aggregate}:{tenant}:{id}`; `Invalidate{Aggregate}CacheWhen{Event}EventHandler` (`caching.md`) | `src/{Name}.Application/{Plural}/`, `src/{Name}.Infrastructure/Caching/` |
-| scheduler (`addons` contains `scheduler`) | `{Verb}{Noun}Job` with a kebab-case `Name`; tables `scheduled_job_runs`, `scheduled_jobs`; settings `Scheduler:Jobs:{name}` (`scheduler.md`) | `src/{Name}.Application/{Plural}/`, `src/{Name}.Infrastructure/Scheduling/` |
+| scheduler (`addons` contains `scheduler`) | `IRecurringJob`; `{Verb}{Noun}Job` with a kebab-case `Name`; table `scheduled_job_runs`; settings `Scheduler:Jobs:{name}` (`scheduler.md`) | `src/{Name}.Shared/Application/`, `src/{Name}.Application/{Plural}/`, `src/{Name}.Infrastructure/Scheduling/` |
 | storage (`addons` contains `storage`) | `IFileStorage`, `*FileStorage` adapters; keys `{plural}/{tenant}/{id}/{name}`; `Attach{Aggregate}{File}Command` (`storage.md`) | `src/{Name}.Infrastructure/Storage/` |
-| secrets (`addons` contains `secrets`) | `ISecretProtector`, `EnvelopeSecretProtector`, `IsSecret()`; envelopes `v1.{keyId}...`; console command `rewrap-secrets` (`secrets.md`) | `src/{Name}.Infrastructure/Secrets/` |
+| secrets (`addons` contains `secrets`) | `ISecretProtector`, `EnvelopeSecretProtector`, `IsSecret()`; envelopes `v1.{keyId}...` (`secrets.md`) | `src/{Name}.Infrastructure/Secrets/` |
 | loop guard (`addons` contains `loop-guard`) | `Chain` on the context and events, `LoopGuardConstants`, code `loop_detected` (`loop-guard.md`) | `src/{Name}.Shared/` |
 | contexts (`addons` contains `contexts`) | `Contexts/{Context}` in every path, `{Context}` a PascalCase noun (`Sales`, `Catalog`) (`contexts.md`) | every project |
 | events project (`addons` contains `events-project`) | `{Name}.Contracts` with `{Plural}/{Event}.cs` and `ContractsMarker`; `[MessageName]` (`events-project.md`) | `src/{Name}.Contracts/` |
@@ -85,13 +85,13 @@ A command's name says what the user asked for. A reaction's command says what ha
 | Key | Value | What it changes in C# |
 |---|---|---|
 | `naming.database` | `snake_case` | `UseSnakeCaseNamingConvention()` on the context; tables are named explicitly in snake case: `builder.ToTable("order_lines")` |
-| | `as-code` | no naming convention; `builder.ToTable("OrderLines")`; the outbox's raw SQL (`outbox.md`) is written for `snake_case` and must quote the as-code names |
+| | `as-code` | no naming convention and no `EFCore.NamingConventions` package; `builder.ToTable("OrderLines")`; a value object's columns `HasColumnName("PriceAmount")`; a check constraint named `CK_Products_StockNotNegative` with its SQL quoting the column, `"\"Stock\" >= 0"`; the configuration tests assert those names. The `xmin` row version keeps its name (it is PostgreSQL's), and EF's own names for indexes and foreign keys stay as EF makes them. The outbox's raw SQL (`outbox.md`) is written for `snake_case` and must quote the as-code names |
 | `naming.json` | `camelCase` | the ASP.NET default; nothing to add |
-| | `snake_case` | `options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower` in `AddControllers().AddJsonOptions(...)` |
+| | `snake_case` | `.AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower)` on `AddControllers(...)` in the Api's `Program.cs` (`using System.Text.Json;`). It names the HTTP bodies only: the Console's input stays case-insensitive and its output keeps the C# names, and an error body's `errors` keys stay the command's member names |
 | `naming.routes` | `kebab-case` | `[Route("order-lines")]` for multi-word resources |
 | | `lowercase` | `[Route("orderlines")]` |
 | `naming.events` | `bare` | events named `{Event}` in the aggregate's own `Events` namespace; the wire name is `{Name}.Domain.Aggregates.{Plural}.Events:{Event}` |
-| | `prefixed` | events named `{Aggregate}{Event}` (`OrderCompleted`); the wire name changes with it |
+| | `prefixed` | events named `{Aggregate}{Event}` (`OrderCompleted`) in the same `Events` namespace, in `Events/{Aggregate}{Event}.cs`; every handler, consumer, test and `using` names them so; the wire name changes with it. Handler and consumer names do not change (`DecreaseStockWhenOrderLineAddedEventConsumer`) |
 
 ## Words that are never used
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Conformance: the soft-delete add-on. A deleted product is invisible, its SKU can be reused, and it can be restored.
-# NOT RUN YET (decision 50): written in phase 1 from soft-delete.md, first run in phase 2.
+# Conformance: the soft-delete add-on. A deleted product is invisible, its SKU stays taken (order lines reference it), and it can be restored.
 # Needs: PROJECT NAME LANG_SH WORK DATABASE API_PORT EXCEPTIONS, TOKEN with auth = jwt, a migrated PostgreSQL, psql, curl.
 # Applies when: addons contains soft-delete, example = true, database = postgres; after example-http.sh
 set -uo pipefail
@@ -18,8 +17,8 @@ call -X POST -d "{\"sku\":\"SDL-$S\",\"name\":\"Gone\",\"stock\":1}" "http://loc
 FIRST="$(id)"
 expect_equal "soft-delete: DELETE answers 204 and keeps the row, marked deleted" "204|t" "$(call -X DELETE "http://localhost:$PORT/products/$FIRST")|$(sql "select is_deleted from products where id = '$FIRST'")"
 expect_equal "soft-delete: a deleted product is invisible (404 not_found)" "404|not_found" "$(call "http://localhost:$PORT/products/$FIRST")|$(json_field "$(cat "$WORK/soft-delete.json")" "['code']")"
-expect_equal "soft-delete: its SKU can be reused by a new product" "201" "$(call -X POST -d "{\"sku\":\"SDL-$S\",\"name\":\"Again\",\"stock\":1}" "http://localhost:$PORT/products")"
-expect_equal "soft-delete: restoring the first while its SKU is taken is a duplicate" "$DUP_STATUS" "$(call -X POST "http://localhost:$PORT/products/$FIRST/restore")"
+expect_equal "soft-delete: its SKU stays taken, because order lines reference it: a new product with it is a duplicate" "$DUP_STATUS" "$(call -X POST -d "{\"sku\":\"SDL-$S\",\"name\":\"Again\",\"stock\":1}" "http://localhost:$PORT/products")"
+expect_equal "soft-delete: a deleted product can be neither deleted again nor renamed (404)" "404|404" "$(call -X DELETE "http://localhost:$PORT/products/$FIRST")|$(call -X PUT -d '{"name":"x"}' "http://localhost:$PORT/products/$FIRST/name")"
 call -X POST -d "{\"sku\":\"SDL2-$S\",\"name\":\"Back\",\"stock\":1}" "http://localhost:$PORT/products" >/dev/null
 SECOND="$(id)"
 call -X DELETE "http://localhost:$PORT/products/$SECOND" >/dev/null

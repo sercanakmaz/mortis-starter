@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Products;
 using Boilerplate.Shared.Domain;
 using Boilerplate.Domain.Aggregates.Products.Events;
 using Boilerplate.Tests.TestSupport.Domain.Products;
@@ -115,5 +116,43 @@ public class ProductTests
         var exception = Assert.Throws<InvalidParameterException>(() => product.DecreaseStock(0));
 
         Assert.StartsWith("quantity is invalid", exception.Message);
+    }
+
+    [Fact]
+    public void Delete_Should_MarkTheProductDeletedAndRaiseDeletedOnce()
+    {
+        var product = FakeProduct.Create("SKU-1", 10);
+        product.ClearEvents();
+
+        product.Delete(FakeAuditUser.Create());
+        product.Delete(FakeAuditUser.Create());
+
+        Assert.Equal((true, FakeAuditUser.Id), (product.IsDeleted, product.DeletedUserId));
+        Assert.NotNull(product.DeletedAt);
+        Assert.IsType<Deleted>(Assert.Single(product.DomainEvents));
+    }
+
+    [Fact]
+    public void Restore_Should_ClearTheDeletionAndRaiseRestored()
+    {
+        var product = FakeProduct.Create("SKU-1", 10);
+        product.Delete(FakeAuditUser.Create());
+        product.ClearEvents();
+
+        product.Restore(FakeAuditUser.Create());
+
+        Assert.Equal((false, null, null), (product.IsDeleted, product.DeletedAt, product.DeletedUserId));
+        Assert.IsType<Restored>(Assert.Single(product.DomainEvents));
+    }
+
+    [Fact]
+    public void Rename_Should_RaiseRenamed()
+    {
+        var product = FakeProduct.Create("SKU-1", 10);
+        product.ClearEvents();
+
+        product.Rename("tr", "Cıvata");
+
+        Assert.Equal("SKU-1", Assert.IsType<Renamed>(Assert.Single(product.DomainEvents)).Sku);
     }
 }

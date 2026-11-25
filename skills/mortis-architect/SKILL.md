@@ -66,7 +66,7 @@ Read only what the situation needs.
 ## Rules for this skill
 
 - Every option you describe says what it **costs**. "More robust" is not information.
-- Offer only values the schema lists, and only languages marked available. Go is listed but not available yet; say so and offer C#.
+- Offer only values the schema lists, and only languages marked available. Go is available for the lean preset's values only (the schema's `only` list for `go`): when the developer chooses Go, take the lean preset, and if they want anything outside it, say Go does not support it yet and offer C#.
 - Never offer a combination the rules refuse; when a choice triggers a rule, say which values change with it and change them.
 - Identifier casing is the language's and is never asked. The four `naming.*` keys are asked only when the description mentions an existing database, API or consumer.
 - The `Why` column holds the user's own reason, in their words.

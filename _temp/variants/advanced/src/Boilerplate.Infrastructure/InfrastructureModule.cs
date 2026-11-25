@@ -1,3 +1,6 @@
+using Boilerplate.Infrastructure.Secrets;
+using Boilerplate.Infrastructure.Caching;
+using Boilerplate.Infrastructure.ReadModels;
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -28,8 +31,11 @@ public static class InfrastructureModule
         services.AddSingleton<MessageLocalizer>();
         services.Configure<AuthSettings>(configuration.GetSection(AuthSettings.Section));
         services.AddOutboxModule(configuration);
+        services.AddCaching(configuration);
+        services.AddSecrets(configuration);
         services.AddRabbitMqModule();
         services.AddPersistenceModule();
+        services.AddReadModelModule();
 
         return services;
     }

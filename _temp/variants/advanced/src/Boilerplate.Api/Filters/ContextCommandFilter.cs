@@ -27,6 +27,11 @@ public class ContextCommandFilter(IOptions<AuthSettings> authSettings, TenantSco
             contextCommand.Context = commandContext;
         }
 
+        foreach (var query in context.ActionArguments.Values.OfType<IQuery>())
+        {
+            query.Context = commandContext;
+        }
+
         await next();
     }
 }

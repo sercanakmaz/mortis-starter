@@ -13,6 +13,31 @@ get() { [ -f "$PROJECT/MORTIS.md" ] && python3 -I "$DECISIONS" "$PROJECT/MORTIS.
 NAME="$(get name "$(basename "$PROJECT")")"
 DATABASE="$(get database postgres)"
 QUERIES="$(get queries commands)"
+if [ "$(get language csharp)" = "go" ]; then
+  LOWER="$(printf '%s' "$PLURAL" | tr 'A-Z' 'a-z')"
+  SNAKE="$(printf '%s' "$AGGREGATE" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr 'A-Z' 'a-z')"
+  NEXT="$(ls "$PROJECT/internal/infrastructure/persistence/migrations" 2>/dev/null | grep -cE '^[0-9]{4}_' || true)"
+  FILES=(
+    "internal/domain/$LOWER/$SNAKE.go"
+    "internal/domain/$LOWER/constants.go"
+    "internal/domain/$LOWER/events.go"
+    "internal/domain/$LOWER/repository.go"
+    "internal/domain/$LOWER/${SNAKE}_test.go"
+    "internal/application/$LOWER/dto.go"
+    "internal/application/$LOWER/create_$SNAKE.go"
+    "internal/application/$LOWER/create_${SNAKE}_test.go"
+    "internal/infrastructure/persistence/$LOWER/repository.go"
+    "internal/infrastructure/persistence/migrations/$(printf '%04d' $((NEXT + 1)))_$LOWER.sql"
+  )
+  for file in "${FILES[@]}"; do
+    echo "$file"
+    [ "$TOUCH" = "--touch" ] && mkdir -p "$PROJECT/$(dirname "$file")" && touch "$PROJECT/$file"
+  done
+  echo "and lines in: internal/application/module.go (shared.Register, Repositories), internal/bootstrap/bootstrap.go, internal/api/routes.go, internal/testsupport/repositories.go (references/go/recipes.md)"
+  exit 0
+fi
+EVENT_FILE="Created.cs"
+[ "$(get naming.events bare)" = "prefixed" ] && EVENT_FILE="${AGGREGATE}Created.cs"
 CONTEXT_SEGMENT=""
 case ",$(get addons ""),"  in *",contexts,"*) CONTEXT_SEGMENT="Contexts/${CONTEXT:?with contexts on, set CONTEXT=<Context>}/" ;; esac
 
@@ -20,7 +45,7 @@ FILES=(
   "src/$NAME.Domain/${CONTEXT_SEGMENT}Aggregates/$PLURAL/$AGGREGATE.cs"
   "src/$NAME.Domain/${CONTEXT_SEGMENT}Aggregates/$PLURAL/${AGGREGATE}Constants.cs"
   "src/$NAME.Domain/${CONTEXT_SEGMENT}Aggregates/$PLURAL/I${AGGREGATE}Repository.cs"
-  "src/$NAME.Domain/${CONTEXT_SEGMENT}Aggregates/$PLURAL/Events/Created.cs"
+  "src/$NAME.Domain/${CONTEXT_SEGMENT}Aggregates/$PLURAL/Events/$EVENT_FILE"
   "src/$NAME.Application/${CONTEXT_SEGMENT}$PLURAL/${AGGREGATE}Dto.cs"
   "src/$NAME.Application/${CONTEXT_SEGMENT}$PLURAL/Create${AGGREGATE}Command.cs"
   "src/$NAME.Api/Controllers/${CONTEXT_SEGMENT}${PLURAL}Controller.cs"

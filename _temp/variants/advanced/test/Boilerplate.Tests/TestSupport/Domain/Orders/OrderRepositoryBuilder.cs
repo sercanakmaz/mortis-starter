@@ -22,6 +22,12 @@ public class OrderRepositoryBuilder
     }
 
 
+    public OrderRepositoryBuilder WithFindOpenWithAllLinesCancelledTrackingAsync(params Order[] orders)
+    {
+        _mock.Setup(orderRepository => orderRepository.FindOpenWithAllLinesCancelledTrackingAsync(It.IsAny<int>())).ReturnsAsync(orders);
+        return this;
+    }
+
     public OrderRepositoryBuilder WithCreateAsync(Action<Order> callback = null)
     {
         _mock.Setup(orderRepository => orderRepository.CreateAsync(It.IsAny<Order>()))

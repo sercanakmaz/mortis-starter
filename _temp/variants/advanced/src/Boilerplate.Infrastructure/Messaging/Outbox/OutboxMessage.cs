@@ -1,4 +1,5 @@
 using Boilerplate.Shared.Domain;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 
@@ -14,6 +15,7 @@ public class OutboxMessage
     public int Attempts { get; private set; }
     public DateTime NextAttemptAt { get; private set; }
     public string LastError { get; private set; }
+    public string TraceParent { get; private set; }
 
     public static OutboxMessage From(EventBase @event)
     {
@@ -24,7 +26,8 @@ public class OutboxMessage
             Type = @event.GetType().FullName,
             Payload = JsonSerializer.Serialize(@event, @event.GetType()),
             OccurredAt = @event.OccurredAt,
-            NextAttemptAt = @event.OccurredAt
+            NextAttemptAt = @event.OccurredAt,
+            TraceParent = Activity.Current?.Id
         };
     }
 

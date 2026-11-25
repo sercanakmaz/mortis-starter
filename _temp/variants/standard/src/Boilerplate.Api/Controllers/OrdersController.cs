@@ -6,7 +6,7 @@ namespace Boilerplate.Api.Controllers;
 
 [ApiController]
 [Route("orders")]
-public class OrdersController(ICommandDispatcher commandDispatcher) : ControllerBase
+public class OrdersController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderCommand command)
@@ -17,11 +17,9 @@ public class OrdersController(ICommandDispatcher commandDispatcher) : Controller
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Get([FromRoute] Guid id)
+    public async Task<IActionResult> Get([FromRoute] GetOrderQuery query)
     {
-        var commandResult = await commandDispatcher.Send(new GetOrderCommand(id));
-
-        return Ok(commandResult.Content);
+        return Ok(await queryDispatcher.Ask(query));
     }
 
     [HttpPost("{id:guid}/lines")]

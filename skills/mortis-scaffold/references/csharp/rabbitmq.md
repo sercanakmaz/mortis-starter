@@ -40,9 +40,6 @@ File `Messaging/RabbitMq/RabbitMqConstants.cs`:
 public static class RabbitMqConstants
 ```
 
-```csharp
-public static class RabbitMqConstants
-```
 
 ```csharp
 public const string ConnectionStringName = "RabbitMq";
@@ -80,19 +77,25 @@ public const ushort PrefetchCount = 16;
 public const int ReconnectSeconds = 5;
 ```
 
+```csharp
+public const string TraceParentHeader = "traceparent";
+```
+
 File `Messaging/RabbitMq/MessageNames.cs`:
 
 ```csharp
 public static class MessageNames
 ```
 
-```csharp
-public static class MessageNames
-```
 
 ```csharp
 public static string Exchange(Type messageType)
 {
+    if (messageType.GetCustomAttribute<MessageNameAttribute>() is { } messageName)
+    {
+        return messageName.Name;
+    }
+
     var name = messageType.IsNested ? $"{messageType.DeclaringType!.Name}+{messageType.Name}" : messageType.Name;
 
     return $"{messageType.Namespace}:{name}";
@@ -130,9 +133,6 @@ File `Messaging/RabbitMq/MessageEnvelope.cs`:
 public class MessageEnvelope
 ```
 
-```csharp
-public class MessageEnvelope
-```
 
 ```csharp
 public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.Never };
@@ -220,7 +220,8 @@ public static MessageEnvelope From(EventBase @event, string sourceAddress)
             ["Mortis-Tenant-Id"] = @event.TenantId,
             ["Mortis-User-Id"] = @event.UserId,
             ["Mortis-User-Email"] = @event.UserEmail,
-            ["Mortis-Language"] = @event.Language
+            ["Mortis-Language"] = @event.Language,
+            [RabbitMqConstants.TraceParentHeader] = Activity.Current?.Id
         },
         Host = new Dictionary<string, object>
         {
@@ -267,9 +268,6 @@ File `Messaging/RabbitMq/RabbitMqConnection.cs`, a singleton:
 public sealed class RabbitMqConnection(IConfiguration configuration) : IAsyncDisposable
 ```
 
-```csharp
-public sealed class RabbitMqConnection(IConfiguration configuration) : IAsyncDisposable
-```
 
 ```csharp
 private readonly SemaphoreSlim _lock = new(1, 1);
@@ -322,9 +320,6 @@ File `Messaging/RabbitMq/RabbitMqPublisher.cs`:
 public class RabbitMqPublisher(RabbitMqConnection rabbitMqConnection)
 ```
 
-```csharp
-public class RabbitMqPublisher(RabbitMqConnection rabbitMqConnection)
-```
 
 ```csharp
 private static readonly string Source = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
@@ -375,7 +370,10 @@ private async Task<bool> PublishAsync(Func<OutboxRepository, Task<OutboxMessage>
         return false;
     }
 
-    var @event = message.ToEvent(typeof(DomainModule).Assembly);
+    var @event = message.ToEvent(typeof(ContractsMarker).Assembly);
+
+    ActivityContext.TryParse(message.TraceParent, null, out var parent);
+    using var activity = Telemetry.Source.StartActivity($"publish {@event.GetType().Name}", ActivityKind.Producer, parent);
 
     using var logScope = logger.BeginScope(LogFields.Of(@event));
 
@@ -409,9 +407,6 @@ The consumer's endpoint is an `EventConsumerEndpoint` (`event-consumers.md`); it
 public class ReceiveEndpointService(EventConsumerEndpoint eventConsumerEndpoint, RabbitMqConnection rabbitMqConnection, IServiceScopeFactory serviceScopeFactory, ILogger<ReceiveEndpointService> logger) : BackgroundService
 ```
 
-```csharp
-public class ReceiveEndpointService(EventConsumerEndpoint eventConsumerEndpoint, RabbitMqConnection rabbitMqConnection, IServiceScopeFactory serviceScopeFactory, ILogger<ReceiveEndpointService> logger) : BackgroundService
-```
 
 ```csharp
 private readonly string _errorQueue = eventConsumerEndpoint.Queue + RabbitMqConstants.ErrorSuffix;
@@ -470,6 +465,8 @@ private async Task ConsumeAsync(CancellationToken stoppingToken)
         }
 
         var @event = envelope.ToEvent(eventType);
+        ActivityContext.TryParse(envelope.Headers.GetValueOrDefault(RabbitMqConstants.TraceParentHeader)?.ToString(), null, out var parent);
+        using var activity = Telemetry.Source.StartActivity($"consume {eventType.Name}", ActivityKind.Consumer, parent);
         using var logScope = logger.BeginScope(LogFields.Of(@event));
 
         for (var attempt = 1; ; attempt++)
@@ -483,10 +480,12 @@ private async Task ConsumeAsync(CancellationToken stoppingToken)
             }
             catch (Exception exception) when (attempt <= eventConsumerEndpoint.RetryCount)
             {
+                Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                 logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, attempt);
             }
             catch (Exception exception)
             {
+                Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                 logger.LogError(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}; moved to {ErrorQueue}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, _errorQueue);
 ```
 
@@ -562,9 +561,6 @@ File `Messaging/RabbitMq/RabbitMqModule.cs`:
 public static class RabbitMqModule
 ```
 
-```csharp
-public static class RabbitMqModule
-```
 
 ```csharp
 public static IServiceCollection AddRabbitMqModule(this IServiceCollection services)
@@ -585,8 +581,8 @@ public static IServiceCollection AddRabbitMqModule(this IServiceCollection servi
 The Worker's `Program.cs` adds one line per consumer after `.AddOutboxWorker()` (the whole file is on `outbox.md`, the `AddEventConsumer` of this transport on `event-consumers.md`):
 
 ```csharp
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 ```
 
 The Api and the Console register no consumer.
@@ -607,7 +603,7 @@ public class MessageNamesTests
 [Fact]
 public void Exchange_Should_BeTheNamespaceAndTheTypeNameJoinedByAColon()
 {
-    Assert.Equal("{Name}.Domain.Aggregates.Orders.Events:LineAdded", MessageNames.Exchange(typeof(LineAdded)));
+    Assert.Equal("{Name}.Contracts.Orders:LineAdded", MessageNames.Exchange(typeof(LineAdded)));
 }
 ```
 
@@ -616,8 +612,16 @@ public void Exchange_Should_BeTheNamespaceAndTheTypeNameJoinedByAColon()
 public void MessageTypes_Should_ListTheTypeItsBaseTypesAndItsOwnInterfacesAsUrnsLikeMassTransit()
 {
     Assert.Equal(
-        ["urn:message:{Name}.Domain.Aggregates.Orders.Events:LineAdded", "urn:message:{Name}.Shared.Domain:EventBase", "urn:message:{Name}.Shared.Domain:IQueueEvent"],
+        ["urn:message:{Name}.Contracts.Orders:LineAdded", "urn:message:{Name}.Shared.Domain:EventBase", "urn:message:{Name}.Shared.Domain:IQueueEvent"],
         MessageNames.MessageTypes(typeof(LineAdded)));
+}
+```
+
+```csharp
+[Fact]
+public void Exchange_WithAMessageName_Should_UseThePinnedName()
+{
+    Assert.Equal("Old.Namespace:Pinned", MessageNames.Exchange(typeof(PinnedProbe)));
 }
 ```
 
@@ -637,7 +641,7 @@ public void From_Should_UseTheEventIdAsMessageIdAndTheCorrelationAsCorrelationAn
 
     Assert.Equal(lineAdded.EventId, envelope.MessageId);
     Assert.Equal([lineAdded.CorrelationId, lineAdded.CorrelationId, lineAdded.CausationId], [envelope.CorrelationId, envelope.ConversationId, envelope.InitiatorId]);
-    Assert.Equal("rabbitmq://localhost/{Name}.Domain.Aggregates.Orders.Events:LineAdded", envelope.DestinationAddress);
+    Assert.Equal("rabbitmq://localhost/{Name}.Contracts.Orders:LineAdded", envelope.DestinationAddress);
     Assert.Equal("tenant-1", envelope.Headers["Mortis-Tenant-Id"]);
 }
 ```
@@ -660,8 +664,8 @@ public void Read_WithTheBodyMassTransitWritesWithSystemTextJson_Should_GiveTheEv
 {
     const string body = """
         {"messageId":"19040000-e39c-f26b-89d6-08df47526602","requestId":null,"correlationId":"ca09b075-0317-4992-9052-79b9d6c89880","conversationId":"19040000-e39c-f26b-81dc-08df47526606","initiatorId":null,
-         "sourceAddress":"rabbitmq://localhost/probe","destinationAddress":"rabbitmq://localhost/{Name}.Domain.Aggregates.Orders.Events:LineAdded","responseAddress":null,"faultAddress":null,
-         "messageType":["urn:message:{Name}.Domain.Aggregates.Orders.Events:LineAdded","urn:message:{Name}.Shared.Domain:EventBase","urn:message:{Name}.Shared.Domain:IQueueEvent"],
+         "sourceAddress":"rabbitmq://localhost/probe","destinationAddress":"rabbitmq://localhost/{Name}.Contracts.Orders:LineAdded","responseAddress":null,"faultAddress":null,
+         "messageType":["urn:message:{Name}.Contracts.Orders:LineAdded","urn:message:{Name}.Shared.Domain:EventBase","urn:message:{Name}.Shared.Domain:IQueueEvent"],
          "message":{"id":"order-1","lineId":"line-1","sku":"SKU-1","quantity":3,"eventId":"7afaf008-ae39-4cf6-954c-2fefe5e608c1","occurredAt":"2026-11-20T22:05:33.3998Z","correlationId":"ca09b075-0317-4992-9052-79b9d6c89880","causationId":null,"tenantId":null,"userId":null},
          "expirationTime":null,"sentTime":"2026-11-20T22:05:33.4232534Z","headers":{},"host":{"machineName":"vm","processName":"probe","processId":1049,"massTransitVersion":"8.5.12.0"}}
         """;
@@ -681,7 +685,7 @@ public void Read_WithTheBodyMassTransitWritesWithNewtonsoftAndNoContextFields_Sh
 {
     const string body = """
         {"MessageId":"3d040000-e39c-f26b-8410-08df475268b1","CorrelationId":"18ec1e17-9271-40c4-9477-07ea8ca9a2d6","ConversationId":"3d040000-e39c-f26b-1bba-08df475268b5",
-         "MessageType":["urn:message:{Name}.Domain.Aggregates.Orders.Events:LineAdded"],
+         "MessageType":["urn:message:{Name}.Contracts.Orders:LineAdded"],
          "Message":{"Id":"order-1","LineId":"line-1","Sku":"SKU-1","Quantity":3},"SentTime":"2026-11-20T22:05:37.9254288Z","Headers":{}}
         """;
 
@@ -689,6 +693,19 @@ public void Read_WithTheBodyMassTransitWritesWithNewtonsoftAndNoContextFields_Sh
 
     Assert.Equal("SKU-1", lineAdded.Sku);
     Assert.Equal(Guid.Parse("18ec1e17-9271-40c4-9477-07ea8ca9a2d6"), lineAdded.CorrelationId);
+}
+```
+
+```csharp
+[Fact]
+public void From_InsideAnActivity_Should_CarryItsIdInTheTraceParentHeader()
+{
+    using var recordedActivities = new RecordedActivities();
+    using var activity = recordedActivities.TestSource.StartActivity("publish");
+
+    var envelope = MessageEnvelope.From(new LineAdded("order-1", "line-1", "SKU-1", 3), "{database}-worker");
+
+    Assert.Equal(activity!.Id, envelope.Headers[RabbitMqConstants.TraceParentHeader]);
 }
 ```
 
@@ -703,11 +720,11 @@ The broker behaviour is proven by the conformance suite (`scripts/conformance/tr
 | File | Namespace | Usings |
 |---|---|---|
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/MessageEnvelope.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | System.Diagnostics, System.Text.Json, System.Text.Json.Serialization, {Name}.Shared.Domain |
-| `src/{Name}.Infrastructure/Messaging/RabbitMq/MessageNames.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | none |
+| `src/{Name}.Infrastructure/Messaging/RabbitMq/MessageNames.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | System.Reflection, {Name}.Shared.Domain |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConnection.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.Configuration, RabbitMQ.Client |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqConstants.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | none |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqModule.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection |
 | `src/{Name}.Infrastructure/Messaging/RabbitMq/RabbitMqPublisher.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | RabbitMQ.Client, {Name}.Shared.Domain |
-| `src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, RabbitMQ.Client, RabbitMQ.Client.Events, System.Globalization, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Tenancy, {Name}.Shared.Domain, {Name}.Shared.Persistence |
-| `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageEnvelopeTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | System.Text, {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq |
-| `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageNamesTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq |
+| `src/{Name}.Infrastructure/Messaging/RabbitMq/ReceiveEndpointService.cs` | `{Name}.Infrastructure.Messaging.RabbitMq` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, RabbitMQ.Client, RabbitMQ.Client.Events, System.Diagnostics, System.Globalization, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Tenancy, {Name}.Shared.Diagnostics, {Name}.Shared.Domain, {Name}.Shared.Persistence |
+| `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageEnvelopeTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | System.Diagnostics, System.Text, {Name}.Contracts.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq, {Name}.Tests.TestSupport.Shared.Diagnostics |
+| `test/{Name}.Tests/Infrastructure/Messaging/RabbitMq/MessageNamesTests.cs` | `{Name}.Tests.Infrastructure.Messaging.RabbitMq` | {Name}.Contracts.Orders, {Name}.Domain.Aggregates.Orders.Events, {Name}.Infrastructure.Messaging.RabbitMq, {Name}.Tests.TestSupport.Infrastructure.Messaging |

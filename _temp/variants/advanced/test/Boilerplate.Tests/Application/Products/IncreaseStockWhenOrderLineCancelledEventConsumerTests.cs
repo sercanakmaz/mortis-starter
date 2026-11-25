@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Shared.Domain;
 using Boilerplate.Tests.TestSupport.Shared.Application;
 using Boilerplate.Tests.TestSupport.Domain.Products;

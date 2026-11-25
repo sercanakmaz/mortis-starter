@@ -129,9 +129,18 @@ Searching or sorting by a translated field uses the language's JSON path (`name 
 
 @@members variant:advanced/src/Boilerplate.Application/Products/ProductDto.cs::ProductDto@@
 
-`GetProductCommand` carries the context, and the controller binds it from the route so the filter fills it:
+With `queries` = `commands`, `GetProductCommand` carries the context, and the controller binds it from the route so the filter fills it (with `split` or `read-models`, `GetProductQuery` does the same, `queries.md`):
 
-@@decl variant:advanced/src/Boilerplate.Application/Products/GetProductCommand.cs::GetProductCommand@@
+```csharp
+public record GetProductCommand : ICommand<ProductDto>, IContextCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public Guid Id { get; set; }
+}
+```
+
+Its handler returns `ProductDto.Map(product, command.Context?.Language)`.
 
 ```csharp
     [HttpGet("{id:guid}")]

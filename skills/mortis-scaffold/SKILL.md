@@ -1,6 +1,6 @@
 ---
 name: mortis-scaffold
-description: Generates a new backend project from its MORTIS.md decisions file, writing every file from the skill's reference pages (contracts, rules and member snippets), then proves it with verify.sh (structure, kernel shape, house rules, build, tests and behaviour checks against a real database). Also brings the building blocks into an existing solution. C# (.NET 10, EF Core, PostgreSQL) today. Use whenever the user wants to create, generate, scaffold or bootstrap a backend, API or service, has a MORTIS.md and asks to build it, asks for a .NET "starter", "boilerplate" or "clean / DDD structure", or wants an existing solution to adopt this structure, even if they never say "scaffold".
+description: Generates a new backend project from its MORTIS.md decisions file, writing every file from the skill's reference pages (contracts, rules and member snippets), then proves it with verify.sh (structure, kernel shape, house rules, build, tests and behaviour checks against a real database). Also brings the building blocks into an existing solution. C# (.NET 10, EF Core, PostgreSQL) for every preset; Go (pgx, PostgreSQL) for the lean preset. Use whenever the user wants to create, generate, scaffold or bootstrap a backend, API or service, has a MORTIS.md and asks to build it, asks for a .NET "starter", "boilerplate" or "clean / DDD structure", or wants an existing solution to adopt this structure, even if they never say "scaffold".
 ---
 
 # Generate a project
@@ -10,8 +10,8 @@ This skill holds knowledge and checks, never a project. Every file of the new pr
 ## Before anything
 
 1. **There must be a `MORTIS.md`.** If the project folder has none, hand over to the `mortis-architect` skill, which writes it. Then come back.
-2. **Read the decisions:** `python3 -I scripts/decisions.py MORTIS.md get <key>` for `name`, `language`, `database`, `example`, `events.outbox`, `events.transport`, `hosts.worker`, `naming.database`. Every choice comes from `MORTIS.md`; where it is silent, the manifest decides. When a choice is answered by neither, stop and ask.
-3. **Read the language's pages for what is on.** Today: `references/csharp/`. Read `naming.md` and `manifest.json` first, always.
+2. **Read the decisions:** every row of `MORTIS.md`, with `python3 -I scripts/decisions.py MORTIS.md get <key>` for any key you need (`name`, `language`, `database`, `example`, `keys.default`, the four `naming.*` keys, `exceptions`, `events.*`, `queries`, `tenancy.*`, `languages.mode`, `testing`, `auth`, `hosts.worker`, `addons`). A value other than the preset's changes code on several pages: `naming.md` "Project choices" and `worked-slice.md` "Keys the database assigns" say what each one changes. Every choice comes from `MORTIS.md`; where it is silent, the manifest decides. When a choice is answered by neither, stop and ask.
+3. **Read the language's pages for what is on.** `references/csharp/` or `references/go/`. Read `naming.md` and `manifest.json` first, always. **For `language` = `go`, follow `references/go/steps.md` in place of the step table below** (Go is built for the lean preset only).
 
 ## The procedure
 
@@ -20,16 +20,16 @@ Follow these steps in order. Keep `.mortis/progress.md` in the project: one line
 | # | Step | Page | Done when |
 |---|---|---|---|
 | 1 | Create the solution and projects with the tools; write the root files and project files | `solution.md` | `dotnet build` succeeds |
-| 2 | Shared: domain building blocks | `shared-domain.md` | build |
-| 3 | Shared: failures, persistence contracts | `shared-other.md` | build |
-| 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`) | `shared-application.md` | build |
+| 2 | Shared: domain building blocks | `shared-domain.md` | written (they use `CommandContext`, so the build waits for step 4) |
+| 3 | Shared: failures, persistence contracts | `shared-other.md` | written |
+| 4 | Shared: commands, pipeline, dispatcher; then `SharedModule` (`shared-other.md`); with `queries` = `split` or `read-models`, the query types (`queries.md`) | `shared-application.md` | build (steps 2 to 4 together) |
 | 5 | Domain and Application project roots: `DomainModule`, `ApplicationModule` with empty bodies | `domain.md`, `application.md` | build |
-| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both), and `rabbitmq.md` when `events.transport` is `rabbitmq`; event consumer registration (`event-consumers.md`); `AuthSettings` when `auth` is `jwt` (`authentication.md`); the tenant scope when `tenancy.mode` is `interface` (`tenancy.md`); the message files and `MessageLocalizer` when `languages.mode` is not `none` (`languages.md`); persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule` | `logging.md`, `events-inprocess.md` or `outbox.md`, `rabbitmq.md`, `event-consumers.md`, `authentication.md`, `tenancy.md`, `languages.md`, `infrastructure-postgres.md`, `failures.md` | build |
-| 7 | Hosts: Api and Console, the Worker when `hosts.worker` is `separate`, `ErrorReference`, VS Code files with the first launch configuration only; the add-ons' host files (`correlation.md`); the sign-in lines and `ConsoleTokens` when `auth` is `jwt` | `hosts.md`, `outbox.md`, `authentication.md`, `failures.md` | build |
-| 8 | Test support and the kernel tests | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
-| 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
-| 10 | Only when `example` is `true`: the example domain, in the order its page gives | `worked-slice.md`, `worked-slice-tests.md` | build and test after each line of that order |
-| 11 | Only when an aggregate exists or an outbox is on: the first migration | `infrastructure-postgres.md` "Migrations" | the migration files exist |
+| 6 | Infrastructure: logging; event publishing for `events.outbox` only (`events-inprocess.md` for `none`, `outbox.md` for `background` or `after-command`, never both), and `rabbitmq.md` when `events.transport` is `rabbitmq`; event consumer registration (`event-consumers.md`); `AuthSettings` when `auth` is `jwt` (`authentication.md`); the tenant scope when `tenancy.mode` is `interface` (`tenancy.md`); the message files and `MessageLocalizer` when `languages.mode` is not `none` (`languages.md`); persistence, unit of work (its `CommitTransactionAsync` by `events.outbox`, its `SaveChangesAsync` by `exceptions`), `PersistenceModule` (empty body) and `InfrastructureModule`; with `database` = `mongo` the persistence, unit of work and module are those of `infrastructure-mongo.md` | `logging.md`, `events-inprocess.md` or `outbox.md`, `rabbitmq.md`, `event-consumers.md`, `authentication.md`, `tenancy.md`, `languages.md`, `infrastructure-postgres.md`, `failures.md` | build |
+| 7 | Hosts: Api and Console, the Worker when `hosts.worker` is `separate`, `ErrorReference`, VS Code files with the first launch configuration only; the add-ons' host files (`correlation.md`, `api-conventions.md`); the sign-in lines and `ConsoleTokens` when `auth` is `jwt`. The `AddEventConsumer` lines and `using {Name}.Application.{Plural};` of the hosts name example types: they are added at step 10 | `hosts.md`, `outbox.md`, `authentication.md`, `failures.md` | build |
+| 8 | Test support and the kernel tests; with `testing` above `unit`, the level's support and the integration project (`testing-levels.md`) | `testing.md`, `testing-kernel.md` | `dotnet test` passes |
+| 9 | Project documents: `AGENTS.md`, `CLAUDE.md`, `README.md`, `plans/README.md`, `docs/architecture.md`, `docs/incidents.md`, `docs/adr/`; `MORTIS.md` stays as `mortis-architect` wrote it. A value that differs from its preset gets its own record, numbered after the generated ones, written from `0000-template.md` with the row's Why; `mortis-architect` writes them when it is in the conversation, the scaffold when it is not | `project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | files exist |
+| 10 | Only when `example` is `true`: the example domain, in the order its page gives; then the example's parts of the chosen options (the readers and queries of `queries.md`, the `PATCH` slice of `api-conventions.md`, the scenario and integration tests of `testing-levels.md`) | `worked-slice.md`, `worked-slice-tests.md` | build and test after each line of that order |
+| 11 | Only with `database` = `postgres`, when an aggregate exists or an outbox is on: the first migration, then `dotnet format`. With `mongo` there is no migration: the unique indexes are ensured by the Api in Development and by the Console's `ensure-indexes` | `infrastructure-postgres.md` "Migrations" | the migration files exist |
 | 12 | `dotnet format` | | no changes left |
 | 13 | `scripts/verify.sh <project-dir>` | | every check passes or is skipped with a stated reason |
 
@@ -52,6 +52,8 @@ Rules for every step:
 bash scripts/verify.sh <project-dir>            # every check
 bash scripts/verify.sh <project-dir> --dry-run  # the plan: which checks this MORTIS.md turns on
 ```
+
+A full run takes two to six minutes (it builds, tests and starts the hosts several times): run it with a timeout of ten minutes or in the background, never with a two-minute default.
 
 It checks, in order: `MORTIS.md`; the file structure against the manifest; the house rules; the kernel shape against `references/<language>/kernel-shape.txt`; the build (0 warnings); the tests; the formatter; then the conformance suite in `scripts/conformance/` for the options that are on. Conformance starts the project and checks behaviour only: Console commands, database rows, JSON log lines, HTTP status codes and error bodies. It needs PostgreSQL (`docker compose up -d postgres`); without it those checks are skipped and named as skipped.
 
@@ -84,7 +86,7 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/hosts.md` | step 7, and any controller |
 | `references/csharp/testing.md` | step 8: test layout, rules, kernel test support |
 | `references/csharp/testing-kernel.md` | step 8: the kernel tests |
-| `references/csharp/testing-levels.md` | step 8, when `testing` is not `unit`: scenarios, the integration project, the architecture rules (not built yet: hand-written snippets) |
+| `references/csharp/testing-levels.md` | step 8, when `testing` is not `unit`: scenarios and the integration project (built), the architecture rules (not built yet: hand-written snippets) |
 | `references/csharp/project-docs.md`, `project-docs-architecture.md`, `project-docs-adr.md` | step 9 |
 | `references/csharp/worked-slice.md`, `worked-slice-tests.md` | step 10, and as the pattern for any new aggregate |
 | `references/csharp/failures.md` | the `exceptions` level: what each level adds, the status table, `ErrorReference`, the catalogue |
@@ -94,11 +96,13 @@ Do not generate over a solution that has code. Read `references/csharp/adopting.
 | `references/csharp/event-consumers.md` | steps 6 and 7: registering event consumers in the hosts, and any new consumer |
 | `references/csharp/authentication.md` | steps 6 and 7, when `auth` is `jwt` |
 | `references/csharp/tenancy.md` | steps 6, 7 and 10, when `tenancy.mode` is `interface` |
-| `references/csharp/infrastructure-mongo.md` | steps 6 and 7, when `database` is `mongo` (not built yet: hand-written snippets) |
+| `references/csharp/infrastructure-mongo.md` | steps 6 to 8 and 11, when `database` is `mongo`, in place of `infrastructure-postgres.md` (built and verified on the standard preset; tenancy on MongoDB not built) |
 | `references/csharp/permissions.md` | steps 6 and 7, when `auth` is `jwt`, after asking the developer which claim carries permissions and in what form (not built yet: hand-written snippets) |
-| `references/csharp/api-conventions.md`, `idempotency.md`, `observability.md` | steps 6 and 7, when `addons` contains `api-conventions`, `idempotent-commands` (with PostgreSQL) or `observability` (not built yet: hand-written snippets) |
+| `references/csharp/api-conventions.md` | steps 4, 7 and 10, when `addons` contains `api-conventions` (built) |
+| `references/csharp/idempotency.md`, `observability.md` | steps 6 and 7, when `addons` contains `idempotent-commands` (with PostgreSQL) or `observability` (not built yet: hand-written snippets) |
 | `references/csharp/soft-delete.md`, `caching.md`, `scheduler.md`, `storage.md`, `secrets.md`, `loop-guard.md`, `contexts.md`, `events-project.md` | steps 6 and 7, when `addons` contains the matching add-on (not built yet: hand-written snippets; R14 for MongoDB) |
-| `references/csharp/queries.md`, `read-models.md` | steps 6 and 7, when `queries` is not `commands` (not built yet: hand-written snippets) |
+| `references/csharp/queries.md` | steps 4, 6, 7 and 10, when `queries` is not `commands` (built) |
+| `references/csharp/read-models.md` | steps 6 and 7, when `queries` is `read-models` (not built yet: hand-written snippets) |
 | `references/csharp/languages.md` | steps 3, 6, 7 and 10, when `languages.mode` is not `none` |
 | `references/csharp/adopting.md` | the project already exists |
 | `references/schema.json` | the keys and values of `MORTIS.md` (a copy of the architect skill's) |

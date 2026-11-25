@@ -9,6 +9,8 @@ public record CustomerDto
     public string Email { get; set; }
     public bool IsBlocked { get; set; }
     public int CompletedOrderCount { get; set; }
+    public string Note { get; set; }
+    public string TaxNumber { get; set; }
 
     public static CustomerDto Map(Customer customer) => new()
     {
@@ -16,6 +18,19 @@ public record CustomerDto
         Name = customer.Name,
         Email = customer.Email,
         IsBlocked = customer.IsBlocked,
-        CompletedOrderCount = customer.CompletedOrderCount
+        CompletedOrderCount = customer.CompletedOrderCount,
+        Note = customer.Note,
+        TaxNumber = customer.TaxNumber
+    };
+
+    public static CustomerDto From(CustomerView view) => new()
+    {
+        Id = view.Id,
+        Name = view.Name,
+        Email = view.Email,
+        IsBlocked = view.IsBlocked,
+        CompletedOrderCount = view.CompletedOrderCount,
+        Note = view.Note,
+        TaxNumber = view.TaxNumber
     };
 }

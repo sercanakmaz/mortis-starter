@@ -6,7 +6,7 @@ namespace Boilerplate.Api.Controllers;
 
 [ApiController]
 [Route("categories")]
-public class CategoriesController(ICommandDispatcher commandDispatcher) : ControllerBase
+public class CategoriesController(ICommandDispatcher commandDispatcher, IQueryDispatcher queryDispatcher) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCategoryCommand command)
@@ -17,10 +17,8 @@ public class CategoriesController(ICommandDispatcher commandDispatcher) : Contro
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Get([FromRoute] int id)
+    public async Task<IActionResult> Get([FromRoute] GetCategoryQuery query)
     {
-        var commandResult = await commandDispatcher.Send(new GetCategoryCommand(id));
-
-        return Ok(commandResult.Content);
+        return Ok(await queryDispatcher.Ask(query));
     }
 }

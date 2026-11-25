@@ -1,18 +1,18 @@
 # The recipes in C#
 
-The commands and C# notes the recipes rely on. Paths in the recipes are already C#'s; this page adds what to run.
+The commands and C# notes the recipes rely on. Paths in the recipes are already C#'s; this page adds what to run. `<skills>` is the folder holding the skills and `<project>` the project's: use absolute paths, since the work happens in the project.
 
 ## Commands
 
 ```bash
 dotnet build                                   # 0 warnings is the bar
 dotnet test                                    # the whole suite
-dotnet test --filter "FullyQualifiedName~OrderTests"   # one class while working
+dotnet test --filter "FullyQualifiedName~OrderTests" -p:CollectCoverage=false   # one class while working (the coverage gate counts the whole suite)
 dotnet ef migrations add <Change> --project src/{Name}.Infrastructure --output-dir Persistence/Migrations
 dotnet format
-bash ../mortis-scaffold/scripts/verify.sh .
-bash ../mortis-review/scripts/review.sh .
-bash scripts/new_aggregate.sh . Invoice Invoices          # the files an aggregate needs in this project, by its MORTIS.md
+bash <skills>/mortis-scaffold/scripts/verify.sh <project>
+bash <skills>/mortis-review/scripts/review.sh <project>
+bash <skills>/mortis-develop/scripts/new_aggregate.sh <project> Invoice Invoices   # the files an aggregate needs in this project, by its MORTIS.md
 ```
 
 A migration is named after the change in PascalCase (`AddInvoices`, `AddTenantToProducts`). Never edit a migration that was applied anywhere outside a developer's machine; add another.

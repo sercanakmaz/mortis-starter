@@ -177,7 +177,7 @@ public class DecreaseStockWhenOrderLineAddedEventConsumer(ICommandDispatcher com
 
 @@member src/Boilerplate.Application/Products/DecreaseStockWhenOrderLineAddedEventConsumer.cs::DecreaseStockWhenOrderLineAddedEventConsumer::OnHandle@@
 
-A consumer is not registered here: it gets one `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(3))` line in the host that runs it (`event-consumers.md`).
+A consumer is not registered here: it gets one `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(10))` line in the host that runs it (`event-consumers.md`).
 
 ## Registration
 

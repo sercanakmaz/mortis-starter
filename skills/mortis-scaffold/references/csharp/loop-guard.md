@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `loop-guard`. Project `{Name}.Shared` (folders `Application/`, `Domain/`, `Exceptions/`). Layer 1: `options/addons.md`, `architecture/advanced-addons.md`.
 
-**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Built** in the advanced reference solution (decision 52): compiled, tested and verified there.
 
 ## How it fits together
 
@@ -40,6 +40,7 @@ public static class LoopGuardConstants
 {
     public const int MaxChain = 16;
     public const string Separator = " -> ";
+    public const string LoopDetectedCode = "loop_detected";
 }
 ```
 
@@ -58,24 +59,139 @@ File `src/{Name}.Shared/Exceptions/LoopDetectedException.cs`:
 
 ```csharp
 public class LoopDetectedException(IReadOnlyList<string> chain) : ExceptionBase(
-    "loop_detected",
+    LoopGuardConstants.LoopDetectedCode,
     HttpStatusCode.InternalServerError,
     $"Commands triggered each other more than {LoopGuardConstants.MaxChain} times: {string.Join(LoopGuardConstants.Separator, chain)}.",
     null,
     new Dictionary<string, object> { ["chain"] = string.Join(LoopGuardConstants.Separator, chain) });
 ```
 
-With `exceptions` = `catalogued`, `loop_detected` joins the catalogue (`failures.md`).
+With `exceptions` = `catalogued`, `LoopGuardConstants.LoopDetectedCode` joins `ErrorCatalogue.Codes` (using `{Name}.Shared.Application`), and with translated messages every `messages.<language>.json` gets a `loop_detected` text with a `{chain}` placeholder (`MessageLocalizerTests` fails otherwise), for example `"loop_detected": "Commands triggered each other too many times: {chain}."`.
 
 ## Tests
 
-`CommandPipelineTests` gains: the context's chain ends with the command's name after `ExecuteAsync`; a context whose chain already holds `MaxChain` names throws `LoopDetectedException` before any validator runs, and its message names every command. `EventContextTests` gains: a raised event carries the command's chain. `CommandContextTests` gains: `FromEvent` copies the chain.
+`CommandPipelineTests` gains:
 
-The phase 2 proof is a scenario with two fake handlers that trigger each other, in `TestSupport/Shared/Application/PingPong.cs` (a `PingCommand` whose handler raises `Pinged`, a sync handler of `Pinged` that sends `PongCommand`, whose handler raises `Ponged`, whose sync handler sends `PingCommand`): `LoopGuardTests.Send_WithTwoHandlersThatTriggerEachOther_Should_StopAtTheLimitAndNameTheChain` asserts `LoopDetectedException`, a chain of `MaxChain + 1` names alternating `PingCommand` and `PongCommand`, and no more than `MaxChain` handled commands. `scripts/conformance/loop-guard.sh` checks the chain on the example's log lines.
+```csharp
+[Fact]
+public async Task ExecuteAsync_WithAContextCommand_Should_EndTheChainWithTheCommandsName()
+{
+    var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create().Build();
+    var fakeContextCommand = new FakeContextCommand { Context = new CommandContext { Chain = ["CreateOrderCommand"] } };
+
+    await commandPipeline.ExecuteAsync(fakeContextCommand, command => Task.FromResult(CommandResult.FromContent(command.Name)));
+
+    Assert.Equal(["CreateOrderCommand", nameof(FakeContextCommand)], fakeContextCommand.Context.Chain);
+}
+```
+
+```csharp
+[Fact]
+public async Task ExecuteAsync_WithAFullChain_Should_ThrowLoopDetectedBeforeAnyValidatorRuns()
+{
+    var validated = false;
+    var commandPipeline = CommandPipelineBuilder<FakeContextCommand>.Create()
+        .WithValidator(new InlineValidator<FakeContextCommand> { validator => validator.RuleFor(command => command.Name).Must(_ => validated = true) })
+        .Build();
+    var fakeContextCommand = new FakeContextCommand { Context = new CommandContext { Chain = Enumerable.Repeat("PingCommand", LoopGuardConstants.MaxChain).ToList() } };
+
+    var exception = await Assert.ThrowsAsync<LoopDetectedException>(() => commandPipeline.ExecuteAsync(fakeContextCommand, command => Task.FromResult(CommandResult.FromContent(command.Name))));
+
+    Assert.False(validated);
+    Assert.Equal(LoopGuardConstants.LoopDetectedCode, exception.Code);
+    Assert.EndsWith($"PingCommand{LoopGuardConstants.Separator}{nameof(FakeContextCommand)}.", exception.Message);
+}
+```
+
+(using `FluentValidation` for `InlineValidator`). `EventContextTests` gains:
+
+```csharp
+[Fact]
+public void AddRaised_InsideACommand_Should_CarryTheCommandsChain()
+{
+    var eventContext = new EventContext();
+    eventContext.EnterCommand(new CommandContext { Chain = ["CreateOrderCommand"] });
+
+    eventContext.AddRaised(new FakeEvent("first"));
+
+    Assert.Equal(["CreateOrderCommand"], eventContext.TakeRaised().Chain);
+}
+```
+
+`CommandContextTests` gains:
+
+```csharp
+[Fact]
+public void FromEvent_Should_CopyTheEventsChain()
+{
+    var fakeEvent = new FakeEvent("first") { Chain = ["CreateOrderCommand"] };
+
+    var commandContext = CommandContext.FromEvent(fakeEvent, FakeAuditUser.Create());
+
+    Assert.Equal(["CreateOrderCommand"], commandContext.Chain);
+}
+```
+
+`TestSupport/Shared/Application/PingPongLog.cs` holds two context commands that trigger each other: `PingCommand` and `PongCommand` (each `ICommand<int>, IContextCommand` with a `[JsonIgnore]` context), the events `Pinged` and `Ponged` (`: EventBase`), a `PingPongLog` (a `List<string> Handled`), and four handlers:
+
+```csharp
+public class PingCommandHandler(CommandPipeline<PingCommand> commandPipeline, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, PingPongLog pingPongLog) : BaseCommandHandler<PingCommand, int>(commandPipeline)
+```
+
+```csharp
+protected override async Task<CommandResult<int>> OnHandle(PingCommand command)
+{
+    pingPongLog.Handled.Add(nameof(PingCommand));
+    eventContext.AddRaised(new Pinged());
+    await eventHandlerExecutor.ExecuteRaisedAsync();
+
+    return CommandResult.FromContent(pingPongLog.Handled.Count);
+}
+```
+
+`PongCommandHandler` is the same with `Pong`/`Ponged`; the sync handlers send the other command with the event's context:
+
+```csharp
+public class SendPongWhenPinged(ICommandDispatcher commandDispatcher) : BaseSyncEventHandler<Pinged>
+{
+    protected override Task OnHandle(Pinged @event) => commandDispatcher.Send(new PongCommand { Context = ContextOf(@event) });
+}
+```
+
+`Shared/Application/LoopGuardTests.cs`, through the real dispatcher and pipeline:
+
+```csharp
+public class LoopGuardTests
+```
+
+```csharp
+[Fact]
+public async Task Send_WithTwoHandlersThatTriggerEachOther_Should_StopAtTheLimitAndNameTheChain()
+{
+    var services = new ServiceCollection().AddSharedModule();
+    services.AddSingleton(UnitOfWorkBuilder.Create().Build());
+    services.AddSingleton<PingPongLog>();
+    services.AddCommandHandler<PingCommand, int, PingCommandHandler>();
+    services.AddCommandHandler<PongCommand, int, PongCommandHandler>();
+    services.AddScoped<BaseSyncEventHandler<Pinged>, SendPongWhenPinged>();
+    services.AddScoped<BaseSyncEventHandler<Ponged>, SendPingWhenPonged>();
+    await using var serviceProvider = services.BuildServiceProvider();
+    using var scope = serviceProvider.CreateScope();
+
+    var exception = await Assert.ThrowsAsync<LoopDetectedException>(() => scope.ServiceProvider.GetRequiredService<ICommandDispatcher>().Send(new PingCommand()));
+
+    var chain = ((string)exception.Parameters["chain"]).Split(LoopGuardConstants.Separator);
+    Assert.Equal(LoopGuardConstants.MaxChain + 1, chain.Length);
+    Assert.All(chain.Select((name, index) => (name, index)), link => Assert.Equal(link.index % 2 == 0 ? nameof(PingCommand) : nameof(PongCommand), link.name));
+    Assert.Equal(LoopGuardConstants.MaxChain, serviceProvider.GetRequiredService<PingPongLog>().Handled.Count);
+}
+```
+
+With an architecture level, the event-contract golden file gains `Chain` on every queue event: run once with `MORTIS_UPDATE_CONTRACTS=1`. `scripts/conformance/loop-guard.sh` checks the chain on the example's log lines.
 
 ## Files this add-on changes
 
-`CommandContext.cs`, `EventBase.cs`, `EventContext.cs`, `CommandPipeline.cs`, `LogFields.cs`; with RabbitMQ nothing more, since the envelope carries the whole event.
+`CommandContext.cs`, `EventBase.cs`, `EventContext.cs`, `CommandPipeline.cs`, `LogFields.cs` (using `{Name}.Shared.Application`), `ErrorCatalogue.cs` and the message files when catalogued and translated; with RabbitMQ nothing more, since the envelope carries the whole event.
 
 ## Namespaces and usings
 
@@ -83,7 +199,8 @@ The phase 2 proof is a scenario with two fake handlers that trigger each other, 
 |---|---|---|
 | `LoopGuardConstants.cs` | `{Name}.Shared.Application` | none |
 | `LoopDetectedException.cs` | `{Name}.Shared.Exceptions` | `{Name}.Shared.Application`, `System.Net` |
-| `PingPong.cs`, `LoopGuardTests.cs` | `{Name}.Tests.TestSupport.Shared.Application`, `{Name}.Tests.Shared.Application` | `{Name}.Shared.Application`, `{Name}.Shared.Domain`, `{Name}.Shared.Exceptions`, `Microsoft.Extensions.DependencyInjection` |
+| `PingPongLog.cs` | `{Name}.Tests.TestSupport.Shared.Application` | `System.Text.Json.Serialization`, `{Name}.Shared.Application`, `{Name}.Shared.Domain` |
+| `LoopGuardTests.cs` | `{Name}.Tests.Shared.Application` | `{Name}.Shared`, `{Name}.Shared.Application`, `{Name}.Shared.Domain`, `{Name}.Shared.Exceptions`, `{Name}.Shared.Persistence`, `{Name}.Tests.TestSupport.Shared.Application`, `{Name}.Tests.TestSupport.Shared.Persistence`, `Microsoft.Extensions.DependencyInjection` |
 
 ## Decision record
 

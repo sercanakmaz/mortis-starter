@@ -30,6 +30,47 @@ public async Task PublishAsync(EventBase @event)
 }
 ```
 
+```csharp
+private async Task ConsumeAsync(EventConsumerEndpoint eventConsumerEndpoint, EventBase @event)
+{
+    var consumerName = eventConsumerEndpoint.ConsumerType.FullName;
+
+    for (var attempt = 1; ; attempt++)
+    {
+        using var scope = serviceScopeFactory.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var eventConsumer = (IEventConsumer)scope.ServiceProvider.GetRequiredService(eventConsumerEndpoint.ConsumerType);
+
+        try
+        {
+            await unitOfWork.BeginTransactionAsync(nameof(EventPublisher));
+            await eventConsumer.Handle(@event);
+            await unitOfWork.CommitTransactionAsync(nameof(EventPublisher));
+
+            logger.LogInformation("Handled {Event} {EventId} by {EventConsumer}", @event.GetType().Name, @event.EventId, consumerName);
+
+            return;
+        }
+        catch (Exception exception) when (attempt <= eventConsumerEndpoint.RetryCount)
+        {
+            await unitOfWork.RollbackTransactionAsync();
+
+            logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", consumerName, @event.GetType().Name, @event.EventId, attempt);
+
+            await Task.Delay(TimeSpan.FromMilliseconds(attempt * MessagingConstants.RetryDelayMilliseconds));
+        }
+        catch (Exception exception)
+        {
+            await unitOfWork.RollbackTransactionAsync();
+
+            logger.LogError(exception, "Event consumer {EventConsumer} failed for {Event} {EventId} after {Attempt} attempts; the transaction that raised the event stays committed", consumerName, @event.GetType().Name, @event.EventId, attempt);
+
+            return;
+        }
+    }
+}
+```
+
 - Every event consumer is a consumer of its own: a fresh scope and transaction per attempt, in the order of the `AddEventConsumer` lines.
 - A failure, a concurrency conflict included, is retried after a short delay up to the consumer's `Retry(n)`; after the last attempt it is logged as an error and the next consumer still runs.
 - Its log lines carry the event's fields (`LogFields.Of(event)`, `logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.

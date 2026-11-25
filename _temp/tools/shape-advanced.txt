@@ -1,22 +1,6 @@
 # Kernel shape of the advanced add-ons. Hand-written, not built yet (decision 50); build_shape.py appends it.
-[addons=soft-delete] type {Name}.Shared.Domain: public interface ISoftDeletable
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: bool IsDeleted { get; }
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: DateTime? DeletedAt { get; }
-[addons=soft-delete] member {Name}.Shared.Domain.ISoftDeletable: string DeletedUserId { get; }
-[addons=caching] type {Name}.Shared.Application: public interface ICacheService
-[addons=caching] member {Name}.Shared.Application.ICacheService: Task<T> GetOrCreateAsync<T>(string key, IReadOnlyCollection<string> tags, Func<CancellationToken, Task<T>> load, CancellationToken cancellationToken = default);
-[addons=caching] member {Name}.Shared.Application.ICacheService: Task RemoveByTagAsync(string tag, CancellationToken cancellationToken = default);
 [addons=storage] type {Name}.Shared.Application: public interface IFileStorage
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task PutAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default);
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task<StoredFile> OpenAsync(string key, CancellationToken cancellationToken = default);
 [addons=storage] member {Name}.Shared.Application.IFileStorage: Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 [addons=storage] type {Name}.Shared.Application: public sealed record StoredFile(Stream Content, string ContentType, long Length);
-[addons=secrets] type {Name}.Shared.Application: public interface ISecretProtector
-[addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Protect(string plaintext);
-[addons=secrets] member {Name}.Shared.Application.ISecretProtector: string Unprotect(string envelope);
-[addons=loop-guard] type {Name}.Shared.Application: public static class LoopGuardConstants
-[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const int MaxChain = 16;
-[addons=loop-guard] member {Name}.Shared.Application.LoopGuardConstants: public const string Separator = " -> ";
-[addons=loop-guard] type {Name}.Shared.Exceptions: public class LoopDetectedException(IReadOnlyList<string> chain) : ExceptionBase
-[addons=events-project] type {Name}.Shared.Domain: public sealed class MessageNameAttribute(string name) : Attribute
-[addons=events-project] member {Name}.Shared.Domain.MessageNameAttribute: public string Name { get; } = name;

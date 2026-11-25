@@ -1,0 +1,3 @@
+# Kernel shape that tenancy.key = text adds. Built and verified in _temp/variants-extra/advanced-t; build_shape.py appends it.
+[tenancy.mode=interface,tenancy.key=text] type {Name}.Shared.Domain: public static class TenancyConstants
+[tenancy.mode=interface,tenancy.key=text] member {Name}.Shared.Domain.TenancyConstants: public const int TenantIdMaxLength = 64

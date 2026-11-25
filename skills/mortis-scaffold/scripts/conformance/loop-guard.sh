@@ -12,7 +12,7 @@ API_PID="$("$LANG_SH" api-start "$PROJECT" "$NAME" "$PORT")"
 for _ in $(seq 1 60); do curl -fs "http://localhost:$PORT/health" >/dev/null 2>&1 && break; sleep 0.5; done
 api_curl -s -o /dev/null -H "Content-Type: application/json" -X POST -d "{\"sku\":\"LPG-$S\",\"name\":\"Looped\",\"stock\":5}" "http://localhost:$PORT/products"
 CUSTOMER="$(api_curl -s -H "Content-Type: application/json" -X POST -d "{\"name\":\"Lpg\",\"email\":\"lpg-$S@example.com\"}" "http://localhost:$PORT/customers" | python3 -I -c 'import sys, json; print(json.load(sys.stdin)["id"])')"
-api_curl -s -o /dev/null -H "Content-Type: application/json" -X POST -d "{\"orderNumber\":\"LPG-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"LPG-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "http://localhost:$PORT/orders"
+api_curl -s -o /dev/null -H "Content-Type: application/json" -X POST -d "{\"orderNumber\":\"LPG-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"LPG-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "http://localhost:$PORT/orders"
 eventually "select stock from products where sku = 'LPG-$S'" "4" 20 >/dev/null
 LOG="$WORK/loop-guard.log"
 cat "$PROJECT/.mortis/api.log" > "$LOG"

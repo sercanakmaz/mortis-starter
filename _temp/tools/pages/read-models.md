@@ -2,7 +2,7 @@
 
 Applies when `queries` is `read-models` (it includes everything on `queries.md`). Project `{Name}.Infrastructure`, folder `ReadModels/`; the query and its reader port as on `queries.md`. Layer 1: `options/queries.md`, `architecture/queries.md`.
 
-**Not built or run yet** (decision 46): hand-written snippets; phase 2 compiles and proves them. `docs/unverified.md` lists them.
+**Built** in the advanced reference solution (with tenancy), decision 52: compiled, tested and verified there. The snippets below are its code.
 
 A read model is a table shaped for one screen. Infrastructure owns it, sync event handlers keep it in step with the write in the same transaction, and a Console command rebuilds it from the aggregates. The example's is `OrderSummary`: order number, customer name, status, total and line count, for an order list screen.
 
@@ -30,9 +30,10 @@ dotnet run -- rebuild-order-summary -> delete every summary, recompute them all,
 File `src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummary.cs`, a plain class (not an aggregate), and its configuration in the same folder:
 
 ```csharp
-public class OrderSummary
+public class OrderSummary : IMultiTenant
 {
     public Guid OrderId { get; private set; }
+    public Guid TenantId { get; private set; }
     public string OrderNumber { get; private set; }
     public string CustomerName { get; private set; }
     public string Status { get; private set; }
@@ -52,12 +53,12 @@ public class OrderSummaryConfiguration : IEntityTypeConfiguration<OrderSummary>
         builder.Property(orderSummary => orderSummary.CustomerName).HasMaxLength(CustomerConstants.NameMaxLength).IsRequired();
         builder.Property(orderSummary => orderSummary.Status).HasMaxLength(OrderSummaryProjection.StatusMaxLength).IsRequired();
         builder.Property(orderSummary => orderSummary.TotalAmount).HasPrecision(18, 4);
-        builder.HasIndex(orderSummary => orderSummary.Status);
+        builder.HasIndex(orderSummary => new { orderSummary.TenantId, orderSummary.Status });
     }
 }
 ```
 
-The table comes from the next migration (`dotnet ef migrations add OrderSummaries`).
+The table is part of the project's `Initial` migration when the project is generated; a project that adds a read model later gets it from its next migration.
 
 ## OrderSummaryProjection
 
@@ -82,8 +83,8 @@ public class OrderSummaryProjection(AppDbContext context)
     private static string Upsert(string condition)
     {
         return $"""
-            insert into order_summaries (order_id, order_number, customer_name, status, total_amount, line_count)
-            select o.id, o.order_number, c.name, o.status,
+            insert into order_summaries (order_id, tenant_id, order_number, customer_name, status, total_amount, line_count)
+            select o.id, o.tenant_id, o.order_number, c.name, o.status,
                    coalesce(sum(l.price_amount * l.quantity) filter (where not l.is_cancelled), 0),
                    count(l.id) filter (where not l.is_cancelled)
             from orders o
@@ -92,7 +93,7 @@ public class OrderSummaryProjection(AppDbContext context)
             {condition}
             group by o.id, c.name
             on conflict (order_id) do update set
-                order_number = excluded.order_number, customer_name = excluded.customer_name, status = excluded.status,
+                tenant_id = excluded.tenant_id, order_number = excluded.order_number, customer_name = excluded.customer_name, status = excluded.status,
                 total_amount = excluded.total_amount, line_count = excluded.line_count
             """;
     }
@@ -101,7 +102,7 @@ public class OrderSummaryProjection(AppDbContext context)
 
 - It runs on the context's connection and transaction, after `SaveChanges`, so it sees the command's own writes.
 - The condition is a fixed string, never caller input; the order id is a parameter. One statement with `{0} is null or o.id = {0}` would not work: PostgreSQL cannot type a null parameter.
-- With tenancy, add `tenant_id` to the column list, the select and the update.
+- The snippets show tenancy (the example's read model lives in the advanced preset). Without tenancy, drop `TenantId`, `IMultiTenant`, the `tenant_id` column and its place in the index.
 
 ## The handlers
 
@@ -146,26 +147,107 @@ public static class ReadModelModule
 
 ## Reading it
 
-As on `queries.md`: `IOrderSummaryReader` and `OrderSummaryView` in `src/{Name}.Domain/Aggregates/Orders/`, `OrderSummaryReader` in `ReadModels/OrderSummaries/` (a `Select` from `order_summaries` with `AsNoTracking`, sorted by order number, paged), and `ListOrderSummariesQuery { Page, Size, Status }` with its validator and handler in `src/{Name}.Application/Orders/`. `OrdersController` adds `[HttpGet("summaries")]`.
+`IOrderSummaryReader` and `OrderSummaryView` in `src/{Name}.Domain/Aggregates/Orders/`:
+
+```csharp
+public interface IOrderSummaryReader
+{
+    Task<PagedResult<OrderSummaryView>> ListAsync(int page, int size, string status);
+}
+```
+
+```csharp
+public record OrderSummaryView(Guid OrderId, string OrderNumber, string CustomerName, string Status, decimal TotalAmount, int LineCount);
+```
+
+File `ReadModels/OrderSummaries/OrderSummaryReader.cs`:
+
+```csharp
+public class OrderSummaryReader(AppDbContext context) : IOrderSummaryReader
+{
+    public async Task<PagedResult<OrderSummaryView>> ListAsync(int page, int size, string status)
+    {
+        var summaries = context.Set<OrderSummary>().AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            summaries = summaries.Where(orderSummary => orderSummary.Status == status);
+        }
+
+        var total = await summaries.CountAsync();
+        var items = await summaries
+            .OrderBy(orderSummary => orderSummary.OrderNumber).ThenBy(orderSummary => orderSummary.OrderId)
+            .Skip(PageRequest.Skip(page, size)).Take(size)
+            .Select(orderSummary => new OrderSummaryView(orderSummary.OrderId, orderSummary.OrderNumber, orderSummary.CustomerName, orderSummary.Status, orderSummary.TotalAmount, orderSummary.LineCount))
+            .ToListAsync();
+
+        return new PagedResult<OrderSummaryView>(items, page, size, total);
+    }
+}
+```
+
+File `src/{Name}.Application/Orders/ListOrderSummariesQuery.cs`; the view is the answer as it is (a read model is already the screen's shape):
+
+```csharp
+public record ListOrderSummariesQuery : IQuery<PagedResult<OrderSummaryView>>
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public int Page { get; set; } = 1;
+    public int Size { get; set; } = PageRequest.DefaultSize;
+    public string Status { get; set; }
+}
+
+public class ListOrderSummariesQueryValidator : AbstractValidator<ListOrderSummariesQuery>
+{
+    public ListOrderSummariesQueryValidator()
+    {
+        RuleFor(query => query.Page).GreaterThan(0);
+        RuleFor(query => query.Size).InclusiveBetween(1, PageRequest.MaxSize);
+        RuleFor(query => query.Status).IsEnumName(typeof(OrderStatus)).When(query => query.Status is not null);
+    }
+}
+
+public class ListOrderSummariesQueryHandler(IOrderSummaryReader orderSummaryReader, IEnumerable<IValidator<ListOrderSummariesQuery>> validators) : BaseQueryHandler<ListOrderSummariesQuery, PagedResult<OrderSummaryView>>(validators)
+{
+    protected override Task<PagedResult<OrderSummaryView>> OnHandle(ListOrderSummariesQuery query)
+    {
+        return orderSummaryReader.ListAsync(query.Page, query.Size, query.Status);
+    }
+}
+```
+
+`ApplicationModule` registers it with its validator; `AddInfrastructureModule` calls `services.AddReadModelModule();`. `OrdersController`, before the `{id}` route:
+
+```csharp
+    [HttpGet("summaries")]
+    public async Task<IActionResult> ListSummaries([FromQuery] ListOrderSummariesQuery query)
+    {
+        return Ok(await queryDispatcher.Ask(query));
+    }
+```
 
 ## Rebuilding
 
-`ConsoleConstants` gains `public const string RebuildOrderSummaryCommand = "rebuild-order-summary";`; `Program.cs` handles it before running a command, in one transaction:
+`ConsoleConstants` gains `public const string RebuildOrderSummaryCommand = "rebuild-order-summary";`. A run still names its user (`--user`), so `Program.cs` handles the name after `ConsoleArguments.Parse` and entering the tenant, in one transaction that crosses tenants:
 
 ```csharp
-    if (arguments[0] == ConsoleConstants.RebuildOrderSummaryCommand)
+    if (consoleArguments.Name == ConsoleConstants.RebuildOrderSummaryCommand)
     {
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        await unitOfWork.BeginTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
-        await scope.ServiceProvider.GetRequiredService<OrderSummaryProjection>().RebuildAsync();
-        await unitOfWork.CommitTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+        using (scope.ServiceProvider.GetRequiredService<TenantScope>().Bypass(ConsoleConstants.RebuildOrderSummaryCommand))
+        {
+            await unitOfWork.BeginTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+            await scope.ServiceProvider.GetRequiredService<OrderSummaryProjection>().RebuildAsync();
+            await unitOfWork.CommitTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+        }
 
         return 0;
     }
 ```
 
-With tenancy the rebuild crosses tenants: it runs inside `TenantScope.Bypass("rebuild-order-summary")`.
+Without tenancy there is no `TenantScope` and no `using` block.
 
 ## Tests
 

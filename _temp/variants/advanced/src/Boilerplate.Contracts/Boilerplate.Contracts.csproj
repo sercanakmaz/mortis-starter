@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Boilerplate.Contracts</PackageId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Boilerplate.Shared/Boilerplate.Shared.csproj" />
+  </ItemGroup>
+</Project>

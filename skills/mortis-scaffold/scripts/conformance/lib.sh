@@ -12,14 +12,30 @@ expect_equal() {
   if [ "$2" = "$3" ]; then pass "$1"; else fail "$1" "expected '$2', got '$3'"; fi
 }
 
-sql() { psql -d "$DATABASE" -tAc "$1"; }
+sql() {
+  if [ "${NAMING_DATABASE:-snake_case}" = "as-code" ]; then
+    psql -d "$DATABASE" -tAc "$(psql -d "$DATABASE" -tAc "select table_name from information_schema.tables where table_schema = 'public' union select column_name from information_schema.columns where table_schema = 'public'" | python3 -I "$(dirname "${BASH_SOURCE[0]}")/as_code_sql.py" "$1")"
+  else
+    psql -d "$DATABASE" -tAc "$1"
+  fi
+}
 # Every Console run names its user (CONSOLE_USER) and, with tenancy, its tenant (CONSOLE_TENANT, set by verify.sh): the Console takes no token.
 # With auth = jwt every API call carries TOKEN through api_curl.
 console_run() { "$LANG_SH" console "$PROJECT" "$NAME" --user "${CONSOLE_USER:-console}" --email "${CONSOLE_USER:-console}@example.com" ${CONSOLE_TENANT:+--tenant "$CONSOLE_TENANT"} "$@"; }
 api_curl() { curl ${TOKEN:+-H "Authorization: Bearer $TOKEN"} "$@"; }
 dev_token() { "$LANG_SH" console "$PROJECT" "$NAME" dev-token "$1" 2>/dev/null; }
 new_id() { python3 -I -c 'import uuid; print(uuid.uuid4())'; }
+# An id in a JSON body: a uuid is a string, a database-assigned key (keys.default = int or long) a number.
+jid() { case "$1" in ''|*[!0-9]*) printf '"%s"' "$1" ;; *) printf '%s' "$1" ;; esac; }
+# An id no row has, in the project's key type.
+missing_id() { case "${KEYS:-guid}" in int|long) echo 999999 ;; *) echo 01900000-0000-7000-8000-000000000000 ;; esac; }
+# Checks write HTTP bodies with camelCase names. api_body renames a request body's keys to naming.json;
+# api_read renames a response file's keys back, so a check reads the same names whatever the project chose.
+api_body() { python3 -I "$(dirname "${BASH_SOURCE[0]}")/json_names.py" out "${NAMING_JSON:-camelCase}" "$1"; }
+api_read() { python3 -I "$(dirname "${BASH_SOURCE[0]}")/json_names.py" in "${NAMING_JSON:-camelCase}" "$1"; }
 wire_name() { "$LANG_SH" wire-name "$PROJECT" "$NAME" "$1" "$2"; }
+# The type name of an example event, by naming.events: event_name Orders Completed is Completed, or OrderCompleted when prefixed.
+event_name() { if [ "${NAMING_EVENTS:-bare}" = "prefixed" ]; then printf '%s%s' "$(printf '%s' "$1" | sed -E 's/ies$/y/; t; s/s$//')" "$2"; else printf '%s' "$2"; fi; }
 json_field() { python3 -I -c "import sys, json; d = json.loads(sys.argv[1]); print(d$2)" "$1"; }
 # Log lines are one JSON object per line. log_count FILE EXPR counts the lines where the Python expression on l is true;
 # log_field FILE EXPR FIELD prints FIELD of the first such line; error_code FILE prints the code of the Console's error line.

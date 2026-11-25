@@ -8,6 +8,7 @@
     <Project Path="src/Boilerplate.Shared/Boilerplate.Shared.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/Boilerplate.IntegrationTests/Boilerplate.IntegrationTests.csproj" />
     <Project Path="test/Boilerplate.Tests/Boilerplate.Tests.csproj" />
   </Folder>
 </Solution>

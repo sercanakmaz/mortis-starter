@@ -116,6 +116,17 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("TaxNumber")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("tax_number")
+                        .HasAnnotation("Mortis:Secret", true);
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -299,10 +310,34 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("created_user_name");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DeletedUserId")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_user_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("name");
+
+                    b.Property<string>("NameSearch")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("name_search")
+                        .HasComputedColumnSql("name::text", true);
+
+                    b.Property<string>("NameSort")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("name_sort")
+                        .HasComputedColumnSql("name ->> 'en'", true);
 
                     b.Property<string>("Sku")
                         .IsRequired()
@@ -347,6 +382,9 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_products_category_id");
 
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("ix_products_is_deleted");
+
                     b.ToTable("products", null, t =>
                         {
                             t.HasCheckConstraint("ck_products_stock_not_negative", "stock >= 0");
@@ -385,6 +423,11 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("tenant_id");
 
+                    b.Property<string>("TraceParent")
+                        .HasMaxLength(55)
+                        .HasColumnType("character varying(55)")
+                        .HasColumnName("trace_parent");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -398,6 +441,126 @@ namespace Boilerplate.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_outbox_messages_next_attempt_at");
 
                     b.ToTable("outbox_messages", (string)null);
+                });
+
+            modelBuilder.Entity("Boilerplate.Infrastructure.Persistence.Idempotency.IdempotencyRecord", b =>
+                {
+                    b.Property<string>("Scope")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("scope");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("text")
+                        .HasColumnName("location");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.Property<string>("ResponseBody")
+                        .HasColumnType("text")
+                        .HasColumnName("response_body");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<int?>("StatusCode")
+                        .HasColumnType("integer")
+                        .HasColumnName("status_code");
+
+                    b.HasKey("Scope", "Key")
+                        .HasName("pk_idempotency_records");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("ix_idempotency_records_started_at");
+
+                    b.ToTable("idempotency_records", (string)null);
+                });
+
+            modelBuilder.Entity("Boilerplate.Infrastructure.ReadModels.OrderSummaries.OrderSummary", b =>
+                {
+                    b.Property<Guid>("OrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<int>("LineCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_count");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("order_number");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("total_amount");
+
+                    b.HasKey("OrderId")
+                        .HasName("pk_order_summaries");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_order_summaries_tenant_id_status");
+
+                    b.ToTable("order_summaries", (string)null);
+                });
+
+            modelBuilder.Entity("Boilerplate.Infrastructure.Scheduling.ScheduledJobRun", b =>
+                {
+                    b.Property<string>("Job")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("job");
+
+                    b.Property<DateTime>("Tick")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("tick");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Job", "Tick")
+                        .HasName("pk_scheduled_job_runs");
+
+                    b.ToTable("scheduled_job_runs", (string)null);
                 });
 
             modelBuilder.Entity("Boilerplate.Domain.Aggregates.Orders.Order", b =>

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Boilerplate.Infrastructure.Secrets;
 using Boilerplate.Infrastructure.Tenancy;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +18,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             .UseSnakeCaseNamingConvention()
             .Options;
 
-        return new AppDbContext(options, new TenantScope(NullLogger<TenantScope>.Instance));
+        return new AppDbContext(options, new TenantScope(NullLogger<TenantScope>.Instance), new EnvelopeSecretProtector(Options.Create(new SecretsSettings())));
     }
 }

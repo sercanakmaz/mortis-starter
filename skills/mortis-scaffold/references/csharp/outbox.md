@@ -48,9 +48,6 @@ File `Messaging/Outbox/OutboxMessage.cs`:
 public class OutboxMessage
 ```
 
-```csharp
-public class OutboxMessage
-```
 
 ```csharp
 public Guid Id { get; private set; }
@@ -150,9 +147,6 @@ File `Messaging/Outbox/OutboxRepository.cs`, scoped, on the request's `AppDbCont
 public class OutboxRepository(AppDbContext context, EventConsumerRegistry eventConsumerRegistry)
 ```
 
-```csharp
-public class OutboxRepository(AppDbContext context, EventConsumerRegistry eventConsumerRegistry)
-```
 
 ```csharp
 public void Add(IEnumerable<EventBase> events)
@@ -318,9 +312,6 @@ File `Messaging/Outbox/OutboxSettings.cs`, bound to the `Outbox` section; the de
 public class OutboxSettings
 ```
 
-```csharp
-public class OutboxSettings
-```
 
 ```csharp
 public const string Section = "Outbox";
@@ -328,6 +319,10 @@ public const string Section = "Outbox";
 
 ```csharp
 public const int TenantIdMaxLength = 64;
+```
+
+```csharp
+public const int TraceParentMaxLength = 55;
 ```
 
 ```csharp
@@ -346,9 +341,6 @@ File `Messaging/Outbox/OutboxModule.cs`:
 public static class OutboxModule
 ```
 
-```csharp
-public static class OutboxModule
-```
 
 ```csharp
 public static IServiceCollection AddOutboxModule(this IServiceCollection services, IConfiguration configuration)
@@ -529,7 +521,10 @@ File `src/{Name}.Worker/{Name}.Worker.csproj`:
 File `src/{Name}.Worker/Program.cs`. `.AddOutboxWorker()` is there only with an outbox, and the `.AddEventConsumer<...>(...)` lines with `database` or `rabbitmq` (`event-consumers.md`):
 
 ```csharp
+using {Name}.Infrastructure.Diagnostics;
+using {Name}.Application.Orders;
 using {Name}.Infrastructure.Messaging.Outbox;
+using {Name}.Infrastructure.Scheduling;
 using {Name}.Infrastructure.Messaging;
 using {Name}.Application.Products;
 using {Name}.Infrastructure.Logging;
@@ -548,9 +543,12 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
+    .AddObservability(builder.Configuration)
+    .AddScheduler(builder.Configuration)
+    .AddRecurringJob<CancelEmptyOrdersJob>()
     .AddOutboxWorker()
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 
 using var host = builder.Build();
 
@@ -571,6 +569,22 @@ File `src/{Name}.Worker/appsettings.json`; the `RabbitMq` connection string only
       "Microsoft.Hosting": "Warning",
       "Microsoft.EntityFrameworkCore": "Warning"
     }
+  },
+  "Observability": {
+    "OtlpEndpoint": "",
+    "OutboxLagThresholdSeconds": 60
+  },
+  "Caching": {
+    "Seconds": 60
+  },
+  "Scheduler": {
+    "Jobs": {
+      "cancel-empty-orders": {
+        "UserId": "",
+        "UserEmail": "",
+        "TenantId": ""
+      }
+    }
   }
 }
 ```
@@ -581,7 +595,7 @@ The table is part of the project's first migration (`infrastructure-postgres.md`
 
 ## Tests
 
-File `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs`:
+File `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs`. With `events.transport` = `rabbitmq` (one row per event, `Id` is the event's id, tenant kept):
 
 ```csharp
 public class OutboxMessageTests
@@ -614,6 +628,66 @@ public void ToEvent_Should_ReadBackTheSameEventWithItsContext()
 }
 ```
 
+```csharp
+[Fact]
+public void From_InsideAnActivity_Should_StoreThatActivitysIdAsTraceParent()
+{
+    using var recordedActivities = new RecordedActivities();
+    using var activity = recordedActivities.TestSource.StartActivity("request");
+
+    var outboxMessage = OutboxMessage.From(new FakeQueueEvent("first"));
+
+    Assert.Equal(activity!.Id, outboxMessage.TraceParent);
+}
+```
+
+```csharp
+[Fact]
+public void From_OutsideAnyActivity_Should_StoreNoTraceParent()
+{
+    Activity.Current = null;
+
+    var outboxMessage = OutboxMessage.From(new FakeQueueEvent("first"));
+
+    Assert.Null(outboxMessage.TraceParent);
+}
+```
+
+With `database` (one row per event and consumer, a fresh `Id`, the consumer's attempt limit; using `{Name}.Infrastructure.Messaging` as well):
+
+```csharp
+public class OutboxMessageTests
+```
+
+```csharp
+[Fact]
+public void From_Should_MakeOneRowForTheEventAndTheConsumerDueAtOnceWithItsAttemptLimit()
+{
+    var fakeQueueEvent = new FakeQueueEvent("first");
+
+    var outboxMessage = OutboxMessage.From(fakeQueueEvent, new EventConsumerEndpoint(typeof(RecordingEventConsumer)).Retry(4));
+
+    Assert.Equal(fakeQueueEvent.EventId, outboxMessage.EventId);
+    Assert.NotEqual(fakeQueueEvent.EventId, outboxMessage.Id);
+    Assert.Equal(typeof(RecordingEventConsumer).FullName, outboxMessage.Consumer);
+    Assert.Equal(5, outboxMessage.MaxAttempts);
+    Assert.Equal(fakeQueueEvent.OccurredAt, outboxMessage.NextAttemptAt);
+    Assert.Equal(0, outboxMessage.Attempts);
+}
+```
+
+```csharp
+[Fact]
+public void ToEvent_Should_ReadBackTheSameEventWithItsContext()
+{
+    var fakeQueueEvent = new FakeQueueEvent("first") { CorrelationId = Guid.CreateVersion7(), CausationId = Guid.CreateVersion7(), TenantId = "tenant-1", UserId = "user-1" };
+
+    var readBack = OutboxMessage.From(fakeQueueEvent, new EventConsumerEndpoint(typeof(RecordingEventConsumer))).ToEvent(typeof(FakeQueueEvent).Assembly);
+
+    Assert.Equal(fakeQueueEvent, readBack);
+}
+```
+
 The claim, the worker and the retry need a real database; the conformance suite proves them (`scripts/conformance/outbox.sh`).
 
 ## Decision record
@@ -626,11 +700,11 @@ The `UnitOfWork` variants use `{Name}.Infrastructure.Messaging.Outbox` instead o
 
 | File | Namespace | Usings |
 |---|---|---|
-| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs` | `{Name}.Infrastructure.Messaging.Outbox` | System.Reflection, System.Text.Json, {Name}.Shared.Domain |
+| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs` | `{Name}.Infrastructure.Messaging.Outbox` | System.Diagnostics, System.Reflection, System.Text.Json, {Name}.Shared.Domain |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessageConfiguration.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxModule.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxRepository.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.EntityFrameworkCore, {Name}.Infrastructure.Persistence, {Name}.Shared.Domain |
 | `src/{Name}.Infrastructure/Messaging/Outbox/OutboxSettings.cs` | `{Name}.Infrastructure.Messaging.Outbox` | none |
-| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, Microsoft.Extensions.Options, {Name}.Domain, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging.RabbitMq, {Name}.Shared.Persistence |
-| `src/{Name}.Worker/Program.cs` | `` | Microsoft.Extensions.Hosting, {Name}.Application, {Name}.Application.Products, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Messaging.Outbox, {Name}.Shared |
-| `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs` | `{Name}.Tests.Infrastructure.Messaging.Outbox` | {Name}.Infrastructure.Messaging.Outbox, {Name}.Tests.TestSupport.Shared.Domain |
+| `src/{Name}.Infrastructure/Messaging/Outbox/OutboxWorker.cs` | `{Name}.Infrastructure.Messaging.Outbox` | Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Extensions.Logging, Microsoft.Extensions.Options, System.Diagnostics, {Name}.Contracts, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging.RabbitMq, {Name}.Shared.Diagnostics, {Name}.Shared.Persistence |
+| `src/{Name}.Worker/Program.cs` | `` | Microsoft.Extensions.Hosting, {Name}.Application, {Name}.Application.Orders, {Name}.Application.Products, {Name}.Domain, {Name}.Infrastructure, {Name}.Infrastructure.Diagnostics, {Name}.Infrastructure.Logging, {Name}.Infrastructure.Messaging, {Name}.Infrastructure.Messaging.Outbox, {Name}.Infrastructure.Scheduling, {Name}.Shared |
+| `test/{Name}.Tests/Infrastructure/Messaging/Outbox/OutboxMessageTests.cs` | `{Name}.Tests.Infrastructure.Messaging.Outbox` | System.Diagnostics, {Name}.Infrastructure.Messaging.Outbox, {Name}.Tests.TestSupport.Shared.Diagnostics, {Name}.Tests.TestSupport.Shared.Domain |

@@ -282,7 +282,26 @@ protected static CommandContext ContextOf(EventBase @event)
 File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the same `ContextOf`, the event's user:
 
 ```csharp
+public interface IEventConsumer
+```
+
+```csharp
+Task Handle(EventBase @event);
+```
+
+```csharp
 public abstract class BaseEventConsumer<TEvent> : IEventConsumer where TEvent : EventBase, IQueueEvent
+```
+
+```csharp
+protected abstract Task OnHandle(TEvent @event);
+```
+
+```csharp
+public Task Handle(EventBase @event)
+{
+    return OnHandle((TEvent)@event);
+}
 ```
 
 ```csharp

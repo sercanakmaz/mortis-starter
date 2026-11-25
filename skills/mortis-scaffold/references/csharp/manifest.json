@@ -218,21 +218,19 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "docs/adr/0018-queries-and-read-models.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0019-every-command-declares-a-permission.md",
@@ -247,78 +245,71 @@
   {
    "path": "docs/adr/0020-one-shape-for-requests-and-failures.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0021-idempotency-keys-for-post.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0022-health-traces-and-metrics.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0023-testing-levels.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "testing": [
      "handlers",
      "integration",
      "architecture"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0024-soft-delete.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "soft-delete"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0025-caching-reads.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0026-scheduled-jobs.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0027-file-storage-port.md",
@@ -333,23 +324,21 @@
   {
    "path": "docs/adr/0028-secrets-at-rest.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0029-loop-guard.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "loop-guard"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/adr/0030-bounded-contexts.md",
@@ -364,12 +353,11 @@
   {
    "path": "docs/adr/0031-event-contracts-project.md",
    "page": "project-docs-adr.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "events-project"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "docs/architecture.md",
@@ -444,11 +432,10 @@
    "path": "src/{Name}.Api/Conventions/ApiConventionsModule.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Api/Filters/ContextCommandFilter.cs",
@@ -460,12 +447,51 @@
    "path": "src/{Name}.Api/Idempotency/IdempotencyFilter.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
+   }
+  },
+  {
+   "path": "src/{Name}.Api/Idempotency/IdempotencyHash.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "src/{Name}.Api/Idempotency/IdempotencyInProgressException.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "src/{Name}.Api/Idempotency/IdempotencyKeyReusedException.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "src/{Name}.Api/Idempotency/IdempotencyReplay.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Api/Middlewares/ApiConstants.cs",
@@ -516,21 +542,19 @@
    "path": "src/{Name}.Api/Middlewares/RequestLoggingMiddleware.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Api/Observability/HealthResponse.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Api/Program.cs",
@@ -608,15 +632,14 @@
    "path": "src/{Name}.Application/Categories/GetCategoryQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Customers/BlockCustomerCommand.cs",
@@ -631,12 +654,11 @@
    "path": "src/{Name}.Application/Customers/ChangeCustomerCommand.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Customers/CreateCustomerCommand.cs",
@@ -681,15 +703,14 @@
    "path": "src/{Name}.Application/Customers/GetCustomerQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Customers/RegisterCompletedOrderCommand.cs",
@@ -713,13 +734,12 @@
    "path": "src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs",
    "page": "secrets.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "secrets",
-    "database": "postgres"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "secrets",
+    "database": "postgres",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Orders/AddOrderLineCommand.cs",
@@ -734,25 +754,23 @@
    "path": "src/{Name}.Application/Orders/CancelEmptyOrdersCommand.cs",
    "page": "scheduler.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "scheduler",
-    "database": "postgres"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Orders/CancelEmptyOrdersJob.cs",
    "page": "scheduler.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "scheduler",
-    "database": "postgres"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Orders/CancelOrderLineCommand.cs",
@@ -813,27 +831,25 @@
    "path": "src/{Name}.Application/Orders/GetOrderQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Orders/ListOrderSummariesQuery.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Orders/OrderDto.cs",
@@ -860,8 +876,8 @@
    "page": "storage.md",
    "source": "snippets",
    "when": {
-    "example": "true",
-    "addons": "storage"
+    "addons": "storage",
+    "example": "true"
    },
    "kernel": false,
    "unbuilt": true
@@ -897,12 +913,11 @@
    "path": "src/{Name}.Application/Products/DeleteProductCommand.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Products/GetProductCommand.cs",
@@ -919,8 +934,8 @@
    "page": "storage.md",
    "source": "snippets",
    "when": {
-    "example": "true",
-    "addons": "storage"
+    "addons": "storage",
+    "example": "true"
    },
    "kernel": false,
    "unbuilt": true
@@ -929,15 +944,14 @@
    "path": "src/{Name}.Application/Products/GetProductQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Products/IncreaseProductStockCommand.cs",
@@ -958,62 +972,83 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenDeletedEventHandler.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": [
+     "caching",
+     "soft-delete"
+    ],
+    "example": "true"
+   }
+  },
+  {
    "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenRenamedEventHandler.cs",
    "page": "caching.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "caching"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
+  },
+  {
+   "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenRestoredEventHandler.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": [
+     "caching",
+     "soft-delete"
+    ],
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenStockDecreasedEventHandler.cs",
    "page": "caching.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "caching"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Products/InvalidateProductCacheWhenStockIncreasedEventHandler.cs",
    "page": "caching.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "caching"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Products/ListProductsQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Application/Products/ProductCacheKeys.cs",
    "page": "caching.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "caching"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/Products/ProductDto.cs",
@@ -1049,23 +1084,11 @@
    "path": "src/{Name}.Application/Products/RestoreProductCommand.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "src/{Name}.Application/Scheduling/IRecurringJob.cs",
-   "page": "scheduler.md",
-   "source": "snippets",
    "when": {
-    "addons": "scheduler",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Application/{Name}.Application.csproj",
@@ -1131,43 +1154,79 @@
    "path": "src/{Name}.Contracts/ContractsMarker.cs",
    "page": "events-project.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "events-project"
-   },
+   }
+  },
+  {
+   "path": "src/{Name}.Contracts/Orders/Cancelled.cs",
+   "page": "events-project.md",
+   "source": "snippets",
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
+  },
+  {
+   "path": "src/{Name}.Contracts/Orders/Completed.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Contracts/Orders/LineAdded.cs",
    "page": "events-project.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "events-project"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Contracts/Orders/LineCancelled.cs",
    "page": "events-project.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "events-project"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
+  },
+  {
+   "path": "src/{Name}.Contracts/Products/StockDecreased.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
+  },
+  {
+   "path": "src/{Name}.Contracts/Products/StockIncreased.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "events-project",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Contracts/{Name}.Contracts.csproj",
    "page": "events-project.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "addons": "events-project"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Categories/Category.cs",
@@ -1191,15 +1250,14 @@
    "path": "src/{Name}.Domain/Aggregates/Categories/CategoryView.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Categories/Events/Created.cs",
@@ -1214,15 +1272,14 @@
    "path": "src/{Name}.Domain/Aggregates/Categories/ICategoryReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Categories/ICategoryRepository.cs",
@@ -1255,15 +1312,14 @@
    "path": "src/{Name}.Domain/Aggregates/Customers/CustomerView.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/Blocked.cs",
@@ -1278,12 +1334,11 @@
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/Changed.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/Created.cs",
@@ -1298,27 +1353,25 @@
    "path": "src/{Name}.Domain/Aggregates/Customers/Events/TaxNumberSet.cs",
    "page": "secrets.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "secrets",
-    "database": "postgres"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "secrets",
+    "database": "postgres",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Customers/ICustomerRepository.cs",
@@ -1336,7 +1389,10 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/Events/Completed.cs",
@@ -1345,7 +1401,10 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/Events/Created.cs",
@@ -1363,7 +1422,10 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/Events/LineCancelled.cs",
@@ -1372,21 +1434,23 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/IOrderReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs",
@@ -1401,13 +1465,12 @@
    "path": "src/{Name}.Domain/Aggregates/Orders/IOrderSummaryReader.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/Money.cs",
@@ -1467,27 +1530,25 @@
    "path": "src/{Name}.Domain/Aggregates/Orders/OrderSummaryView.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Orders/OrderView.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/Created.cs",
@@ -1502,20 +1563,19 @@
    "path": "src/{Name}.Domain/Aggregates/Products/Events/Deleted.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/ImageAttached.cs",
    "page": "storage.md",
    "source": "snippets",
    "when": {
-    "example": "true",
-    "addons": "storage"
+    "addons": "storage",
+    "example": "true"
    },
    "kernel": false,
    "unbuilt": true
@@ -1524,23 +1584,21 @@
    "path": "src/{Name}.Domain/Aggregates/Products/Events/Renamed.cs",
    "page": "caching.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "caching"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/Restored.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/StockDecreased.cs",
@@ -1549,7 +1607,10 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/Events/StockIncreased.cs",
@@ -1558,21 +1619,23 @@
    "when": {
     "example": "true"
    },
-   "kernel": false
+   "kernel": false,
+   "when_not": {
+    "addons": "events-project"
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/IProductReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/Aggregates/Products/IProductRepository.cs",
@@ -1605,15 +1668,14 @@
    "path": "src/{Name}.Domain/Aggregates/Products/ProductView.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Domain/DomainModule.cs",
@@ -1659,100 +1721,91 @@
    "path": "src/{Name}.Infrastructure/Caching/CachingModule.cs",
    "page": "caching.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Caching/CachingSettings.cs",
    "page": "caching.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Caching/HybridCacheService.cs",
    "page": "caching.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilityConstants.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilityModule.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/ObservabilitySettings.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/OutboxHealthCheck.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "events.outbox": [
      "after-command",
      "background"
     ],
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/OutboxLagProbe.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "events.outbox": [
      "after-command",
      "background"
     ],
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Diagnostics/RabbitMqHealthCheck.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "events.transport": "rabbitmq",
     "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/InfrastructureModule.cs",
@@ -1867,6 +1920,19 @@
    "when": {
     "events.outbox": "none"
    }
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxConstants.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "events.outbox": [
+     "background",
+     "after-command"
+    ],
+    "database": "mongo"
+   },
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Messaging/Outbox/OutboxMessage.cs",
@@ -2027,6 +2093,7 @@
    "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "database": "postgres",
@@ -2034,9 +2101,7 @@
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Categories/CategoryRepository.cs",
@@ -2071,6 +2136,7 @@
    "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "database": "postgres",
@@ -2078,9 +2144,7 @@
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Customers/CustomerRepository.cs",
@@ -2127,78 +2191,71 @@
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyCleanupService.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyConstants.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyModule.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecord.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyRecordConfiguration.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencySettings.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Idempotency/IdempotencyStore.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/LocalizedTextConversion.cs",
@@ -2270,6 +2327,20 @@
    "kernel": false
   },
   {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Categories/CategoryReader.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false
+  },
+  {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Categories/CategoryRepository.cs",
    "page": "infrastructure-mongo.md",
    "source": "snippets",
@@ -2277,8 +2348,7 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/ConcurrencyConflictException.cs",
@@ -2287,8 +2357,21 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerReader.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Customers/CustomerRepository.cs",
@@ -2298,8 +2381,7 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoClassMaps.cs",
@@ -2308,8 +2390,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoExceptionHandler.cs",
@@ -2318,8 +2399,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexes.cs",
@@ -2328,8 +2408,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoIndexesService.cs",
@@ -2338,8 +2417,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoModule.cs",
@@ -2348,8 +2426,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoRepository.cs",
@@ -2358,8 +2435,16 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoSession.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "database": "mongo"
+   },
+   "kernel": true
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/MongoUnitOfWork.cs",
@@ -2368,8 +2453,21 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderReader.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Orders/OrderRepository.cs",
@@ -2379,8 +2477,21 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
+  },
+  {
+   "path": "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductReader.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Mongo/Products/ProductRepository.cs",
@@ -2390,8 +2501,7 @@
     "example": "true",
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderConfiguration.cs",
@@ -2407,6 +2517,7 @@
    "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "database": "postgres",
@@ -2414,9 +2525,7 @@
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs",
@@ -2457,6 +2566,7 @@
    "path": "src/{Name}.Infrastructure/Persistence/Products/ProductReader.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "database": "postgres",
@@ -2464,9 +2574,7 @@
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Persistence/Products/ProductRepository.cs",
@@ -2491,238 +2599,187 @@
    "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummary.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryConfiguration.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryProjection.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryReader.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/ReadModels/OrderSummaries/OrderSummaryRefresh.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/ReadModels/ReadModelModule.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/RecurringJobRegistry.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJob.cs",
-   "page": "scheduler.md",
-   "source": "snippets",
-   "when": {
-    "addons": "scheduler",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobConfiguration.cs",
-   "page": "scheduler.md",
-   "source": "snippets",
-   "when": {
-    "addons": "scheduler",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobRun.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobRunConfiguration.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "src/{Name}.Infrastructure/Scheduling/ScheduledJobService.cs",
-   "page": "scheduler.md",
-   "source": "snippets",
-   "when": {
-    "addons": "scheduler",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/SchedulerModule.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/SchedulerService.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/SchedulerSettings.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Scheduling/SchedulerTicks.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Secrets/EnvelopeSecretProtector.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Secrets/SecretPropertyExtensions.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Secrets/SecretsConstants.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Secrets/SecretsModule.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Secrets/SecretsSettings.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Infrastructure/Storage/LocalDiskFileStorage.cs",
@@ -2808,14 +2865,13 @@
    "path": "src/{Name}.Shared/Application/BaseQueryHandler.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/CommandContext.cs",
@@ -2861,11 +2917,10 @@
    "path": "src/{Name}.Shared/Application/ICacheService.cs",
    "page": "caching.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "caching"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/ICommand.cs",
@@ -2905,38 +2960,45 @@
    "path": "src/{Name}.Shared/Application/IQuery.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/IQueryDispatcher.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
+   }
+  },
+  {
+   "path": "src/{Name}.Shared/Application/IRecurringJob.cs",
+   "page": "scheduler.md",
+   "source": "snippets",
    "kernel": true,
-   "unbuilt": true
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres"
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/ISecretProtector.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/Languages.cs",
@@ -2954,46 +3016,43 @@
    "path": "src/{Name}.Shared/Application/LoopGuardConstants.cs",
    "page": "loop-guard.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "loop-guard"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/Optional.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/OptionalJsonConverter.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/OptionalJsonConverterFactory.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/PageRequest.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when_any": [
     {
      "queries": [
@@ -3004,14 +3063,13 @@
     {
      "addons": "api-conventions"
     }
-   ],
-   "kernel": true,
-   "unbuilt": true
+   ]
   },
   {
    "path": "src/{Name}.Shared/Application/PagedResult.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when_any": [
     {
      "queries": [
@@ -3022,35 +3080,31 @@
     {
      "addons": "api-conventions"
     }
-   ],
-   "kernel": true,
-   "unbuilt": true
+   ]
   },
   {
    "path": "src/{Name}.Shared/Application/QueryDispatcher.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/QueryHandlerExtensions.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Application/StoredFile.cs",
@@ -3066,11 +3120,10 @@
    "path": "src/{Name}.Shared/Diagnostics/Telemetry.cs",
    "page": "observability.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "observability"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Domain/AggregateRoot.cs",
@@ -3133,11 +3186,10 @@
    "path": "src/{Name}.Shared/Domain/ISoftDeletable.cs",
    "page": "soft-delete.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "soft-delete"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Domain/LocalizedText.cs",
@@ -3152,11 +3204,20 @@
    "path": "src/{Name}.Shared/Domain/MessageNameAttribute.cs",
    "page": "events-project.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "events-project"
+   }
+  },
+  {
+   "path": "src/{Name}.Shared/Domain/TenancyConstants.cs",
+   "page": "tenancy.md",
+   "source": "snippets",
+   "when": {
+    "tenancy.mode": "interface",
+    "tenancy.key": "text"
    },
-   "kernel": true,
-   "unbuilt": true
+   "kernel": true
   },
   {
    "path": "src/{Name}.Shared/Exceptions/BusinessRuleException.cs",
@@ -3192,11 +3253,10 @@
    "path": "src/{Name}.Shared/Exceptions/LoopDetectedException.cs",
    "page": "loop-guard.md",
    "source": "snippets",
+   "kernel": true,
    "when": {
     "addons": "loop-guard"
-   },
-   "kernel": true,
-   "unbuilt": true
+   }
   },
   {
    "path": "src/{Name}.Shared/Exceptions/NotFoundException.cs",
@@ -3265,6 +3325,17 @@
    }
   },
   {
+   "path": "src/{Name}.Worker/appsettings.Development.json",
+   "page": "secrets.md",
+   "source": "data",
+   "kernel": false,
+   "when": {
+    "addons": "secrets",
+    "database": "postgres",
+    "hosts.worker": "separate"
+   }
+  },
+  {
    "path": "src/{Name}.Worker/appsettings.json",
    "page": "outbox.md",
    "source": "data",
@@ -3283,24 +3354,10 @@
    }
   },
   {
-   "path": "test/{Name}.IntegrationTests/Diagnostics/TraceLinkTests.cs",
-   "page": "observability.md",
-   "source": "snippets",
-   "when": {
-    "database": "postgres",
-    "testing": [
-     "integration",
-     "architecture"
-    ],
-    "addons": "observability"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
    "path": "test/{Name}.IntegrationTests/Messaging/OutboxClaimTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
@@ -3309,30 +3366,27 @@
     "events.outbox": [
      "after-command",
      "background"
-    ],
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+    ]
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/Messaging/RabbitMqRoundTripTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ],
     "events.transport": "rabbitmq"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/Persistence/IdempotencyStoreTests.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
@@ -3340,105 +3394,39 @@
     ],
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/Persistence/ProductRepositoryTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ],
-    "example": "true",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "test/{Name}.IntegrationTests/Persistence/SecretColumnTests.cs",
-   "page": "secrets.md",
-   "source": "snippets",
-   "when": {
-    "example": "true",
-    "testing": [
-     "integration",
-     "architecture"
-    ],
-    "addons": "secrets",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "test/{Name}.IntegrationTests/Persistence/SoftDeleteTests.cs",
-   "page": "soft-delete.md",
-   "source": "snippets",
-   "when": {
-    "example": "true",
-    "database": "postgres",
-    "testing": [
-     "integration",
-     "architecture"
-    ],
-    "addons": "soft-delete"
-   },
-   "kernel": false,
-   "unbuilt": true
+    "example": "true"
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/Persistence/UnitOfWorkTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
-    ],
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "test/{Name}.IntegrationTests/Scheduling/SchedulerClaimTests.cs",
-   "page": "scheduler.md",
-   "source": "snippets",
-   "when": {
-    "testing": [
-     "integration",
-     "architecture"
-    ],
-    "addons": "scheduler",
-    "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+    ]
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/Storage/S3FileStorageTests.cs",
    "page": "storage.md",
    "source": "snippets",
    "when": {
-    "testing": [
-     "integration",
-     "architecture"
-    ],
-    "addons": "storage"
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationCollections.cs",
-   "page": "testing-levels.md",
-   "source": "snippets",
-   "when": {
+    "addons": "storage",
     "testing": [
      "integration",
      "architecture"
@@ -3451,78 +3439,156 @@
    "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationConstants.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/TestSupport/IntegrationServices.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ]
+   }
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/MongoCollection.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "database": "mongo"
    },
    "kernel": false,
    "unbuilt": true
   },
   {
-   "path": "test/{Name}.IntegrationTests/TestSupport/PostgresFixture.cs",
+   "path": "test/{Name}.IntegrationTests/TestSupport/MongoFixture.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false,
+   "unbuilt": true
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/OutboxRows.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.outbox": [
+     "after-command",
+     "background"
+    ],
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/PostgresCollection.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ],
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
-   "path": "test/{Name}.IntegrationTests/TestSupport/RabbitMqFixture.cs",
+   "path": "test/{Name}.IntegrationTests/TestSupport/PostgresFixture.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/RabbitMqCollection.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ],
     "events.transport": "rabbitmq"
-   },
+   }
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/RabbitMqDeliveries.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
+   "path": "test/{Name}.IntegrationTests/TestSupport/RabbitMqFixture.cs",
+   "page": "testing-levels.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "testing": [
+     "integration",
+     "architecture"
+    ],
+    "events.transport": "rabbitmq"
+   }
   },
   {
    "path": "test/{Name}.IntegrationTests/{Name}.IntegrationTests.csproj",
    "page": "testing-levels.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "testing": [
      "integration",
      "architecture"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Api/Conventions/ApiConventionsModuleTests.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Api/Filters/ContextCommandFilterTests.cs",
@@ -3534,12 +3600,11 @@
    "path": "test/{Name}.Tests/Api/Idempotency/IdempotencyFilterTests.cs",
    "page": "idempotency.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "idempotent-commands",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Api/Middlewares/CorrelationIdMiddlewareTests.cs",
@@ -3578,12 +3643,11 @@
    "path": "test/{Name}.Tests/Application/Customers/ChangeCustomerCommandHandlerTests.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Customers/CreateCustomerCommandHandlerTests.cs",
@@ -3613,6 +3677,17 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Customers/SetCustomerTaxNumberCommandHandlerTests.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "secrets",
+    "database": "postgres",
+    "example": "true"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Application/Orders/AddOrderLineCommandHandlerTests.cs",
    "page": "worked-slice-tests.md",
    "source": "snippets",
@@ -3625,13 +3700,12 @@
    "path": "test/{Name}.Tests/Application/Orders/CancelEmptyOrdersCommandHandlerTests.cs",
    "page": "scheduler.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "scheduler",
-    "database": "postgres"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "scheduler",
+    "database": "postgres",
+    "example": "true"
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Orders/CancelOrderLineCommandHandlerTests.cs",
@@ -3693,8 +3767,8 @@
    "page": "storage.md",
    "source": "snippets",
    "when": {
-    "example": "true",
-    "addons": "storage"
+    "addons": "storage",
+    "example": "true"
    },
    "kernel": false,
    "unbuilt": true
@@ -3712,6 +3786,7 @@
    "path": "test/{Name}.Tests/Application/Products/CreateProductCommandValidatorTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "handlers",
@@ -3719,9 +3794,7 @@
      "architecture"
     ],
     "example": "true"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Products/DecreaseProductStockCommandHandlerTests.cs",
@@ -3745,26 +3818,24 @@
    "path": "test/{Name}.Tests/Application/Products/DeleteProductCommandHandlerTests.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Products/GetProductQueryHandlerTests.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Products/IncreaseProductStockCommandHandlerTests.cs",
@@ -3785,18 +3856,27 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Application/Products/InvalidateProductCacheEventHandlerTests.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "caching",
+    "example": "true"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Application/Products/ListProductsQueryHandlerTests.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/Products/RenameProductCommandHandlerTests.cs",
@@ -3812,25 +3892,23 @@
    "path": "test/{Name}.Tests/Application/Products/RestoreProductCommandHandlerTests.cs",
    "page": "soft-delete.md",
    "source": "snippets",
-   "when": {
-    "example": "true",
-    "addons": "soft-delete"
-   },
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "soft-delete",
+    "example": "true"
+   }
   },
   {
    "path": "test/{Name}.Tests/Application/QueryRulesTests.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/ContextRulesTests.cs",
@@ -3846,71 +3924,65 @@
    "path": "test/{Name}.Tests/Architecture/ContractsRulesTests.cs",
    "page": "events-project.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "events-project"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/EventContractTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/LayerRulesTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/RegistrationRulesTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/ServiceRulesTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Architecture/event-contracts.json",
    "page": "testing-levels.md",
-   "source": "snippets",
+   "source": "data",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Console/ConsoleArgumentsTests.cs",
-   "page": "testing-kernel.md",
+   "page": "hosts.md",
    "source": "snippets",
    "kernel": false
   },
   {
    "path": "test/{Name}.Tests/Console/ConsoleCommandRunnerTests.cs",
-   "page": "testing-kernel.md",
+   "page": "hosts.md",
    "source": "snippets",
    "kernel": false
   },
@@ -3990,11 +4062,10 @@
    "path": "test/{Name}.Tests/Infrastructure/Caching/HybridCacheServiceTests.cs",
    "page": "caching.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Localization/MessageLocalizerTests.cs",
@@ -4018,7 +4089,10 @@
    "path": "test/{Name}.Tests/Infrastructure/Messaging/EventConsumerModuleTests.cs",
    "page": "event-consumers.md",
    "source": "snippets",
-   "kernel": false
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Messaging/EventPublisherTests.cs",
@@ -4080,14 +4154,24 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Customers/CustomerConfigurationTests.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "secrets",
+    "database": "postgres",
+    "example": "true"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoClassMapsTests.cs",
    "page": "infrastructure-mongo.md",
    "source": "snippets",
    "when": {
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/MongoRepositoryRulesTests.cs",
@@ -4096,8 +4180,21 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
+  },
+  {
+   "path": "test/{Name}.Tests/Infrastructure/Persistence/Mongo/ProductReaderTests.cs",
+   "page": "infrastructure-mongo.md",
+   "source": "snippets",
+   "when": {
+    "example": "true",
+    "queries": [
+     "split",
+     "read-models"
+    ],
+    "database": "mongo"
+   },
+   "kernel": false
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Orders/OrderConfigurationTests.cs",
@@ -4133,6 +4230,7 @@
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductReaderTests.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "database": "postgres",
@@ -4140,9 +4238,7 @@
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Persistence/Products/ProductRepositoryTests.cs",
@@ -4158,35 +4254,32 @@
    "path": "test/{Name}.Tests/Infrastructure/ReadModels/ReadModelModuleTests.cs",
    "page": "read-models.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": "read-models",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Scheduling/SchedulerTicksTests.cs",
    "page": "scheduler.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "scheduler",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs",
    "page": "secrets.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "secrets",
     "database": "postgres"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Infrastructure/Storage/LocalDiskFileStorageTests.cs",
@@ -4220,6 +4313,7 @@
    "path": "test/{Name}.Tests/Scenarios/CreateProductScenarioTests.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "handlers",
@@ -4227,9 +4321,7 @@
      "architecture"
     ],
     "example": "true"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Shared/Application/CommandContextTests.cs",
@@ -4271,21 +4363,19 @@
    "path": "test/{Name}.Tests/Shared/Application/LoopGuardTests.cs",
    "page": "loop-guard.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "loop-guard"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Shared/Application/OptionalTests.cs",
    "page": "api-conventions.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "api-conventions"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/Shared/Domain/AggregateRootTests.cs",
@@ -4321,6 +4411,26 @@
    "kernel": false
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/Api/Idempotency/IdempotencyStoreBuilder.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Api/Idempotency/ResourceExecutingContextBuilder.cs",
+   "page": "idempotency.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "idempotent-commands",
+    "database": "postgres"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/TestSupport/Architecture/ContextReferences.cs",
    "page": "contexts.md",
    "source": "snippets",
@@ -4334,11 +4444,10 @@
    "path": "test/{Name}.Tests/TestSupport/Architecture/EventContracts.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": "architecture"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Domain/Categories/CategoryRepositoryBuilder.cs",
@@ -4407,15 +4516,14 @@
    "path": "test/{Name}.Tests/TestSupport/Domain/Products/ProductReaderBuilder.cs",
    "page": "queries.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "example": "true",
     "queries": [
      "split",
      "read-models"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs",
@@ -4445,6 +4553,16 @@
    }
   },
   {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/PinnedProbe.cs",
+   "page": "events-project.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "events-project",
+    "events.transport": "rabbitmq"
+   }
+  },
+  {
    "path": "test/{Name}.Tests/TestSupport/Infrastructure/Messaging/RecordingLogger.cs",
    "page": "testing.md",
    "source": "snippets",
@@ -4454,7 +4572,20 @@
    "path": "test/{Name}.Tests/TestSupport/Infrastructure/Persistence/AppDbContextBuilder.cs",
    "page": "testing.md",
    "source": "snippets",
-   "kernel": false
+   "kernel": false,
+   "when": {
+    "database": "postgres"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Infrastructure/Secrets/FakeSecretsSettings.cs",
+   "page": "secrets.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "secrets",
+    "database": "postgres"
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Infrastructure/Tenancy/TenantScopeBuilder.cs",
@@ -4469,25 +4600,14 @@
    "path": "test/{Name}.Tests/TestSupport/Scenarios/ScenarioHost.cs",
    "page": "testing-levels.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "testing": [
      "handlers",
      "integration",
      "architecture"
     ]
-   },
-   "kernel": false,
-   "unbuilt": true
-  },
-  {
-   "path": "test/{Name}.Tests/TestSupport/Shared/Application/CacheServiceBuilder.cs",
-   "page": "caching.md",
-   "source": "snippets",
-   "when": {
-    "addons": "caching"
-   },
-   "kernel": false,
-   "unbuilt": true
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Shared/Application/CommandDispatcherBuilder.cs",
@@ -4542,14 +4662,40 @@
    "unbuilt": true
   },
   {
-   "path": "test/{Name}.Tests/TestSupport/Shared/Application/PingPong.cs",
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/OptionalProbe.cs",
+   "page": "api-conventions.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "api-conventions"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/PassThroughCacheService.cs",
+   "page": "caching.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "addons": "caching"
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Application/PingPongLog.cs",
    "page": "loop-guard.md",
    "source": "snippets",
+   "kernel": false,
    "when": {
     "addons": "loop-guard"
-   },
+   }
+  },
+  {
+   "path": "test/{Name}.Tests/TestSupport/Shared/Diagnostics/RecordedActivities.cs",
+   "page": "observability.md",
+   "source": "snippets",
    "kernel": false,
-   "unbuilt": true
+   "when": {
+    "addons": "observability"
+   }
   },
   {
    "path": "test/{Name}.Tests/TestSupport/Shared/Domain/EventHandlerExecutorBuilder.cs",
@@ -4600,8 +4746,7 @@
    "when": {
     "database": "mongo"
    },
-   "kernel": false,
-   "unbuilt": true
+   "kernel": false
   },
   {
    "path": "test/{Name}.Tests/{Name}.Tests.csproj",
@@ -4662,7 +4807,14 @@
     "{Aggregate}ReaderBuilder.cs"
    ],
    "src/{Name}.Infrastructure/Persistence/Mongo/{Plural}": [
-    "{Aggregate}Repository.cs"
+    "{Aggregate}Repository.cs",
+    "{Aggregate}Reader.cs"
+   ],
+   "test/{Name}.IntegrationTests/Persistence": [
+    "{Aggregate}RepositoryTests.cs"
+   ],
+   "src/{Name}.Contracts/{Plural}": [
+    "*.cs"
    ]
   }
  },
@@ -4724,9 +4876,9 @@
     "src/{Name}.Worker/Program.cs",
     "src/{Name}.Worker/appsettings.json",
     "src/{Name}.Domain/Aggregates/Orders/IOrderRepository.cs",
+    "src/{Name}.Domain/Aggregates/Orders/OrderConstants.cs",
     "src/{Name}.Infrastructure/Persistence/Orders/OrderRepository.cs",
-    "src/{Name}.Application/ApplicationModule.cs",
-    "src/{Name}.Infrastructure/Persistence/AppDbContext.cs"
+    "src/{Name}.Application/ApplicationModule.cs"
    ],
    "storage": [
     "src/{Name}.Domain/Aggregates/Products/Product.cs",

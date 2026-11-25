@@ -16,6 +16,8 @@ File `Messaging/EventPublisher.cs`, registered as a singleton by `AddInfrastruct
 
 @@member src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs::EventPublisher::PublishAsync@@
 
+@@member src/Boilerplate.Infrastructure/Messaging/EventPublisher.cs::EventPublisher::ConsumeAsync@@
+
 - Every event consumer is a consumer of its own: a fresh scope and transaction per attempt, in the order of the `AddEventConsumer` lines.
 - A failure, a concurrency conflict included, is retried after a short delay up to the consumer's `Retry(n)`; after the last attempt it is logged as an error and the next consumer still runs.
 - Its log lines carry the event's fields (`LogFields.Of(event)`, `logging.md`): `CorrelationId`, `CausationId`, `TenantId`, `UserId`, `Event`, `EventId`.

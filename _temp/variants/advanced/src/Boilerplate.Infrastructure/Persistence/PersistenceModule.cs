@@ -18,6 +18,10 @@ public static class PersistenceModule
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<ICategoryReader, CategoryReader>();
+        services.AddScoped<ICustomerReader, CustomerReader>();
+        services.AddScoped<IOrderReader, OrderReader>();
+        services.AddScoped<IProductReader, ProductReader>();
 
         return services;
     }

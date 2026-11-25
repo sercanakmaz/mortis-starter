@@ -25,7 +25,7 @@ expect_equal "api-conventions: an unknown method on a known route is a 405 metho
 call -X PATCH -d '{"note":"call before noon"}' "http://localhost:$PORT/customers/$CUSTOMER" >/dev/null
 expect_equal "api-conventions: PATCH with {} changes nothing" "200|Opt Out|call before noon" "$(call -X PATCH -d '{}' "http://localhost:$PORT/customers/$CUSTOMER")|$(sql "select name || '|' || coalesce(note, '<null>') from customers where id = '$CUSTOMER'")"
 expect_equal "api-conventions: PATCH with a null note clears the note and keeps the name" "200|Opt Out|<null>" "$(call -X PATCH -d '{"note":null}' "http://localhost:$PORT/customers/$CUSTOMER")|$(sql "select name || '|' || coalesce(note, '<null>') from customers where id = '$CUSTOMER'")"
-expect_equal "api-conventions: PATCH with a null name is a validation failure on name (a required member cannot be cleared)" "400|yes" "$(call -X PATCH -d '{"name":null}' "http://localhost:$PORT/customers/$CUSTOMER")|$(python3 -I -c "import json,sys; d=json.load(open(sys.argv[1])); print('yes' if any(k.lower() == 'name' for k in (d.get('errors') or {})) else 'no')" "$BODY")"
+expect_equal "api-conventions: PATCH with a null name is a 422 validation failure on name (a required member cannot be cleared)" "422|yes" "$(call -X PATCH -d '{"name":null}' "http://localhost:$PORT/customers/$CUSTOMER")|$(python3 -I -c "import json,sys; d=json.load(open(sys.argv[1])); print('yes' if any(k.lower() == 'name' for k in (d.get('errors') or {})) else 'no')" "$BODY")"
 expect_equal "api-conventions: the OpenAPI document is served" "200" "$(call "http://localhost:$PORT/openapi/v1.json")"
 
 kill "$API_PID" 2>/dev/null

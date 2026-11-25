@@ -42,3 +42,7 @@ What `review.sh` cannot decide. Walk it over the changed files, layer by layer; 
 - **Names** from the closed list of `../mortis-develop/references/canonical-shapes.md`; no `{Aggregate}Service`, `Manager`, `Helper`.
 - **No new package or abstraction without its record in `docs/adr/`** (AGENTS 17, 18).
 - **No comments in code** (AGENTS 15): the reason goes to `docs/`.
+
+## In a Go project
+
+The items above hold with these translations (`../mortis-develop/references/go/recipes.md`): names from the Go `naming.md` (tests `Test<Unit>_<Situation>_<Outcome>` in `<package>_test`, files in snake case), not `canonical-shapes.md`; a consumer is registered with `events.AddConsumer` in `internal/application/module.go` and has no retry; test doubles are the in-memory stores of `internal/testsupport/`, not fakes and builders; a child's exported fields are allowed, but only the aggregate's methods change it; `AGENTS n` means the Go `AGENTS.md` rule with that meaning (its rules are not numbered). `review.sh` reads C# files only, so in Go it reports nothing: the Go house rules are checked by `verify.sh` (`go_rules.py`) and the rest of this list is reviewed by reading.

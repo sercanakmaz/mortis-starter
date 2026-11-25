@@ -1,3 +1,5 @@
+using Boilerplate.Infrastructure.ReadModels.OrderSummaries;
+using Boilerplate.Shared.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Authentication;
 using Boilerplate.Infrastructure.Tenancy;
@@ -37,7 +39,7 @@ using var scope = host.Services.CreateScope();
 
 var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
 var language = Languages.Default;
-var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
+var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly, scope.ServiceProvider.GetRequiredService<IQueryDispatcher>());
 
 try
 {
@@ -55,6 +57,20 @@ try
     language = commandContext.Language;
 
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
+
+    if (consoleArguments.Name == ConsoleConstants.RebuildOrderSummaryCommand)
+    {
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        using (scope.ServiceProvider.GetRequiredService<TenantScope>().Bypass(ConsoleConstants.RebuildOrderSummaryCommand))
+        {
+            await unitOfWork.BeginTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+            await scope.ServiceProvider.GetRequiredService<OrderSummaryProjection>().RebuildAsync();
+            await unitOfWork.CommitTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+        }
+
+        return 0;
+    }
 
     var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, commandContext);
 

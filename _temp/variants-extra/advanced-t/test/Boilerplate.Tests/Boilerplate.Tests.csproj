@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <CollectCoverage>true</CollectCoverage>
+    <Threshold>80</Threshold>
+    <ThresholdType>line</ThresholdType>
+    <ThresholdStat>total</ThresholdStat>
+    <CoverletOutput>bin/coverage/</CoverletOutput>
+    <Include>[Boilerplate.Shared]*,[Boilerplate.Domain]*,[Boilerplate.Application]*</Include>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Boilerplate.Api/Boilerplate.Api.csproj" />
+    <ProjectReference Include="../../src/Boilerplate.Application/Boilerplate.Application.csproj" />
+    <ProjectReference Include="../../src/Boilerplate.Console/Boilerplate.Console.csproj" />
+    <ProjectReference Include="../../src/Boilerplate.Infrastructure/Boilerplate.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.msbuild" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

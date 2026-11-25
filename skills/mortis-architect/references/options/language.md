@@ -16,9 +16,9 @@ Which language the project is written in. Each language has its own reference pa
 
 ### go
 
-**Choose when:** not available yet.
+**Choose when:** the team writes Go and the lean preset's values fit: in-process events, no outbox, no authentication, minimal failures, commands for reads, unit tests, PostgreSQL with uuid keys (decision 54). Go 1.24 or later, `pgx` with hand-written SQL, the standard library router.
 
-**Costs:** the validator refuses it until its references exist.
+**Costs:** every other value is refused for Go until its reference solution is built; a project that will soon need an outbox, a broker, authentication or tenants should start in C#.
 
 **Rules:** R11.
 

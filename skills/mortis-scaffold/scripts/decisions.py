@@ -154,6 +154,9 @@ def check_rules(schema, values, lines):
     language = values.get("language")
     if language in schema["languages"] and not schema["languages"][language]["available"]:
         errors.append(rule_error(schema, "R11", at("language"), "language", f"language '{language}' has no references yet"))
+    for key, supported in schema["languages"].get(language, {}).get("only", {}).items():
+        if key in values and values[key] != supported:
+            errors.append(rule_error(schema, "R11", at(key), key, f"language '{language}' supports only {key} = {supported or 'none'} today"))
     if values.get("database") == "mongo" and values.get("keys.default") in ("int", "long"):
         errors.append(rule_error(schema, "R12", at("keys.default"), "keys.default", "mongo does not support integer keys"))
     if values.get("tenancy.mode") == "interface" and values.get("auth") != "jwt":

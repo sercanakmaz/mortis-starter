@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    { "id": "name", "type": "promptString", "description": "Command name, for example CreateProduct" },
+    { "id": "json", "type": "promptString", "description": "The command's JSON, or @file.json", "default": "{}" },
+    { "id": "user", "type": "promptString", "description": "The user the command runs as", "default": "developer" }
+  ],
+  "configurations": [
+    {
+      "name": "Console: run a command",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/console",
+      "args": ["--user", "${input:user}", "${input:name}", "${input:json}"],
+      "env": { "ConnectionStrings__Default": "Host=localhost;Port=5432;Database=delta;Username=postgres;Password=postgres" }
+    },
+    {
+      "name": "Console: apply the migrations",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/console",
+      "args": ["--user", "developer", "migrate"],
+      "env": { "ConnectionStrings__Default": "Host=localhost;Port=5432;Database=delta;Username=postgres;Password=postgres" }
+    }
+  ]
+}

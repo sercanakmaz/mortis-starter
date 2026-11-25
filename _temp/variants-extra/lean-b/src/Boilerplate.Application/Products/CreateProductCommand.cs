@@ -1,0 +1,45 @@
+using System.Text.Json.Serialization;
+using Boilerplate.Domain.Aggregates.Products;
+using Boilerplate.Shared.Application;
+using FluentValidation;
+
+namespace Boilerplate.Application.Products;
+
+public record CreateProductCommand : ICommand<ProductDto>, IContextCommand, ITransactionalCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public string Sku { get; set; }
+    public string Name { get; set; }
+    public int Stock { get; set; }
+    public int? CategoryId { get; set; }
+}
+
+public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
+{
+    public CreateProductCommandValidator()
+    {
+        RuleFor(command => command.Sku).NotEmpty().MaximumLength(ProductConstants.SkuMaxLength);
+        RuleFor(command => command.Name).NotEmpty().MaximumLength(ProductConstants.NameMaxLength);
+        RuleFor(command => command.Stock).GreaterThanOrEqualTo(0);
+        RuleFor(command => command.CategoryId).GreaterThan(0).When(command => command.CategoryId.HasValue);
+    }
+}
+
+public class CreateProductCommandHandler(
+    IProductRepository productRepository,
+    CommandPipeline<CreateProductCommand> commandPipeline) : BaseCommandHandler<CreateProductCommand, ProductDto>(commandPipeline)
+{
+    protected override async Task<CommandResult<ProductDto>> OnHandle(CreateProductCommand command)
+    {
+        var product = new Product(command.Sku, command.Name, command.Stock, command.Context.User, command.CategoryId);
+
+        await productRepository.CreateAsync(product);
+
+        product.MarkCreated();
+
+        await productRepository.UpdateAsync(product);
+
+        return CommandResult.FromContent(ProductDto.Map(product));
+    }
+}

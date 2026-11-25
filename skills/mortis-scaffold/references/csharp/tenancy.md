@@ -31,9 +31,6 @@ File `src/{Name}.Shared/Domain/IMultiTenant.cs`:
 public interface IMultiTenant
 ```
 
-```csharp
-public interface IMultiTenant
-```
 
 ```csharp
 Guid TenantId { get; }
@@ -67,9 +64,6 @@ File `src/{Name}.Infrastructure/Tenancy/TenantScope.cs`, registered scoped by `A
 public class TenantScope(ILogger<TenantScope> logger)
 ```
 
-```csharp
-public class TenantScope(ILogger<TenantScope> logger)
-```
 
 ```csharp
 public Guid? TenantId { get; private set; }
@@ -138,9 +132,6 @@ File `src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs`, regi
 public class TenantCommandHandlerMiddleware(TenantScope tenantScope) : ICommandHandlerMiddleware
 ```
 
-```csharp
-public class TenantCommandHandlerMiddleware(TenantScope tenantScope) : ICommandHandlerMiddleware
-```
 
 ```csharp
 public void Before(ICommand command)
@@ -170,15 +161,16 @@ public void After(ICommand command, CommandResult commandResult)
 `AppDbContext` (`infrastructure-postgres.md`) takes the `TenantScope`. It filters every `IMultiTenant` type and stamps new rows:
 
 ```csharp
-public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope, ISecretProtector secretProtector) : DbContext(options)
 ```
 
-```csharp
-public class AppDbContext(DbContextOptions<AppDbContext> options, TenantScope tenantScope) : DbContext(options)
-```
 
 ```csharp
 private static readonly MethodInfo FilterByTenantMethod = typeof(AppDbContext).GetMethod(nameof(FilterByTenant), BindingFlags.NonPublic | BindingFlags.Instance);
+```
+
+```csharp
+private static readonly MethodInfo FilterDeletedMethod = typeof(AppDbContext).GetMethod(nameof(FilterDeleted), BindingFlags.NonPublic | BindingFlags.Static);
 ```
 
 ```csharp
@@ -193,10 +185,16 @@ private Guid CurrentTenantId => tenantScope.Required(PersistenceConstants.Tenant
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    modelBuilder.ProtectSecrets(secretProtector);
 
     foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(entityType => typeof(IMultiTenant).IsAssignableFrom(entityType.ClrType)).ToList())
     {
         FilterByTenantMethod.MakeGenericMethod(entityType.ClrType).Invoke(this, [modelBuilder]);
+    }
+
+    foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(entityType => typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType)).ToList())
+    {
+        FilterDeletedMethod.MakeGenericMethod(entityType.ClrType).Invoke(null, [modelBuilder]);
     }
 }
 ```
@@ -226,7 +224,15 @@ public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, Cance
 private void FilterByTenant<TEntity>(ModelBuilder modelBuilder) where TEntity : class, IMultiTenant
 {
     modelBuilder.Entity<TEntity>().Property(entity => entity.TenantId).IsRequired();
-    modelBuilder.Entity<TEntity>().HasQueryFilter(entity => TenantBypassed || entity.TenantId == CurrentTenantId);
+    modelBuilder.Entity<TEntity>().HasQueryFilter(PersistenceConstants.TenantFilter, entity => TenantBypassed || entity.TenantId == CurrentTenantId);
+}
+```
+
+```csharp
+private static void FilterDeleted<TEntity>(ModelBuilder modelBuilder) where TEntity : class, ISoftDeletable
+{
+    modelBuilder.Entity<TEntity>().HasQueryFilter(PersistenceConstants.SoftDeleteFilter, entity => !entity.IsDeleted);
+    modelBuilder.Entity<TEntity>().HasIndex(entity => entity.IsDeleted);
 }
 ```
 
@@ -307,6 +313,8 @@ private async Task ConsumeAsync(CancellationToken stoppingToken)
         }
 
         var @event = envelope.ToEvent(eventType);
+        ActivityContext.TryParse(envelope.Headers.GetValueOrDefault(RabbitMqConstants.TraceParentHeader)?.ToString(), null, out var parent);
+        using var activity = Telemetry.Source.StartActivity($"consume {eventType.Name}", ActivityKind.Consumer, parent);
         using var logScope = logger.BeginScope(LogFields.Of(@event));
 
         for (var attempt = 1; ; attempt++)
@@ -320,10 +328,12 @@ private async Task ConsumeAsync(CancellationToken stoppingToken)
             }
             catch (Exception exception) when (attempt <= eventConsumerEndpoint.RetryCount)
             {
+                Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                 logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, attempt);
             }
             catch (Exception exception)
             {
+                Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                 logger.LogError(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}; moved to {ErrorQueue}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, _errorQueue);
 ```
 
@@ -565,7 +575,66 @@ public async Task SaveChangesAsync_DeletingARowOfAnotherTenant_Should_ThrowForbi
 
 ## tenancy.key = text
 
-The same code with `string` in place of `Guid`: `IMultiTenant.TenantId` is a `string` with a maximum length, `TenantScope` keeps the claim as it is (no parsing), and `Required` returns `string`. The tenant id is whatever the identity provider puts in the claim, so validate its format there.
+Built and verified on the advanced preset with `tenancy.key` = `text` (`verify.sh` all green, tenants `acme-…` and `globex-…`). The same code with `string` in place of `Guid`:
+
+- `IMultiTenant.TenantId` is a `string`; every tenant-owned class declares it `= string.Empty`, because EF cannot track an added row whose alternate key (`TenantId`, `Sku`) is null, and `SaveChangesAsync` stamps the tenant only when it is empty (`string.IsNullOrEmpty(entry.Entity.TenantId)` in place of `== Guid.Empty`):
+
+```csharp
+public string TenantId { get; private set; } = string.Empty;
+```
+
+- File `src/{Name}.Shared/Domain/TenancyConstants.cs`, the column's length:
+
+```csharp
+public static class TenancyConstants
+```
+
+```csharp
+public const int TenantIdMaxLength = 64;
+```
+
+- `AppDbContext.FilterByTenant` gives the column its length, and `CurrentTenantId` is a `string`:
+
+```csharp
+private void FilterByTenant<TEntity>(ModelBuilder modelBuilder) where TEntity : class, IMultiTenant
+{
+    modelBuilder.Entity<TEntity>().Property(entity => entity.TenantId).IsRequired().HasMaxLength(TenancyConstants.TenantIdMaxLength);
+    modelBuilder.Entity<TEntity>().HasQueryFilter(PersistenceConstants.TenantFilter, entity => TenantBypassed || entity.TenantId == CurrentTenantId);
+}
+```
+
+- `TenantScope` keeps the claim as it is, refuses a value with white space or longer than the column, and `Required` returns `string` (`null` when bypassed without a tenant):
+
+```csharp
+public void Enter(string tenantId)
+{
+    if (string.IsNullOrEmpty(tenantId)) return;
+
+    if (tenantId.Length > TenancyConstants.TenantIdMaxLength || tenantId.Any(char.IsWhiteSpace))
+    {
+        throw new ForbiddenException("A tenant that is not a valid id");
+    }
+
+    if (TenantId is not null && TenantId != tenantId)
+    {
+        throw new ForbiddenException("Switching tenant inside one scope");
+    }
+
+    TenantId = tenantId;
+}
+```
+
+```csharp
+public string Required(string type)
+{
+    if (Bypassed) return TenantId;
+
+    return TenantId ?? throw new TenantRequiredException(type);
+}
+```
+
+- Tests use readable ids (`"acme"`, `"globex"`): `TenantScopeBuilder.WithTenant(string)`, `IntegrationServices.TenantA = "acme"`; the "not an id" test sends `"acme corp"` and a value one character too long; the bypass test asserts `Required` is `null`.
+- The rest (the middleware, the hosts, the consumers, the outbox's `tenant_id`, the RabbitMQ header) already carries the tenant as a string and does not change. The identity provider decides the format beyond this; validate it there.
 
 ## Decision record
 
@@ -580,6 +649,7 @@ Every file of this page, with its namespace and the `using` lines it needs (`Imp
 | `src/{Name}.Infrastructure/Tenancy/TenantCommandHandlerMiddleware.cs` | `{Name}.Infrastructure.Tenancy` | {Name}.Shared.Application |
 | `src/{Name}.Infrastructure/Tenancy/TenantScope.cs` | `{Name}.Infrastructure.Tenancy` | Microsoft.Extensions.Logging, {Name}.Shared.Exceptions |
 | `src/{Name}.Shared/Domain/IMultiTenant.cs` | `{Name}.Shared.Domain` | none |
+| `src/{Name}.Shared/Domain/TenancyConstants.cs` | `{Name}.Shared.Domain` | none |
 | `src/{Name}.Shared/Exceptions/TenantRequiredException.cs` | `{Name}.Shared.Exceptions` | System.Net |
 | `test/{Name}.Tests/Infrastructure/Persistence/AppDbContextTests.cs` | `{Name}.Tests.Infrastructure.Persistence` | Microsoft.EntityFrameworkCore, {Name}.Domain.Aggregates.Categories, {Name}.Domain.Aggregates.Customers, {Name}.Domain.Aggregates.Orders, {Name}.Domain.Aggregates.Products, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Persistence, {Name}.Tests.TestSupport.Infrastructure.Tenancy |
 | `test/{Name}.Tests/Infrastructure/Tenancy/TenantCommandHandlerMiddlewareTests.cs` | `{Name}.Tests.Infrastructure.Tenancy` | {Name}.Infrastructure.Tenancy, {Name}.Shared.Application, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Infrastructure.Tenancy, {Name}.Tests.TestSupport.Shared.Application |

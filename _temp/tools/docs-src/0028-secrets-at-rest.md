@@ -28,4 +28,4 @@ The keys, their rotation, which members are secret.
 
 ## How it is enforced
 
-`EnvelopeSecretProtectorTests`, `SecretColumnTests`, and `secrets.sh` (the column never holds the plaintext; the API reads it back).
+`EnvelopeSecretProtectorTests`, `CustomerConfigurationTests`, and `secrets.sh` (the column never holds the plaintext; the API reads it back).

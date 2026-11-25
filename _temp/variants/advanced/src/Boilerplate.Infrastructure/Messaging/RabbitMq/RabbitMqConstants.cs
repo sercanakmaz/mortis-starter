@@ -11,4 +11,5 @@ public static class RabbitMqConstants
     public const string ClassicQueueType = "classic";
     public const ushort PrefetchCount = 16;
     public const int ReconnectSeconds = 5;
+    public const string TraceParentHeader = "traceparent";
 }

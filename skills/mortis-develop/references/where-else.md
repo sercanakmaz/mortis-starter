@@ -8,7 +8,7 @@ Per option, the files a change usually forgets. A change that touches what an op
 | always | a command | its validator, its `ApplicationModule` line, its handler test, the host that sends it |
 | always | an event's members | every handler and consumer of it, their tests |
 | `[events.outbox=after-command\|background]` | an event with a consumer | nothing in the outbox itself; the consumer must be idempotent (at-least-once) |
-| `[events.transport=rabbitmq]` | a queue event's name, namespace or members | the wire name (`docs/specs/messaging-wire-format.md` of the project); every other service consuming it |
+| `[events.transport=rabbitmq]` | a queue event's name, namespace or members | the wire name (`docs/specs/messaging-wire-format.md`, when the project has one); every other service consuming it |
 | `[tenancy.mode=interface]` | a new aggregate or table | `IMultiTenant`, `tenant_id` in every unique index, a cross-tenant test |
 | `[tenancy.mode=interface]` | raw SQL or a bulk update | the tenant filter by hand |
 | `[languages.mode!=none]` | a new error code | every `messages.{language}.json` |

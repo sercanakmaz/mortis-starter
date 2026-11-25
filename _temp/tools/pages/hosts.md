@@ -12,6 +12,8 @@ Top-level statements, the whole file:
 
 @@data src/Boilerplate.Api/Program.cs csharp@@
 
+With `naming.json` = `snake_case` the `AddControllers(...)` call gains `.AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower)` on the next line, and the file starts with `using System.Text.Json;` (`naming.md`).
+
 The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
 
 ### appsettings.json
@@ -125,7 +127,7 @@ File `ConsoleCommandRunner.cs`, namespace `{Name}.Console`:
 
 @@members src/Boilerplate.Console/ConsoleArguments.cs::ConsoleArguments@@
 
-Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs`:
+Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs` (its namespace and usings are in `testing-kernel.md`'s table, with every other test file):
 
 @@members test/Boilerplate.Tests/Console/ConsoleArgumentsTests.cs::ConsoleArgumentsTests@@
 
@@ -141,7 +143,7 @@ File `ConsoleConstants.cs`:
 
 @@data .vscode/tasks.json json@@
 
-`.vscode/launch.json`. The first configuration asks for the name and the JSON; the second belongs to the example and is left out when `example` is `false`.
+`.vscode/launch.json`. The first configuration asks for the user, the name and the JSON (the Console refuses a run without `--user`); the second belongs to the example and is left out when `example` is `false`.
 
 @@data .vscode/launch.json json@@
 

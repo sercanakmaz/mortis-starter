@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using Boilerplate.Infrastructure.Messaging;

@@ -46,7 +46,8 @@ public class MessageEnvelope
                 ["Mortis-Tenant-Id"] = @event.TenantId,
                 ["Mortis-User-Id"] = @event.UserId,
                 ["Mortis-User-Email"] = @event.UserEmail,
-                ["Mortis-Language"] = @event.Language
+                ["Mortis-Language"] = @event.Language,
+                [RabbitMqConstants.TraceParentHeader] = Activity.Current?.Id
             },
             Host = new Dictionary<string, object>
             {

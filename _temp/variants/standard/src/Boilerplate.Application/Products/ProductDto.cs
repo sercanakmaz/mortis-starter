@@ -18,4 +18,13 @@ public record ProductDto
         Stock = product.Stock,
         CategoryId = product.CategoryId
     };
+
+    public static ProductDto From(ProductView view) => new()
+    {
+        Id = view.Id,
+        Sku = view.Sku,
+        Name = view.Name,
+        Stock = view.Stock,
+        CategoryId = view.CategoryId
+    };
 }

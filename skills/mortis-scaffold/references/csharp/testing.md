@@ -451,6 +451,8 @@ public AppDbContext Build()
 }
 ```
 
+With `naming.database` = `as-code` the `.UseSnakeCaseNamingConvention()` line is left out here too. With `database` = `mongo` this builder is not written (`infrastructure-mongo.md`).
+
 ```csharp
 public class RecordingLogger<TCategory> : ILogger<TCategory>
 ```

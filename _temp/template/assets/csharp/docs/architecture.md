@@ -83,13 +83,13 @@ commit, after COMMIT    events marked IQueueEvent go to every IEventDispatcher:
 - An async handler that writes to a contended row needs a concurrency token on that aggregate (`Product` uses PostgreSQL's `xmin`); without one, two handlers read the same stock and one update is lost.
 - An event is raised **before** the repository write, inside the aggregate. The repository drains events at the start of `CreateAsync`, `UpdateAsync` and `DeleteAsync`; an event raised after that call would stay on the aggregate and never be handled. `RaiseEvent` is `protected` so that a service cannot do this by accident.
 - A reaction in another aggregate is a handler in **that** aggregate's folder which calls its own service. It never calls the service of the aggregate that raised the event.
-- The exchange name of a queue event is `Namespace:Type`, for example `Boilerplate.Domain.Aggregates.Orders.Events:Completed`. This is why event records keep bare names in their aggregate's own `Events` namespace.
+- The exchange name of a queue event is `Namespace:Type`, for example `Boilerplate.Domain.Aggregates.Orders.Events:Completed`. This is why event records live in their aggregate's own `Events` namespace; with `naming.events` = `prefixed` the type, and so the exchange, is `OrderCompleted`.
 
 ## 4. Persistence
 
 - **Writes flush immediately.** Each repository write ends with `SaveChangesAsync`, so a later query in the same command sees it, and a database error surfaces at the line that caused it.
 - **Tracking.** `FindByIdAsync` is a no-tracking read. `FindByIdTrackingAsync` is the read you change and save. `UpdateAsync` refuses an aggregate that is not tracked.
-- **Ids never come from the database.** `AggregateConfiguration` and `ChildEntityConfiguration` set `ValueGeneratedNever()`. With database-generated keys, EF treats a new child that already has an id as an existing row and sends an `UPDATE` that matches nothing.
+- **Ids never come from the database**, except the key of an aggregate that chose `int` or `long` (`IdentityAggregateConfiguration`, ADR 0008). `AggregateConfiguration` and `ChildEntityConfiguration` set `ValueGeneratedNever()`. With database-generated keys, EF treats a new child that already has an id as an existing row and sends an `UPDATE` that matches nothing.
 - **Child entities** are mapped with `HasMany(...).WithOne()` plus `Navigation(...).AutoInclude()`, so an aggregate always loads whole. They have no `DbSet` of their own.
 - **Value objects** are mapped with `ComplexProperty(...)` and `IsRequired()`.
 - **References to other aggregates** are foreign keys with an explicit delete behaviour. PostgreSQL errors are translated by `DatabaseExceptionHandler`: unique violation → `DuplicateException` (409), foreign key violation → `ReferenceViolationException` (400).
@@ -102,8 +102,8 @@ commit, after COMMIT    events marked IQueueEvent go to every IEventDispatcher:
 
 ```bash
 dotnet run --project src/Boilerplate.Console --                                        # lists every name
-dotnet run --project src/Boilerplate.Console -- CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'
-dotnet run --project src/Boilerplate.Console -- CreateProduct @product.json            # JSON from a file
+dotnet run --project src/Boilerplate.Console -- --user developer CreateProduct '{"sku":"BOLT","name":"Bolt","stock":10}'
+dotnet run --project src/Boilerplate.Console -- --user developer CreateProduct @product.json          # JSON from a file
 ```
 
 - A command is run by `CommandScenario<TCommand, TContent>`: it reads the second argument as JSON (names are case-insensitive, an empty argument means the command's defaults), sends the command through the dispatcher and prints the content as JSON. The name is the command's type name without `Command`.

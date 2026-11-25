@@ -1,6 +1,6 @@
 # Project documents: decision records, C#
 
-Folder `docs/adr/`. Written exactly as shown, replacing `{Name}`; every date is the day the project is generated. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48); `0023` only when `testing` is not `unit` (not built yet, decision 49); `0024` to `0031` only when `addons` contains, in order, `soft-delete`, `caching`, `scheduler` (with PostgreSQL), `storage`, `secrets` (with PostgreSQL), `loop-guard`, `contexts`, `events-project` (not built yet, decision 50). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
+Folder `docs/adr/`. Written exactly as shown, replacing every placeholder: `{Name}` with the `name` row, `<the date the project was generated>` with the day the project is generated, `<exceptions value from MORTIS.md>` with the `exceptions` row, `{testing}` with the `testing` row. `0009` is written only when `addons` contains `correlation`; `0011` only when `events.outbox` is not `none`, with `{outbox}` replaced by its value; `0013` only when `events.transport` is `rabbitmq`; `0014` only when `auth` is `jwt`; `0015` only when `tenancy.mode` is `interface`; `0016` only when `languages.mode` is not `none`; `0017` only when `database` is `mongo` (not built yet, decision 45); `0018` only when `queries` is not `commands` (not built yet, decision 46); `0019` only when `auth` is `jwt` (not built yet, decision 47); `0020` only when `addons` contains `api-conventions`, `0021` only when it contains `idempotent-commands` and `database` is `postgres`, `0022` only when it contains `observability` (not built yet, decision 48); `0023` only when `testing` is not `unit` (not built yet, decision 49); `0024` to `0031` only when `addons` contains, in order, `soft-delete`, `caching`, `scheduler` (with PostgreSQL), `storage`, `secrets` (with PostgreSQL), `loop-guard`, `contexts`, `events-project` (not built yet, decision 50). With an outbox, `docs/architecture.md` §3 says "written to `outbox_messages` before COMMIT; `OutboxWorker` runs the event consumers" in place of the `EventPublisher` line, and §8 drops the "no outbox" gap. A value in `MORTIS.md` that differs from its preset gets a further record from `mortis-architect`, numbered after these.
 
 ## 0000-template.md
 
@@ -157,7 +157,7 @@ Who the actor is (a person, the console, the system). The domain must not look i
 
 ## Decision
 
-A reaction is in the Application layer, next to the commands, and its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync event handler** (`<Action>When<Aggregate><Event>EventHandler : BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. It is registered in `ApplicationModule`. An **event consumer** (`<Action>When<Aggregate><Event>EventConsumer : BaseEventConsumer<T>`) runs after the commit in its own scope and transaction. It is registered with one line in the host that runs it, `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(3))`, and `Retry(n)` is its number of retries in every publishing model. Nothing is found by scanning.
+A reaction is in the Application layer, next to the commands, and its body is one awaited `commandDispatcher.Send(new ...Command {...})`. A **sync event handler** (`<Action>When<Aggregate><Event>EventHandler : BaseSyncEventHandler<T>`) runs inside the transaction after `SaveChanges` and before the commit; if it throws, the command that raised the event is rolled back. It is registered in `ApplicationModule`. An **event consumer** (`<Action>When<Aggregate><Event>EventConsumer : BaseEventConsumer<T>`) runs after the commit in its own scope and transaction. It is registered with one line in the host that runs it, `AddEventConsumer<TConsumer>(endpoint => endpoint.Retry(10))`, and `Retry(n)` is its number of retries in every publishing model. Nothing is found by scanning.
 
 ## What varies
 
@@ -193,7 +193,7 @@ The conformance checks `stock` (sync and async on one event) and `blocked-custom
 
 ## Decision
 
-`dotnet run --project src/{Name}.Console -- <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The run names its user with `--user <id>` (required) and `--email`, and its tenant and language with `--tenant` and `--language` where those options are on; the Console takes no token. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
+`dotnet run --project src/{Name}.Console -- --user <id> <Command> '<json>'` runs the command of that name (case-insensitive; a command's name is its type name without `Command`), found in the Application assembly. The JSON argument may be `@file`. The result is printed on stdout as JSON; the log lines go to stderr. The run names its user with `--user <id>` (required) and `--email`, and its tenant and language with `--tenant` and `--language` where those options are on; the Console takes no token. There are no scenarios: a flow is several runs. Migrations are applied with `dotnet ef database update`. Exit code 1 means no command name, 2 a failure printed as one line `{code, message, errors}` on stderr.
 
 ## What varies
 
@@ -491,7 +491,7 @@ Nothing per project: every environment logs the same way.
 
 `OutboxWorker` publishes each outbox row to RabbitMQ with `RabbitMQ.Client` and deletes the row only after the broker confirmed it. The message is a MassTransit 8 envelope (`application/vnd.masstransit+json`, camelCase, `messageType` URNs of the type, its base types and its own interfaces) on a durable fanout exchange named `<Namespace>:<TypeName>`.
 
-Every event consumer is a consumer of its own. The Worker declares, in code, one receive endpoint per consumer, one line each (`AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))`): a classic durable queue named after the consumer (`decrease-stock-when-order-line-added`, or `Named(queue)`), an exchange of the same name bound to the consumer's event exchange. Each message runs the consumer in its own transaction; one consumer's failure never touches another's queue. The broker delivers at least once and the bus does not deduplicate: every event consumer must be safe to run twice. After the retries, the message goes to `<queue>_error` with the `MT-Fault-*` headers. A message no consumer wants is acknowledged and logged.
+Every event consumer is a consumer of its own. The Worker declares, in code, one receive endpoint per consumer, one line each (`AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))`): a classic durable queue named after the consumer (`decrease-stock-when-order-line-added`, or `Named(queue)`), an exchange of the same name bound to the consumer's event exchange. Each message runs the consumer in its own transaction; one consumer's failure never touches another's queue. The broker delivers at least once and the bus does not deduplicate: every event consumer must be safe to run twice. After the retries, the message goes to `<queue>_error` with the `MT-Fault-*` headers. A message no consumer wants is acknowledged and logged.
 
 Envelopes written by MassTransit with System.Text.Json or Newtonsoft are read; ours are written in one format. No MassTransit package is referenced by the project.
 
@@ -847,7 +847,7 @@ Where telemetry is sent, and the outbox lag threshold.
 
 ## How it is enforced
 
-`CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, `TraceLinkTests` (one trace id from request to consumer), and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).
+`CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).
 ~~~~
 
 ## 0023-testing-levels.md
@@ -897,7 +897,7 @@ The level's own tests, and `testing.sh` (no integration project at `unit`; skipp
 
 ## Decision
 
-A soft-deletable aggregate implements `ISoftDeletable` and raises `Deleted` and `Restored`. A named EF Core query filter hides deleted rows; ignoring it by name keeps the tenant filter. Natural unique keys are unique indexes filtered on `is_deleted = false`, so a deleted key can be reused; a restore that collides answers 409 `duplicate`.
+A soft-deletable aggregate implements `ISoftDeletable` and raises `Deleted` and `Restored`. A named EF Core query filter hides deleted rows; ignoring it by name keeps the tenant filter. A natural key no other table references becomes a unique index filtered on `is_deleted = false`, so a deleted key can be reused and a restore that collides answers 409 `duplicate`; a natural key another table references (the example's SKU) stays an alternate key, because a foreign key needs a real unique constraint, and stays taken.
 
 ## What varies
 
@@ -919,7 +919,7 @@ Which aggregates are soft-deletable.
 
 ## How it is enforced
 
-The domain and handler tests, `ProductConfigurationTests` (the filter and the filtered index), and `soft-delete.sh` (a deleted product is invisible, its SKU can be reused, a restore brings it back).
+The domain and handler tests, `ProductConfigurationTests` (the named filters), and `soft-delete.sh` (a deleted product is invisible, its referenced SKU stays taken, a restore brings it back).
 ~~~~
 
 ## 0025-caching-reads.md
@@ -970,7 +970,7 @@ What is cached and for how long (`Caching:Seconds`).
 
 ## Decision
 
-A recurring job implements `IRecurringJob` (a name, a default cron, `RunAsync` that sends commands). `SchedulerService` claims each due tick with an insert into `scheduled_job_runs` keyed by job and tick; only the winner runs it. Each job runs as the service user its settings name; there is no system user. One-shot jobs live in `scheduled_jobs`, claimed with `for update skip locked`.
+A recurring job implements `IRecurringJob` (a name, a default cron, `RunAsync` that sends commands). `SchedulerService` claims each due tick with an insert into `scheduled_job_runs` keyed by job and tick; only the winner runs it. Each job runs as the service user its settings name; there is no system user.
 
 ## What varies
 
@@ -993,7 +993,7 @@ The jobs, their schedules and their users.
 
 ## How it is enforced
 
-`SchedulerTicks` tests, `SchedulerClaimTests`, and `scheduler.sh` (with two workers a job fires once per tick).
+`SchedulerTicks` tests and `scheduler.sh` (with two workers a job fires once per tick).
 ~~~~
 
 ## 0027-file-storage-port.md
@@ -1065,7 +1065,7 @@ The keys, their rotation, which members are secret.
 
 ## How it is enforced
 
-`EnvelopeSecretProtectorTests`, `SecretColumnTests`, and `secrets.sh` (the column never holds the plaintext; the API reads it back).
+`EnvelopeSecretProtectorTests`, `CustomerConfigurationTests`, and `secrets.sh` (the column never holds the plaintext; the API reads it back).
 ~~~~
 
 ## 0029-loop-guard.md

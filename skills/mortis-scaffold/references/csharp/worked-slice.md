@@ -893,6 +893,18 @@ public static OrderLineDto Map(OrderLine orderLine) => new()
 
 The handlers of `CreateOrderCommand`, `CompleteOrderCommand`, `GetOrderCommand` and `CancelOrderWhenAllLinesCancelledCommand` are written out in `application.md`.
 
+The properties are plain `{ get; set; }` members and `Id` is **not** `[JsonIgnore]`: the Console sends the order's id in the JSON (`{"id":"...","line":{...}}`), and the controller overwrites it from the route (`command with { Id = id }`). Only `Context` is `[JsonIgnore]`. For example:
+
+```csharp
+public record AddOrderLineCommand : ICommand<OrderDto>, IContextCommand, ITransactionalCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    public Guid Id { get; set; }
+    public OrderLineModel Line { get; set; }
+}
+```
+
 ```csharp
 public CreateOrderCommandValidator()
 {
@@ -1196,6 +1208,94 @@ public async Task<IActionResult> Complete([FromRoute] Guid id)
     return Ok(commandResult.Content);
 }
 ```
+
+## Keys the database assigns, prefixed events and as-code names
+
+The snippets above are the defaults: `Guid` keys for Products, Customers and Orders, bare event names, snake_case tables. A `MORTIS.md` that chooses otherwise changes every place below; the code is from a lean project with `keys.default` = `int`, `naming.database` = `as-code`, `naming.json` = `snake_case` and `naming.events` = `prefixed` that passes `verify.sh`.
+
+**`keys.default` = `int` or `long`** makes Products, Customers and Orders database-keyed like Categories (`domain.md`); order lines keep `Guid` ids (decision 55):
+
+- The aggregate's constructor takes no id and raises nothing; `MarkCreated()` raises `Created` with the real id. References to it become `int` (`Order.CustomerId`, `OrderLine.OrderId`, the DTOs' `Id` and `CustomerId`, the views); the line's own `Id` and `LineId` stay `Guid`.
+- The create command has no `Id` and its validator no `Id` rule; the handler creates, marks, then changes, then updates:
+
+```csharp
+protected override async Task<CommandResult<OrderDto>> OnHandle(CreateOrderCommand command)
+{
+    var order = new Order(command.OrderNumber, command.CustomerId, command.Context.User);
+
+    await orderRepository.CreateAsync(order);
+
+    order.MarkCreated();
+
+    foreach (var line in command.Lines)
+    {
+        order.AddLine(line.Sku, new Money(line.Price, line.Currency), line.Quantity);
+    }
+
+    await orderRepository.UpdateAsync(order);
+
+    return CommandResult.FromContent(OrderDto.Map(order));
+}
+```
+
+- Commands that name the aggregate take `int Id`; a sync event handler reads the id back with `int.Parse(@event.CustomerId)`; routes use `{id:int}` and `[FromRoute] int id`, `{lineId:guid}` stays.
+- Infrastructure: `IdentityAggregateConfiguration<Order, int>()` in place of `AggregateConfiguration<Order, Guid>()`, `EfRepository<Order, int>`, `IRepository<Order, int>`. `ChildEntityConfiguration<OrderLine, Guid>()` is unchanged.
+- The fake sets the id and marks it created, so that a test starts from a created aggregate (`FakeCategory` keeps its own `WithId`, because its tests are about the creation itself):
+
+```csharp
+public class FakeOrder : Order
+```
+
+```csharp
+private static int _nextId;
+
+private FakeOrder(int id, int customerId) : base("ORD-DEFAULT", customerId, FakeAuditUser.Create())
+{
+    Id = id;
+    MarkCreated();
+}
+```
+
+```csharp
+public static FakeOrder Create(int id) => new(id, Interlocked.Increment(ref _nextId));
+public static FakeOrder Create() => Create(Interlocked.Increment(ref _nextId));
+```
+
+- The repository builder's `CreateAsync` assigns an id, as the database would, so that the handler's `MarkCreated()` does not throw; its finders match `It.IsAny<int>()`:
+
+```csharp
+public OrderRepositoryBuilder WithCreateAsync(Action<Order> callback = null)
+{
+    _mock.Setup(orderRepository => orderRepository.CreateAsync(It.IsAny<Order>()))
+        .Callback<Order>(order =>
+        {
+            typeof(Entity<int>).GetProperty(nameof(Entity<int>.Id)).SetValue(order, 1);
+            callback?.Invoke(order);
+        })
+        .Returns(Task.CompletedTask);
+    return this;
+}
+```
+
+- Domain tests: "the constructor raises nothing", "`MarkCreated` with the id raises `Created` carrying it", "`MarkCreated` before an id throws", as in `CategoryTests`. Handler tests assert `CreateAsync`, `UpdateAsync` and the commit in that order, and the id the builder assigned. The order configuration test asserts `ValueGenerated.OnAdd` for the order id and `Never` for the line id.
+
+**`naming.events` = `prefixed`** renames every event record to `{Aggregate}{Event}` (`OrderLineAdded`, file `Events/OrderLineAdded.cs`) in every snippet of this page, `worked-slice-tests.md`, `application.md` and `event-consumers.md`; the handlers' and consumers' names do not change (`DecreaseStockWhenOrderLineAddedEventConsumer` handles `OrderLineAdded`). Status strings such as `"Completed"` are not event names and stay.
+
+**`naming.database` = `as-code`** names the tables and columns as the code does (`naming.md`): `ToTable("Orders")`, `ToTable("OrderLines")`, `HasColumnName("PriceAmount")`, `HasCheckConstraint("CK_Products_StockNotNegative", "\"Stock\" >= 0")`, no `UseSnakeCaseNamingConvention()` (also not in the test project's `AppDbContextBuilder`). The configuration tests assert those names:
+
+```csharp
+[Fact]
+public void Model_Should_MapOrdersAndTheirLinesToTablesNamedAsInCode()
+{
+    var model = AppDbContextBuilder.Create().Build().Model;
+
+    Assert.Equal("Orders", model.FindEntityType(typeof(Order)).GetTableName());
+    Assert.Equal("OrderLines", model.FindEntityType(typeof(OrderLine)).GetTableName());
+    Assert.Equal("OrderNumber", model.FindEntityType(typeof(Order)).FindProperty(nameof(Order.OrderNumber)).GetColumnName());
+}
+```
+
+**`naming.json` = `snake_case`** changes the Api's `Program.cs` only (`naming.md`, `hosts.md`).
 
 ## Trying it from the Console
 

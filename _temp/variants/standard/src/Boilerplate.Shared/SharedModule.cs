@@ -12,6 +12,7 @@ public static class SharedModule
         services.AddScoped<EventHandlerExecutor>();
         services.AddScoped(typeof(CommandPipeline<>));
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();
+        services.AddScoped<IQueryDispatcher, QueryDispatcher>();
 
         return services;
     }

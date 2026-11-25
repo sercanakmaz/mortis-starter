@@ -1,9 +1,17 @@
+using System.Reflection;
+using Boilerplate.Shared.Domain;
+
 namespace Boilerplate.Infrastructure.Messaging.RabbitMq;
 
 public static class MessageNames
 {
     public static string Exchange(Type messageType)
     {
+        if (messageType.GetCustomAttribute<MessageNameAttribute>() is { } messageName)
+        {
+            return messageName.Name;
+        }
+
         var name = messageType.IsNested ? $"{messageType.DeclaringType!.Name}+{messageType.Name}" : messageType.Name;
 
         return $"{messageType.Namespace}:{name}";

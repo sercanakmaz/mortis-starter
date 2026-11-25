@@ -2,7 +2,7 @@
 
 Applies when `addons` contains `secrets` and `database` is `postgres` (with MongoDB not offered yet: R14, a note). Projects `{Name}.Shared` (folder `Application/`), `{Name}.Infrastructure` (folder `Secrets/`, and the configurations that use it) and, with the example, the customer slice. Layer 1: `options/addons.md`, `architecture/advanced-addons.md`.
 
-**Not built or run yet** (decision 50): hand-written snippets; no variant builds this add-on. Phase 2 compiles and proves this page. `docs/unverified.md` lists it.
+**Built** in the advanced reference solution (decision 52): compiled, tested and verified there.
 
 ## How it fits together
 
@@ -11,10 +11,10 @@ ISecretProtector (port)   Protect(plaintext) -> envelope text;  Unprotect(envelo
 envelope                  v1.{keyId}.{wrappedDataKey}.{nonce}.{ciphertext}.{tag}   (base64url parts)
   data key                a fresh 32-byte AES-256-GCM key per value
   key-encryption key      Secrets:Keys:{keyId} (32 bytes, base64), the current one Secrets:CurrentKeyId; it wraps the data key (AES-GCM)
-persistence               builder.Property(x => x.TaxNumber).IsSecret(): an EF value converter around the protector
+persistence               builder.Property(x => x.TaxNumber).IsSecret() marks the column; AppDbContext puts a converter around the protector on every marked column
 domain                    sees plaintext; the database and its backups see only envelopes
 rotation                  add a key, make it current: new writes use it, old envelopes still open with the key they name;
-                          the console command rewrap-secrets rewrites every envelope with the current key
+                          a value is re-encrypted with the current key the next time it is written
 ```
 
 - The protector is in Infrastructure; the domain never knows a value is encrypted. A column marked secret cannot be searched or indexed by its plaintext; a lookup by a secret needs a separate keyed hash column, which this add-on does not generate.
@@ -109,7 +109,56 @@ The member continues:
 }
 ```
 
-`SecretsConstants`: `Version = "v1"`, `KeyBytes = 32`, `NonceBytes = 12`, `TagBytes = 16`, `EnvelopeMaxLength = 2048` (a secret of up to about 1,400 characters). `SecretsSettings`: `CurrentKeyId`, `Keys` (a dictionary of key id to base64), section `Secrets`. `SecretsModule.AddSecrets` binds them with `ValidateOnStart` and a validation that the current key exists and is 32 bytes. A tampered envelope fails `Decrypt` with `AuthenticationTagMismatchException`, which surfaces as a 500 with a reference: it is a bug or an attack, never a caller's mistake.
+File `src/{Name}.Infrastructure/Secrets/SecretsConstants.cs`:
+
+```csharp
+public static class SecretsConstants
+{
+    public const string Version = "v1";
+    public const string SecretAnnotation = "Mortis:Secret";
+    public const int KeyBytes = 32;
+    public const int NonceBytes = 12;
+    public const int TagBytes = 16;
+    public const int EnvelopeMaxLength = 2048;
+}
+```
+
+File `src/{Name}.Infrastructure/Secrets/SecretsSettings.cs`:
+
+```csharp
+public class SecretsSettings
+{
+    public const string Section = "Secrets";
+
+    public string CurrentKeyId { get; set; }
+    public Dictionary<string, string> Keys { get; set; } = [];
+
+    public bool HasUsableCurrentKey()
+    {
+        return CurrentKeyId is not null && Keys.TryGetValue(CurrentKeyId, out var key) && Convert.TryFromBase64String(key, new byte[SecretsConstants.KeyBytes], out var length) && length == SecretsConstants.KeyBytes;
+    }
+}
+```
+
+File `src/{Name}.Infrastructure/Secrets/SecretsModule.cs`:
+
+```csharp
+public static class SecretsModule
+{
+    public static IServiceCollection AddSecrets(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<SecretsSettings>()
+            .Bind(configuration.GetSection(SecretsSettings.Section))
+            .Validate(settings => settings.HasUsableCurrentKey(), $"{SecretsSettings.Section}:CurrentKeyId must name a {SecretsConstants.KeyBytes}-byte base64 key in {SecretsSettings.Section}:Keys.")
+            .ValidateOnStart();
+        services.AddSingleton<ISecretProtector, EnvelopeSecretProtector>();
+
+        return services;
+    }
+}
+```
+
+`InfrastructureModule` calls `services.AddSecrets(configuration);` (using `{Name}.Infrastructure.Secrets`). `ValidateOnStart` stops any host without a usable current key at startup. The development key lives only in each host's `appsettings.Development.json` (the API's, the Console's, and a new one for the Worker, which `Microsoft.NET.Sdk.Worker` copies on its own), for example `"Secrets": { "CurrentKeyId": "dev-1", "Keys": { "dev-1": "<32 random bytes, base64>" } }`; generate the key when the project is generated, never reuse one. A tampered envelope fails `Decrypt` with `AuthenticationTagMismatchException`, which surfaces as a 500 with a reference: it is a bug or an attack, never a caller's mistake.
 
 ## Persistence
 
@@ -118,36 +167,245 @@ File `src/{Name}.Infrastructure/Secrets/SecretPropertyExtensions.cs`:
 ```csharp
 public static class SecretPropertyExtensions
 {
-    public static PropertyBuilder<string> IsSecret(this PropertyBuilder<string> propertyBuilder, ISecretProtector secretProtector)
+    public static PropertyBuilder<string> IsSecret(this PropertyBuilder<string> propertyBuilder)
     {
-        return propertyBuilder
-            .HasConversion(plaintext => secretProtector.Protect(plaintext), envelope => secretProtector.Unprotect(envelope))
-            .HasMaxLength(SecretsConstants.EnvelopeMaxLength);
+        return propertyBuilder.HasAnnotation(SecretsConstants.SecretAnnotation, true).HasMaxLength(SecretsConstants.EnvelopeMaxLength);
+    }
+
+    public static void ProtectSecrets(this ModelBuilder modelBuilder, ISecretProtector secretProtector)
+    {
+        var converter = new ValueConverter<string, string>(plaintext => secretProtector.Protect(plaintext), envelope => secretProtector.Unprotect(envelope));
+
+        foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(entityType => entityType.GetProperties()).Where(property => property.FindAnnotation(SecretsConstants.SecretAnnotation) is not null))
+        {
+            property.SetValueConverter(converter);
+        }
     }
 }
 ```
 
-`AppDbContext` receives `ISecretProtector` through its constructor and passes it to configurations that need it (`modelBuilder.ApplyConfiguration(new CustomerConfiguration(secretProtector))`). EF Core caches the model per context type, so the protector is a singleton and its keys are read when it runs, not when the model is built. A secret column is compared by envelope, which differs on every write: never filter on it.
+A configuration marks a column with `.IsSecret()` and needs no protector, so `ApplyConfigurationsFromAssembly` still finds it. `AppDbContext` takes the protector as a third constructor parameter (`ISecretProtector secretProtector`, usings `{Name}.Infrastructure.Secrets` and `{Name}.Shared.Application`) and calls `modelBuilder.ProtectSecrets(secretProtector);` right after `ApplyConfigurationsFromAssembly`. Every place that builds the context by hand passes one: `DesignTimeDbContextFactory` and the integration `PostgresFixture` pass `new EnvelopeSecretProtector(Options.Create(new SecretsSettings()))` (never called: migrations need only the column), `AppDbContextBuilder` in the unit tests passes one over `FakeSecretsSettings`. EF Core caches the model per context type, so the protector is a singleton and reads its keys when it runs. A secret column is compared by envelope, which differs on every write: never filter on it.
 
 ## The example
 
-`Customer` gains `public string TaxNumber { get; private set; }` and `public void SetTaxNumber(string taxNumber) { TaxNumber = taxNumber; RaiseEvent(new TaxNumberSet(Id.ToString())); }` (the event carries no value). `CustomerConfiguration`: `builder.Property(customer => customer.TaxNumber).IsSecret(secretProtector);`. `SetCustomerTaxNumberCommand` (`PUT /customers/{id}/tax-number`, body `{ "taxNumber": "..." }`) sets it; `CustomerDto` gains `TaxNumber`, so a signed-in caller who may read the customer reads it in plaintext through the port. The console command `rewrap-secrets` loads every customer with a tax number and saves it again, which re-encrypts with the current key.
+`Customer` gains `public string TaxNumber { get; private set; }` and
+
+```csharp
+    public void SetTaxNumber(string taxNumber)
+    {
+        TaxNumber = taxNumber;
+
+        RaiseEvent(new TaxNumberSet(Id.ToString()));
+    }
+```
+
+(`Events/TaxNumberSet.cs`: `public record TaxNumberSet(string Id) : EventBase;`, it carries no value; `CustomerConstants.TaxNumberMaxLength = 50`). `CustomerConfiguration`: `builder.Property(customer => customer.TaxNumber).IsSecret();`. With a query side, `CustomerView` gains `string TaxNumber = null` as its last parameter and `CustomerReader` selects it. `CustomerDto` gains `TaxNumber` in `Map` and `From`, so a caller who may read the customer reads it in plaintext through the port. File `src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs` (registered with its validator in `ApplicationModule`):
+
+```csharp
+public record SetCustomerTaxNumberCommand : ICommand<CustomerDto>, IContextCommand, ITransactionalCommand
+{
+    [JsonIgnore] public CommandContext Context { get; set; }
+
+    [JsonIgnore] public Guid Id { get; set; }
+    public string TaxNumber { get; set; }
+}
+
+public class SetCustomerTaxNumberCommandValidator : AbstractValidator<SetCustomerTaxNumberCommand>
+{
+    public SetCustomerTaxNumberCommandValidator()
+    {
+        RuleFor(command => command.TaxNumber).NotEmpty().MaximumLength(CustomerConstants.TaxNumberMaxLength);
+    }
+}
+
+public class SetCustomerTaxNumberCommandHandler(
+    ICustomerRepository customerRepository,
+    CommandPipeline<SetCustomerTaxNumberCommand> commandPipeline) : BaseCommandHandler<SetCustomerTaxNumberCommand, CustomerDto>(commandPipeline)
+{
+    protected override async Task<CommandResult<CustomerDto>> OnHandle(SetCustomerTaxNumberCommand command)
+    {
+        var customer = await customerRepository.FindByIdTrackingAsync(command.Id)
+            ?? throw new NotFoundException(nameof(Customer));
+
+        customer.SetTaxNumber(command.TaxNumber);
+        customer.SetUpdatedAudit(command.Context.User);
+
+        await customerRepository.UpdateAsync(customer);
+
+        return CommandResult.FromContent(CustomerDto.Map(customer));
+    }
+}
+```
+
+`CustomersController`:
+
+```csharp
+    [HttpPut("{id:guid}/tax-number")]
+    public async Task<IActionResult> SetTaxNumber([FromRoute] Guid id, [FromBody] SetCustomerTaxNumberCommand command)
+    {
+        var commandResult = await commandDispatcher.Send(command with { Id = id });
+
+        return Ok(commandResult.Content);
+    }
+```
 
 ## Tests
 
-`EnvelopeSecretProtectorTests`: a round trip returns the plaintext; two protections of one value differ; an envelope made with an old key still opens after the current key changes; a changed character in the ciphertext throws; null stays null. `CustomerConfigurationTests` gains: `TaxNumber` has a value converter. At `testing` = `integration` and above, `SecretColumnTests` in the integration project: the column read with raw SQL starts with `v1.` and does not contain the plaintext. `scripts/conformance/secrets.sh` proves it over HTTP and SQL.
+`test/{Name}.Tests/TestSupport/Infrastructure/Secrets/FakeSecretsSettings.cs`:
+
+```csharp
+public static class FakeSecretsSettings
+{
+    public const string FirstKeyId = "test-1";
+    public const string SecondKeyId = "test-2";
+    public const string FirstKey = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=";
+    public const string SecondKey = "HxwdHBsaGRgXFhUUExIREA8ODQwLCgkIBwYFBAMCAQA=";
+
+    public static SecretsSettings Create(string currentKeyId = FirstKeyId) => new()
+    {
+        CurrentKeyId = currentKeyId,
+        Keys = new Dictionary<string, string> { [FirstKeyId] = FirstKey, [SecondKeyId] = SecondKey }
+    };
+}
+```
+
+`test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs`:
+
+```csharp
+public class EnvelopeSecretProtectorTests
+{
+    [Fact]
+    public void Protect_ThenUnprotect_Should_GiveBackThePlaintextFromAV1EnvelopeNamingTheCurrentKey()
+    {
+        var secretProtector = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create()));
+
+        var envelope = secretProtector.Protect("TR-123");
+
+        Assert.StartsWith($"{SecretsConstants.Version}.{FakeSecretsSettings.FirstKeyId}.", envelope);
+        Assert.DoesNotContain("TR-123", envelope);
+        Assert.Equal("TR-123", secretProtector.Unprotect(envelope));
+    }
+
+    [Fact]
+    public void Protect_TwiceForOneValue_Should_GiveDifferentEnvelopes()
+    {
+        var secretProtector = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create()));
+
+        Assert.NotEqual(secretProtector.Protect("TR-123"), secretProtector.Protect("TR-123"));
+    }
+
+    [Fact]
+    public void Unprotect_AfterTheCurrentKeyChanged_Should_StillOpenAnEnvelopeOfTheOldKey()
+    {
+        var envelope = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create(FakeSecretsSettings.FirstKeyId))).Protect("TR-123");
+
+        var plaintext = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create(FakeSecretsSettings.SecondKeyId))).Unprotect(envelope);
+
+        Assert.Equal("TR-123", plaintext);
+    }
+
+    [Fact]
+    public void Unprotect_WithAChangedCiphertext_Should_Throw()
+    {
+        var secretProtector = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create()));
+        var parts = secretProtector.Protect("TR-123").Split('.');
+        parts[4] = parts[4][0] == 'A' ? 'B' + parts[4][1..] : 'A' + parts[4][1..];
+
+        Assert.ThrowsAny<CryptographicException>(() => secretProtector.Unprotect(string.Join('.', parts)));
+    }
+
+    [Fact]
+    public void ProtectAndUnprotect_WithNull_Should_ReturnNull()
+    {
+        var secretProtector = new EnvelopeSecretProtector(Options.Create(FakeSecretsSettings.Create()));
+
+        Assert.Equal((null, null), (secretProtector.Protect(null), secretProtector.Unprotect(null)));
+    }
+```
+
+The member continues:
+
+```csharp
+    [Theory]
+    [InlineData("test-1", true)]
+    [InlineData("missing", false)]
+    [InlineData(null, false)]
+    public void HasUsableCurrentKey_Should_RequireAThirtyTwoByteKeyUnderTheCurrentId(string currentKeyId, bool expected)
+    {
+        Assert.Equal(expected, FakeSecretsSettings.Create(currentKeyId).HasUsableCurrentKey());
+    }
+}
+```
+
+`test/{Name}.Tests/Infrastructure/Persistence/Customers/CustomerConfigurationTests.cs`:
+
+```csharp
+public class CustomerConfigurationTests
+{
+    [Fact]
+    public void Model_Should_StoreTheTaxNumberAsAnEnvelopeThroughAConverter()
+    {
+        var property = AppDbContextBuilder.Create().Build().Model.FindEntityType(typeof(Customer))!.FindProperty(nameof(Customer.TaxNumber))!;
+
+        var converter = property.GetValueConverter();
+
+        Assert.NotNull(converter);
+        Assert.StartsWith(SecretsConstants.Version + ".", (string)converter.ConvertToProvider("TR-123"));
+        Assert.Equal(SecretsConstants.EnvelopeMaxLength, property.GetMaxLength());
+    }
+}
+```
+
+`test/{Name}.Tests/Application/Customers/SetCustomerTaxNumberCommandHandlerTests.cs`:
+
+```csharp
+public class SetCustomerTaxNumberCommandHandlerTests
+{
+    [Fact]
+    public async Task Handle_Should_SetTheTaxNumberAndRaiseAnEventWithoutIt()
+    {
+        var customer = FakeCustomer.Create();
+        customer.ClearEvents();
+        var commandHandler = new SetCustomerTaxNumberCommandHandler(CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(customer).WithUpdateAsync().Build(), CommandPipelineBuilder<SetCustomerTaxNumberCommand>.Create().WithValidator(new SetCustomerTaxNumberCommandValidator()).Build());
+
+        var commandResult = await commandHandler.Handle(new SetCustomerTaxNumberCommand { Id = customer.Id, TaxNumber = "TR-123", Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+        Assert.Equal("TR-123", commandResult.Content.TaxNumber);
+        Assert.Equal(customer.Id.ToString(), Assert.IsType<TaxNumberSet>(Assert.Single(customer.DomainEvents)).Id);
+    }
+
+    [Fact]
+    public async Task Handle_WithoutATaxNumber_Should_FailValidation()
+    {
+        var commandHandler = new SetCustomerTaxNumberCommandHandler(CustomerRepositoryBuilder.Create().Build(), CommandPipelineBuilder<SetCustomerTaxNumberCommand>.Create().WithValidator(new SetCustomerTaxNumberCommandValidator()).Build());
+
+        await Assert.ThrowsAsync<ValidationFailedException>(() => commandHandler.Handle(new SetCustomerTaxNumberCommand { Id = Guid.CreateVersion7() }));
+    }
+}
+```
+
+`scripts/conformance/secrets.sh` proves the database side over HTTP and SQL.
 
 ## Files this add-on changes
 
-`Customer.cs`, `CustomerDto.cs`, `CustomerConfiguration.cs`, `CustomersController.cs`, `AppDbContext.cs`, `ApplicationModule.cs`, `InfrastructureModule.cs`, the Console's command list, `appsettings.json` and `appsettings.Development.json` (a development key, never the production one); a migration adds `customers.tax_number`.
+`Customer.cs`, `CustomerConstants.cs`, `CustomerView.cs`, `CustomerReader.cs`, `CustomerDto.cs`, `CustomerConfiguration.cs`, `CustomersController.cs`, `AppDbContext.cs`, `DesignTimeDbContextFactory.cs`, `ApplicationModule.cs`, `InfrastructureModule.cs`, each host's `appsettings.Development.json`, the tests' `AppDbContextBuilder` and `PostgresFixture`; the regenerated migration adds `customers.tax_number`.
 
 ## Namespaces and usings
 
 | File | Namespace | Usings |
 |---|---|---|
-| `ISecretProtector.cs` | `{Name}.Shared.Application` | none |
-| `EnvelopeSecretProtector.cs`, `SecretsModule.cs`, `SecretsSettings.cs`, `SecretsConstants.cs`, `SecretPropertyExtensions.cs` | `{Name}.Infrastructure.Secrets` | `{Name}.Shared.Application`, `Microsoft.EntityFrameworkCore.Metadata.Builders`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Options`, `System.Buffers.Text`, `System.Security.Cryptography`, `System.Text` |
-| `SetCustomerTaxNumberCommand.cs` | `{Name}.Application.Customers` | `System.Text.Json.Serialization`, `{Name}.Domain.Aggregates.Customers`, `{Name}.Shared.Application`, `{Name}.Shared.Exceptions`, `FluentValidation` |
+| `src/{Name}.Application/Customers/SetCustomerTaxNumberCommand.cs` | `{Name}.Application.Customers` | FluentValidation, System.Text.Json.Serialization, {Name}.Domain.Aggregates.Customers, {Name}.Shared.Application, {Name}.Shared.Exceptions |
+| `src/{Name}.Domain/Aggregates/Customers/Events/TaxNumberSet.cs` | `{Name}.Domain.Aggregates.Customers.Events` | {Name}.Shared.Domain |
+| `src/{Name}.Infrastructure/Secrets/EnvelopeSecretProtector.cs` | `{Name}.Infrastructure.Secrets` | Microsoft.Extensions.Options, System.Buffers.Text, System.Security.Cryptography, System.Text, {Name}.Shared.Application |
+| `src/{Name}.Infrastructure/Secrets/SecretPropertyExtensions.cs` | `{Name}.Infrastructure.Secrets` | Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Metadata.Builders, Microsoft.EntityFrameworkCore.Storage.ValueConversion, {Name}.Shared.Application |
+| `src/{Name}.Infrastructure/Secrets/SecretsConstants.cs` | `{Name}.Infrastructure.Secrets` | none |
+| `src/{Name}.Infrastructure/Secrets/SecretsModule.cs` | `{Name}.Infrastructure.Secrets` | Microsoft.Extensions.Configuration, Microsoft.Extensions.DependencyInjection, {Name}.Shared.Application |
+| `src/{Name}.Infrastructure/Secrets/SecretsSettings.cs` | `{Name}.Infrastructure.Secrets` | none |
+| `src/{Name}.Shared/Application/ISecretProtector.cs` | `{Name}.Shared.Application` | none |
+| `test/{Name}.Tests/Application/Customers/SetCustomerTaxNumberCommandHandlerTests.cs` | `{Name}.Tests.Application.Customers` | {Name}.Application.Customers, {Name}.Domain.Aggregates.Customers.Events, {Name}.Shared.Application, {Name}.Shared.Domain, {Name}.Shared.Exceptions, {Name}.Tests.TestSupport.Domain.Customers, {Name}.Tests.TestSupport.Shared.Application |
+| `test/{Name}.Tests/Infrastructure/Persistence/Customers/CustomerConfigurationTests.cs` | `{Name}.Tests.Infrastructure.Persistence.Customers` | {Name}.Domain.Aggregates.Customers, {Name}.Infrastructure.Secrets, {Name}.Tests.TestSupport.Infrastructure.Persistence |
+| `test/{Name}.Tests/Infrastructure/Secrets/EnvelopeSecretProtectorTests.cs` | `{Name}.Tests.Infrastructure.Secrets` | Microsoft.Extensions.Options, System.Security.Cryptography, {Name}.Infrastructure.Secrets, {Name}.Tests.TestSupport.Infrastructure.Secrets |
+| `test/{Name}.Tests/TestSupport/Infrastructure/Secrets/FakeSecretsSettings.cs` | `{Name}.Tests.TestSupport.Infrastructure.Secrets` | {Name}.Infrastructure.Secrets |
 
 ## Decision record
 

@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Tests.TestSupport.Shared.Application;
 using Boilerplate.Tests.TestSupport.Domain.Customers;
 using Boilerplate.Domain.Aggregates.Orders.Events;

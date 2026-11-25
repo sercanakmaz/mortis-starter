@@ -36,17 +36,24 @@ CATEGORY="$(field "['id']")"
 expect_equal "tenancy: a global category is readable from another tenant and from none" "200|200" "$(as "$B" "$(url "/categories/$CATEGORY")")|$(as "$NONE" "$(url "/categories/$CATEGORY")")"
 
 as "$B" -X POST -d "{\"sku\":\"ONLY-B-$S\",\"name\":\"B only\",\"stock\":5}" "$(url /products)" >/dev/null
-expect_equal "tenancy: an order line cannot reference another tenant's product: 400 reference_violation" "400|reference_violation" "$(as "$A" -X POST -d "{\"orderNumber\":\"TX-$S\",\"customerId\":\"$CUSTOMER_A\",\"lines\":[{\"sku\":\"ONLY-B-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "$(url /orders)")|$(field "['code']")"
+expect_equal "tenancy: an order line cannot reference another tenant's product: 400 reference_violation" "400|reference_violation" "$(as "$A" -X POST -d "{\"orderNumber\":\"TX-$S\",\"customerId\":$(jid "$CUSTOMER_A"),\"lines\":[{\"sku\":\"ONLY-B-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "$(url /orders)")|$(field "['code']")"
 
 as "$B" -X POST -d "{\"name\":\"B customer\",\"email\":\"t-$S@example.com\"}" "$(url /customers)" >/dev/null
 CUSTOMER_B="$(field "['id']")"
 for order in "A 1" "B 4" "A 2"; do
   set -- $order
   token="$A"; customer="$CUSTOMER_A"; [ "$1" = "B" ] && { token="$B"; customer="$CUSTOMER_B"; }
-  as "$token" -X POST -d "{\"orderNumber\":\"TI-$1-$2-$S\",\"customerId\":\"$customer\",\"lines\":[{\"sku\":\"T-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":$2}]}" "$(url /orders)" >/dev/null
+  as "$token" -X POST -d "{\"orderNumber\":\"TI-$1-$2-$S\",\"customerId\":$(jid "$customer"),\"lines\":[{\"sku\":\"T-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":$2}]}" "$(url /orders)" >/dev/null
 done
 expect_equal "tenancy: with both tenants' events interleaved, each consumer moved only its own tenant's stock (A 10-1-2, B 10-4)" "7|6" "$(eventually "select string_agg(stock::text, '|' order by tenant_id = '$TENANT_B') from products where sku = 'T-$S'" "7|6" 20)"
 
+if [ "${TENANCY_KEY:-guid}" = "text" ]; then
+  SPACED="$(dev_token "{\"subject\":\"user-s\",\"email\":\"s@example.com\",\"tenant\":\"acme corp\"}")"
+  expect_equal "tenancy (key text): a tenant id with a space is refused: 403" "403" "$(as "$SPACED" "$(url "/products/$PRODUCT_A")")"
+  expect_equal "tenancy (key text): tenant_id is text, at most 64 characters, on every tenant-owned table" "0" "$(sql "select count(*) from information_schema.columns where table_schema = 'public' and column_name = 'tenant_id' and table_name <> 'outbox_messages' and (data_type <> 'character varying' or character_maximum_length <> 64)")"
+else
+  expect_equal "tenancy (key guid): tenant_id is a uuid on every tenant-owned table" "0" "$(sql "select count(*) from information_schema.columns where table_schema = 'public' and column_name = 'tenant_id' and table_name <> 'outbox_messages' and data_type <> 'uuid'")"
+fi
 expect_equal "tenancy: every unique index on a tenant-owned table starts with tenant_id" "0" "$(sql "select count(*) from pg_index i join pg_class t on t.oid = i.indrelid join pg_attribute a on a.attrelid = t.oid and a.attnum = i.indkey[0] where i.indisunique and not i.indisprimary and t.relname in ('products', 'customers', 'orders', 'order_lines') and a.attname <> 'tenant_id'")"
 
 kill "$API_PID" 2>/dev/null

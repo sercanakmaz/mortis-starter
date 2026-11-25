@@ -10,7 +10,7 @@ spec = importlib.util.spec_from_file_location("decisions", HERE / "decisions.py"
 decisions = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(decisions)
 
-SKIP_PARTS = {"bin", "obj", ".git", ".vs", ".idea", "TestResults", "node_modules"}
+SKIP_PARTS = {"bin", "obj", ".git", ".vs", ".idea", "TestResults", "node_modules", ".mortis"}
 
 
 def pattern_to_regex(pattern, name):
@@ -24,6 +24,9 @@ def pattern_to_regex(pattern, name):
         elif text[i] == "*":
             out += "[^/]*"
             i += 1
+        elif text.startswith("{plural}", i):
+            out += "[a-z][a-z0-9]*"
+            i += len("{plural}")
         elif text.startswith("{Plural}", i) or text.startswith("{Aggregate}", i):
             token = text[i:text.index("}", i) + 1]
             out += "[A-Z][A-Za-z0-9]*"
@@ -35,11 +38,16 @@ def pattern_to_regex(pattern, name):
 
 
 def applies(entry, values):
+    if "when_not" in entry and applies({"when": entry["when_not"]}, values):
+        return False
     if "when_any" in entry:
         return any(applies({"when": when}, values) for when in entry["when_any"])
     for key, expected in entry.get("when", {}).items():
         actual = values.get(key)
-        if isinstance(expected, list):
+        if isinstance(expected, list) and isinstance(actual, list):
+            if not all(item in actual for item in expected):
+                return False
+        elif isinstance(expected, list):
             if actual not in expected:
                 return False
         elif isinstance(actual, list):
@@ -48,6 +56,20 @@ def applies(entry, values):
         elif actual != expected:
             return False
     return True
+
+
+def singular(plural):
+    return plural[:-3] + "y" if plural.endswith("ies") else plural[:-1] if plural.endswith("s") else plural
+
+
+def with_event_naming(entry, values):
+    if values.get("naming.events") != "prefixed":
+        return entry
+    match = re.search(r"/(?:Aggregates/(\w+)/Events|\{Name\}\.Contracts/(\w+))/(\w+)\.cs$", entry["path"])
+    if not match or "{" in match.group(3):
+        return entry
+    plural = match.group(1) or match.group(2)
+    return {**entry, "path": entry["path"][:match.start(3)] + singular(plural) + match.group(3) + ".cs"}
 
 
 def project_files(root):
@@ -64,8 +86,9 @@ def check(root, plan_only=False):
     language = values["language"]
     name = values["name"]
     manifest = json.loads((HERE.parent / "references" / language / "manifest.json").read_text(encoding="utf-8"))
-    expected = [e for e in manifest["files"] if applies(e, values)]
-    known = [e for e in manifest["files"]]
+    entries = [with_event_naming(e, values) for e in manifest["files"]]
+    expected = [e for e in entries if applies(e, values)]
+    known = list(entries)
     if plan_only:
         return [f"{len(expected)} files expected from the manifest for this MORTIS.md"]
     problems = []

@@ -28,9 +28,6 @@ File `src/{Name}.Infrastructure/Authentication/AuthSettings.cs`, bound from the 
 public class AuthSettings
 ```
 
-```csharp
-public class AuthSettings
-```
 
 ```csharp
 public const string Section = "Auth";
@@ -125,9 +122,6 @@ File `src/{Name}.Api/Authentication/JwtAuthenticationModule.cs`:
 public static class JwtAuthenticationModule
 ```
 
-```csharp
-public static class JwtAuthenticationModule
-```
 
 ```csharp
 public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -179,6 +173,11 @@ public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionE
         contextCommand.Context = commandContext;
     }
 
+    foreach (var query in context.ActionArguments.Values.OfType<IQuery>())
+    {
+        query.Context = commandContext;
+    }
+
     await next();
 }
 ```
@@ -195,9 +194,6 @@ File `src/{Name}.Console/ConsoleTokens.cs`. It only writes development tokens fo
 public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvironment)
 ```
 
-```csharp
-public class ConsoleTokens(AuthSettings authSettings, IHostEnvironment hostEnvironment)
-```
 
 ```csharp
 public string WriteDevelopmentToken(string argument)
@@ -278,6 +274,14 @@ public const string CommandSuffix = "Command";
 ```
 
 ```csharp
+public const string QuerySuffix = "Query";
+```
+
+```csharp
+public const string RebuildOrderSummaryCommand = "rebuild-order-summary";
+```
+
+```csharp
 public const string FilePrefix = "@";
 ```
 
@@ -300,6 +304,8 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
 `Program.cs` with `auth` = `jwt` (the plain version is on `hosts.md`): `dev-token` is handled before the arguments are read. The `TenantScope` and `Languages.Resolve` lines are there only with tenancy and languages, and the `AddEventConsumer` lines of `hosts.md` stay when `events.transport` is not `rabbitmq` (this snippet is the RabbitMQ variant's, which has none):
 
 ```csharp
+using {Name}.Infrastructure.ReadModels.OrderSummaries;
+using {Name}.Shared.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using {Name}.Infrastructure.Authentication;
 using {Name}.Infrastructure.Tenancy;
@@ -339,7 +345,7 @@ using var scope = host.Services.CreateScope();
 
 var messageLocalizer = host.Services.GetRequiredService<MessageLocalizer>();
 var language = Languages.Default;
-var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly);
+var consoleCommandRunner = new ConsoleCommandRunner(scope.ServiceProvider.GetRequiredService<ICommandDispatcher>(), typeof(ApplicationModule).Assembly, scope.ServiceProvider.GetRequiredService<IQueryDispatcher>());
 
 try
 {
@@ -351,16 +357,30 @@ try
 
         return 0;
     }
-
-    var consoleArguments = ConsoleArguments.Parse(args);
-    var commandContext = consoleArguments.CommandContext with { Language = Languages.Resolve([consoleArguments.CommandContext.Language]) };
-    language = commandContext.Language;
 ```
 
 The member continues:
 
 ```csharp
+    var consoleArguments = ConsoleArguments.Parse(args);
+    var commandContext = consoleArguments.CommandContext with { Language = Languages.Resolve([consoleArguments.CommandContext.Language]) };
+    language = commandContext.Language;
+
     scope.ServiceProvider.GetRequiredService<TenantScope>().Enter(commandContext.TenantId);
+
+    if (consoleArguments.Name == ConsoleConstants.RebuildOrderSummaryCommand)
+    {
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        using (scope.ServiceProvider.GetRequiredService<TenantScope>().Bypass(ConsoleConstants.RebuildOrderSummaryCommand))
+        {
+            await unitOfWork.BeginTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+            await scope.ServiceProvider.GetRequiredService<OrderSummaryProjection>().RebuildAsync();
+            await unitOfWork.CommitTransactionAsync(ConsoleConstants.RebuildOrderSummaryCommand);
+        }
+
+        return 0;
+    }
 
     var content = await consoleCommandRunner.RunAsync(consoleArguments.Name, consoleArguments.Argument, commandContext);
 
@@ -378,7 +398,11 @@ catch (ExceptionBase exception)
 }
 ```
 
-The Console project copies `appsettings.Development.json` to its output, next to `appsettings.json`.
+The Console project copies `appsettings.Development.json` to its output, next to `appsettings.json`; add to the `ItemGroup` of `None Update` lines in `{Name}.Console.csproj`:
+
+```xml
+    <None Update="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+```
 
 ## Settings
 
@@ -401,6 +425,12 @@ File `appsettings.Development.json` in the Api and the Console, never in another
 {
   "Auth": {
     "SigningKey": "development-only-signing-key-change-me-0123456789"
+  },
+  "Secrets": {
+    "CurrentKeyId": "dev-1",
+    "Keys": {
+      "dev-1": "fmbcxVN+RyqWldSDHwdoK1toPC/LHnBLl81QgfqNdJY="
+    }
   }
 }
 ```
@@ -409,7 +439,7 @@ The conformance suite runs the hosts with `DOTNET_ENVIRONMENT=Development` so th
 
 ## Tests
 
-`test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs`, with `FakeAuthSettings` in `TestSupport/Infrastructure/Authentication/`:
+`test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs`, with `FakeAuthSettings` in `TestSupport/Infrastructure/Authentication/` (shown with tenancy; without it, drop every `TenantClaim` member, assertion and `tenant` argument, as the standard reference solution does):
 
 ```csharp
 public class AuthSettingsTests
@@ -507,7 +537,22 @@ public void WriteDevelopmentToken_WithoutASubject_Should_ThrowInvalidParameter()
 }
 ```
 
-`ContextCommandFilterTests` and `ActionExecutingContextBuilder` use the `sub` and `email` claims; `ConsoleCommandRunnerTests` passes the context (`hosts.md`). The 401, the audit columns and the refusal outside Development are proven by `scripts/conformance/auth.sh`.
+With jwt the filter takes `IOptions<AuthSettings>`, so `ContextCommandFilterTests` (in `testing-kernel.md`) builds it as `new ContextCommandFilter(Options.Create(new AuthSettings()))` in every test (usings `{Name}.Infrastructure.Authentication`, `Microsoft.Extensions.Options`) and adds one test:
+
+```csharp
+[Fact]
+public async Task OnActionExecutionAsync_Should_ReadTheClaimNamesFromTheSettings()
+{
+    var fakeContextCommand = new FakeContextCommand();
+    var context = ActionExecutingContextBuilder.Create().WithUser("user-1", "user-1@localhost").WithArgument("command", fakeContextCommand).Build();
+
+    await new ContextCommandFilter(Options.Create(new AuthSettings { SubjectClaim = "email", EmailClaim = "sub" })).OnActionExecutionAsync(context, ActionExecutingContextBuilder.NextOf(context));
+
+    Assert.Equal(["user-1@localhost", "user-1"], [fakeContextCommand.Context.User.Id, fakeContextCommand.Context.User.Email]);
+}
+```
+
+`ActionExecutingContextBuilder` uses the `sub` and `email` claims; `ConsoleCommandRunnerTests` passes the context (`hosts.md`). The 401, the audit columns and the refusal outside Development are proven by `scripts/conformance/auth.sh`.
 
 ## Decision record
 

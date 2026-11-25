@@ -35,8 +35,8 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 
 var app = builder.Build();
 
@@ -48,6 +48,8 @@ app.MapGet("/health", () => Results.Ok());
 
 app.Run();
 ```
+
+With `naming.json` = `snake_case` the `AddControllers(...)` call gains `.AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower)` on the next line, and the file starts with `using System.Text.Json;` (`naming.md`).
 
 The `AddEventConsumer` lines are there with `events.transport` = `in-process` or `database`, one per event consumer; with `rabbitmq` the Worker has them instead and this file has none (`event-consumers.md`).
 
@@ -260,8 +262,8 @@ builder.Services
     .AddDomainModule()
     .AddApplicationModule()
     .AddInfrastructureModule(builder.Configuration)
-    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(3))
-    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(3));
+    .AddEventConsumer<DecreaseStockWhenOrderLineAddedEventConsumer>(endpoint => endpoint.Retry(10))
+    .AddEventConsumer<IncreaseStockWhenOrderLineCancelledEventConsumer>(endpoint => endpoint.Retry(10));
 
 using var host = builder.Build();
 
@@ -372,9 +374,6 @@ public async Task<object> RunAsync(string name, string argument, CommandContext 
 public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
 ```
 
-```csharp
-public record ConsoleArguments(CommandContext CommandContext, string Name, string Argument)
-```
 
 ```csharp
 private static readonly string[] Options = [ConsoleConstants.UserOption, ConsoleConstants.EmailOption, ConsoleConstants.TenantOption, ConsoleConstants.LanguageOption];
@@ -418,7 +417,7 @@ public static ConsoleArguments Parse(IReadOnlyList<string> args)
 }
 ```
 
-Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs`:
+Test, `test/{Name}.Tests/Console/ConsoleArgumentsTests.cs` (its namespace and usings are in `testing-kernel.md`'s table, with every other test file):
 
 ```csharp
 public class ConsoleArgumentsTests
@@ -460,9 +459,6 @@ File `ConsoleConstants.cs`:
 public static class ConsoleConstants
 ```
 
-```csharp
-public static class ConsoleConstants
-```
 
 ```csharp
 public const string UserOption = "--user";
@@ -519,7 +515,7 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
 }
 ```
 
-`.vscode/launch.json`. The first configuration asks for the name and the JSON; the second belongs to the example and is left out when `example` is `false`.
+`.vscode/launch.json`. The first configuration asks for the user, the name and the JSON (the Console refuses a run without `--user`); the second belongs to the example and is left out when `example` is `false`.
 
 ```json
 {
@@ -532,6 +528,8 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
       "preLaunchTask": "build-console",
       "program": "${workspaceFolder}/src/{Name}.Console/bin/Debug/net10.0/{Name}.Console.dll",
       "args": [
+        "--user",
+        "${input:user}",
         "${input:name}",
         "${input:json}"
       ],
@@ -546,6 +544,8 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
       "preLaunchTask": "build-console",
       "program": "${workspaceFolder}/src/{Name}.Console/bin/Debug/net10.0/{Name}.Console.dll",
       "args": [
+        "--user",
+        "developer",
         "CreateProduct",
         "{\"sku\":\"BOLT\",\"name\":\"Bolt\",\"stock\":10}"
       ],
@@ -555,6 +555,12 @@ public static readonly JsonSerializerOptions InputOptions = new() { PropertyName
     }
   ],
   "inputs": [
+    {
+      "id": "user",
+      "type": "promptString",
+      "description": "The user the command runs as (--user)",
+      "default": "developer"
+    },
     {
       "id": "name",
       "type": "promptString",

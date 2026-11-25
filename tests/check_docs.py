@@ -12,8 +12,13 @@ TEMPLATE = VARIANTS
 CSHARP = os.path.join(SCAFFOLD, "references", "csharp")
 
 
+EXTRAS = os.path.join(os.path.dirname(VARIANTS), "variants-extra")
+
+
 def source_path(relative):
-    return next((os.path.join(VARIANTS, p, relative) for p in PRESETS if os.path.exists(os.path.join(VARIANTS, p, relative))), os.path.join(VARIANTS, PRESETS[0], relative))
+    candidates = [os.path.join(VARIANTS, p, relative) for p in PRESETS]
+    candidates += [os.path.join(EXTRAS, build, relative) for build in sorted(os.listdir(EXTRAS))] if os.path.isdir(EXTRAS) else []
+    return next((candidate for candidate in candidates if os.path.exists(candidate)), os.path.join(VARIANTS, PRESETS[0], relative))
 
 
 SUPERSEDED = re.compile(r"(Domain/Aggregates/\w+/\w+(Service|Module)\.cs|TestSupport/Domain/\w+/\w+ServiceBuilder\.cs|Tests/Domain/\w+/\w+ServiceTests\.cs)$")
@@ -71,7 +76,8 @@ def check_kernel_shape():
     for preset in ("lean", "standard", "advanced"):
         expected = []
         for f in kernel:
-            expected += shape_of_file(os.path.join(VARIANTS, preset, f), "Boilerplate")
+            if os.path.exists(os.path.join(VARIANTS, preset, f)):
+                expected += shape_of_file(os.path.join(VARIANTS, preset, f), "Boilerplate")
         written = subprocess.run([sys.executable, "-I", os.path.join(SCAFFOLD, "scripts", "shape_for.py"), os.path.join(CSHARP, "kernel-shape.txt"), os.path.join(VARIANTS, preset, "MORTIS.md")],
                                  capture_output=True, text=True, check=True).stdout.splitlines()
         if expected != written:

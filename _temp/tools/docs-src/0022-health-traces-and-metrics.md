@@ -29,4 +29,4 @@ Where telemetry is sent, and the outbox lag threshold.
 
 ## How it is enforced
 
-`CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, `TraceLinkTests` (one trace id from request to consumer), and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).
+`CommandPipelineTests`, `OutboxMessageTests`, `MessageEnvelopeTests`, and `observability.sh` (live and ready answers; ready fails without the database and on outbox lag; the API's and the consumer's log lines share a trace id).

@@ -26,10 +26,10 @@ ORDERER="$(token "orderer-$S" '"customers.create","orders.create"')"
 FULL="$(token "full-$S" '"customers.create","orders.create","products.decrease-stock"')"
 call "$ORDERER" -X POST -d "{\"name\":\"Orderer\",\"email\":\"orderer-$S@example.com\"}" "http://localhost:$PORT/customers" >/dev/null
 CUSTOMER="$(field "['id']")"
-call "$ORDERER" -X POST -d "{\"orderNumber\":\"PRM-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"PRM-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":2}]}" "http://localhost:$PORT/orders" >/dev/null
+call "$ORDERER" -X POST -d "{\"orderNumber\":\"PRM-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"PRM-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":2}]}" "http://localhost:$PORT/orders" >/dev/null
 sleep 5
 expect_equal "permissions: a consumer's command runs as the order's user, so without products.decrease-stock the stock stays" "10" "$(sql "select stock from products where sku = 'PRM-$S'")"
-call "$FULL" -X POST -d "{\"orderNumber\":\"PRM2-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"PRM-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":3}]}" "http://localhost:$PORT/orders" >/dev/null
+call "$FULL" -X POST -d "{\"orderNumber\":\"PRM2-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"PRM-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":3}]}" "http://localhost:$PORT/orders" >/dev/null
 expect_equal "permissions: ... and with it the consumer decreases the stock, audited as that user" "7|full-$S" "$(eventually "select stock || '|' || updated_user_id from products where sku = 'PRM-$S'" "7|full-$S" 20)"
 
 console_run CreateProduct "{\"sku\":\"PRMC-$S\",\"name\":\"Console\",\"stock\":1}" >/dev/null 2>"$WORK/permissions.err"

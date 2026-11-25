@@ -21,6 +21,12 @@ public class ProductRepositoryBuilder
         return this;
     }
 
+    public ProductRepositoryBuilder WithFindByIdIncludingDeletedTrackingAsync(Product product)
+    {
+        _mock.Setup(productRepository => productRepository.FindByIdIncludingDeletedTrackingAsync(It.IsAny<Guid>())).ReturnsAsync(product);
+        return this;
+    }
+
     public ProductRepositoryBuilder WithFindBySkuTrackingAsync(Product product)
     {
         _mock.Setup(productRepository => productRepository.FindBySkuTrackingAsync(It.IsAny<string>())).ReturnsAsync(product);

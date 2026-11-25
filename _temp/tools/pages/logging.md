@@ -36,6 +36,8 @@ File `Logging/JsonLineFormatter.cs`, the console formatter that writes the line:
 
 @@decl src/Boilerplate.Infrastructure/Logging/JsonLineFormatter.cs::JsonLineFormatter@@
 
+@@member src/Boilerplate.Infrastructure/Logging/JsonLineFormatter.cs::JsonLineFormatter::Version@@
+
 @@member src/Boilerplate.Infrastructure/Logging/JsonLineFormatter.cs::JsonLineFormatter::Write@@
 
 ## LoggingModule
@@ -53,6 +55,10 @@ File `Logging/LoggingModule.cs`. Every host calls it first: the Api and the Work
 File `Logging/LoggingCommandHandlerMiddleware.cs`. Opens the command's scope, so every line logged while the command runs carries its fields:
 
 @@decl src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware@@
+
+@@member src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware::_scopes@@
+
+The middleware keeps a stack of scopes because `Before` and `After` are separate calls; it is registered scoped (`services.AddScoped<ICommandHandlerMiddleware, LoggingCommandHandlerMiddleware>()` in `InfrastructureModule`), so a nested command in the same request pushes onto the same stack and pops its own scope.
 
 @@member src/Boilerplate.Infrastructure/Logging/LoggingCommandHandlerMiddleware.cs::LoggingCommandHandlerMiddleware::Before@@
 

@@ -1,3 +1,4 @@
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Tests.TestSupport.Infrastructure.Persistence;
 using Boilerplate.Tests.TestSupport.Shared.Persistence;
 using Boilerplate.Infrastructure.Persistence.Orders;

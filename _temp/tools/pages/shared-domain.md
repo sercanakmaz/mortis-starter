@@ -125,9 +125,9 @@ File `Domain/BaseSyncEventHandler.cs` holds `ISyncEventHandler` and `BaseSyncEve
 
 File `Domain/BaseEventConsumer.cs` is the same with `IEventConsumer` and `BaseEventConsumer<TEvent>`, one more constraint, no `Sequence` (consumers run in the order of their `AddEventConsumer` lines, `event-consumers.md`), and the same `ContextOf`, the event's user:
 
-@@decl src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer@@
+@@members src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::IEventConsumer@@
 
-@@member src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer::ContextOf@@
+@@members src/Boilerplate.Shared/Domain/BaseEventConsumer.cs::BaseEventConsumer@@
 
 Both files need `using {Name}.Shared.Application;`.
 

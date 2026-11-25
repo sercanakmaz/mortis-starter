@@ -10,7 +10,25 @@
    "available": true
   },
   "go": {
-   "available": false
+   "available": true,
+   "only": {
+    "database": "postgres",
+    "events.outbox": "none",
+    "events.transport": "in-process",
+    "keys.default": "guid",
+    "naming.database": "snake_case",
+    "naming.json": "camelCase",
+    "naming.routes": "kebab-case",
+    "naming.events": "bare",
+    "exceptions": "minimal",
+    "queries": "commands",
+    "tenancy.mode": "none",
+    "languages.mode": "none",
+    "testing": "unit",
+    "auth": "none",
+    "hosts.worker": "none",
+    "addons": []
+   }
   }
  },
  "keys": {
@@ -378,8 +396,8 @@
   },
   {
    "id": "R11",
-   "text": "language must have references. A language is available only when the schema lists it as available.",
-   "fix": "Choose an available language."
+   "text": "language must have references. A language is available only when the schema lists it as available; a language with an `only` list accepts only those values (Go: the lean preset's values, decision 54).",
+   "fix": "Choose an available language, or the values the language supports."
   },
   {
    "id": "R12",

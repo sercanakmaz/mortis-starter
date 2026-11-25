@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Boilerplate.Shared.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -65,6 +67,8 @@ public class ReceiveEndpointService(EventConsumerEndpoint eventConsumerEndpoint,
             }
 
             var @event = envelope.ToEvent(eventType);
+            ActivityContext.TryParse(envelope.Headers.GetValueOrDefault(RabbitMqConstants.TraceParentHeader)?.ToString(), null, out var parent);
+            using var activity = Telemetry.Source.StartActivity($"consume {eventType.Name}", ActivityKind.Consumer, parent);
             using var logScope = logger.BeginScope(LogFields.Of(@event));
 
             for (var attempt = 1; ; attempt++)
@@ -78,10 +82,12 @@ public class ReceiveEndpointService(EventConsumerEndpoint eventConsumerEndpoint,
                 }
                 catch (Exception exception) when (attempt <= eventConsumerEndpoint.RetryCount)
                 {
+                    Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                     logger.LogWarning(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}, attempt {Attempt}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, attempt);
                 }
                 catch (Exception exception)
                 {
+                    Telemetry.ConsumerFailures.Add(1, new KeyValuePair<string, object>("consumer", eventConsumerEndpoint.ConsumerType.Name));
                     logger.LogError(exception, "Event consumer {EventConsumer} failed for {Event} {EventId}; moved to {ErrorQueue}", eventConsumerEndpoint.ConsumerType.FullName, eventType.Name, @event.EventId, _errorQueue);
 
                     var faultProperties = new BasicProperties(delivery.BasicProperties)

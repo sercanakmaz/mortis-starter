@@ -1,0 +1,808 @@
+{
+ "language": "go",
+ "manifest_version": 1,
+ "placeholders": {
+  "Name": "the `name` row of MORTIS.md",
+  "module": "the Go module path: the name in lower case",
+  "plural": "an aggregate's package, plural lower case"
+ },
+ "supported": {
+  "preset": "lean",
+  "description": "Go is built and proved for the lean preset's values only (decision 54); any other value is refused by mortis-architect for Go."
+ },
+ "files": [
+  {
+   "path": ".gitignore",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": ".vscode/launch.json",
+   "page": "hosts.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "AGENTS.md",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "MORTIS.md",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "README.md",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "cmd/api/main.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "cmd/console/arguments.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "cmd/console/arguments_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "cmd/console/main.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "cmd/console/run.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "docker-compose.yml",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "go.mod",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "go.sum",
+   "page": "solution.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "internal/api/context.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/api/respond.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/api/respond_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/api/routes.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/application/categories/create_category.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/categories/dto.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/categories/get_category.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/block_customer.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/create_customer.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/dto.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/get_customer.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/register_completed_order.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/customers/register_completed_order_when_order_completed.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/flow_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/module.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/application/orders/add_order_line.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/cancel_order_line.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/cancel_order_when_all_lines_cancelled.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/cancel_order_when_order_line_cancelled.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/complete_order.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/create_order.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/dto.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/get_order.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/line_rules.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/orders/load.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/create_product.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/decrease_product_stock.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/decrease_stock_when_order_line_added.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/dto.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/get_product.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/increase_product_stock.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/application/products/increase_stock_when_order_line_cancelled.go",
+   "page": "application.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/bootstrap/bootstrap.go",
+   "page": "hosts.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/domain/categories/category.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/categories/constants.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/categories/events.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/categories/repository.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/customers/constants.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/customers/customer.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/customers/customer_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/customers/events.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/customers/repository.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/constants.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/events.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/line.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/linemodel.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/money.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/order.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/order_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/repository.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/orders/status.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/products/constants.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/products/events.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/products/product.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/products/product_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/domain/products/repository.go",
+   "page": "domain.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/infrastructure/logging/command_middleware.go",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/logging/constants.go",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/logging/fields.go",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/logging/json_line_handler.go",
+   "page": "logging.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/messaging/event_publisher.go",
+   "page": "events-inprocess.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/categories/repository.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/infrastructure/persistence/connection_string.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/connection_string_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/customers/repository.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/infrastructure/persistence/database.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/events.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/migrate.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/migrations/0001_initial.sql",
+   "page": "persistence.md",
+   "source": "data",
+   "kernel": false
+  },
+  {
+   "path": "internal/infrastructure/persistence/orders/repository.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/infrastructure/persistence/products/repository.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/infrastructure/persistence/unit_of_work.go",
+   "page": "persistence.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/shared/aggregate.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/audit.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/commandcontext.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/dispatcher.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/dispatcher_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/shared/errors.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/eventcontext.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/eventcontext_test.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  },
+  {
+   "path": "internal/shared/events.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/handlers.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/ids.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/unitofwork.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/shared/validation.go",
+   "page": "shared-kernel.md",
+   "source": "snippets",
+   "kernel": true
+  },
+  {
+   "path": "internal/testsupport/repositories.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false,
+   "when": {
+    "example": "true"
+   }
+  },
+  {
+   "path": "internal/testsupport/unit_of_work.go",
+   "page": "testing.md",
+   "source": "snippets",
+   "kernel": false
+  }
+ ],
+ "aggregate_files": {
+  "description": "Files a project adds per aggregate.",
+  "folders": {
+   "internal/domain/{plural}": [
+    "*.go"
+   ],
+   "internal/application/{plural}": [
+    "*.go"
+   ],
+   "internal/infrastructure/persistence/{plural}": [
+    "repository.go",
+    "*_test.go"
+   ]
+  }
+ },
+ "always_allowed": {
+  "description": "Paths a project may add at any time.",
+  "patterns": [
+   "internal/infrastructure/persistence/migrations/*.sql",
+   "docs/*.md",
+   "docs/adr/*.md",
+   "plans/**",
+   ".mortis/**",
+   "README.md",
+   "AGENTS.md"
+  ]
+ },
+ "option_changes": {}
+}

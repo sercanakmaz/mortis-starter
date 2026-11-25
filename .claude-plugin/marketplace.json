@@ -1,0 +1,13 @@
+{
+  "name": "mortis",
+  "owner": {
+    "name": "Sercan Akmaz"
+  },
+  "plugins": [
+    {
+      "name": "mortis-starter",
+      "source": "./",
+      "description": "Start, grow and review backend projects from a decisions file (C#)."
+    }
+  ]
+}

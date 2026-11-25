@@ -28,7 +28,7 @@ Then overwrite every `.csproj` with the content below. The tools' versions of th
 | `{Name}.Shared` | none | `FluentValidation`, `Microsoft.Extensions.DependencyInjection.Abstractions` |
 | `{Name}.Domain` | Shared | none |
 | `{Name}.Application` | Domain, Shared | none |
-| `{Name}.Infrastructure` | Domain, Shared | `EFCore.NamingConventions`, `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Design` (private), `Microsoft.EntityFrameworkCore.Relational`, `Npgsql.EntityFrameworkCore.PostgreSQL` |
+| `{Name}.Infrastructure` | Domain, Shared | `EFCore.NamingConventions` (only with `naming.database` = `snake_case`), `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Design` (private), `Microsoft.EntityFrameworkCore.Relational`, `Microsoft.Extensions.Hosting`, `Npgsql.EntityFrameworkCore.PostgreSQL` |
 | `{Name}.Api` | Application, Infrastructure | `Microsoft.AspNetCore.OpenApi` |
 | `{Name}.Console` | Application, Infrastructure | `Microsoft.Extensions.Hosting` |
 | `{Name}.Tests` | Api, Application, Console, Infrastructure | `Microsoft.Extensions.DependencyInjection`, `Microsoft.NET.Test.Sdk`, `Moq`, `xunit`, `xunit.runner.visualstudio` (private) |
@@ -197,7 +197,7 @@ Domain and Application never reference Infrastructure. Nothing references a host
 </Project>
 ```
 
-`Directory.Packages.props` pins every package. These are the versions the examples were verified against; do not change one without regenerating the examples. Generate only the lines of the chosen options: `RabbitMQ.Client` with `events.transport` = `rabbitmq`; with `auth` = `jwt`, `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.15, referenced by the Api) and `Microsoft.IdentityModel.Protocols.OpenIdConnect` (8.19.2, referenced by Infrastructure).
+`Directory.Packages.props` pins every package. These are the versions the examples were verified against; do not change one without regenerating the examples. Generate only the lines of the chosen options: `EFCore.NamingConventions` (here and in the Infrastructure project file) only with `naming.database` = `snake_case` and `database` = `postgres`; the EF Core and Npgsql packages only with `database` = `postgres` and `MongoDB.Driver` only with `mongo` (`infrastructure-mongo.md`); `RabbitMQ.Client` with `events.transport` = `rabbitmq`; with `auth` = `jwt`, `Microsoft.AspNetCore.Authentication.JwtBearer` (10.0.15, referenced by the Api) and `Microsoft.IdentityModel.Protocols.OpenIdConnect` (8.19.2, referenced by Infrastructure).
 
 ```xml
 <Project>

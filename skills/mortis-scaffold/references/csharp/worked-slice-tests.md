@@ -314,7 +314,85 @@ public IOrderRepository Build() => _mock.Object;
 public Mock<IOrderRepository> BuildMock() => _mock;
 ```
 
-`CustomerRepositoryBuilder` has the same members for `Customer`. `ProductRepositoryBuilder` has them for `Product` plus:
+File `test/{Name}.Tests/TestSupport/Domain/Customers/CustomerRepositoryBuilder.cs`, the same members for `Customer`:
+
+```csharp
+public class CustomerRepositoryBuilder
+```
+
+```csharp
+private readonly Mock<ICustomerRepository> _mock = new();
+```
+
+```csharp
+public static CustomerRepositoryBuilder Create() => new();
+```
+
+```csharp
+public CustomerRepositoryBuilder WithFindByIdAsync(Customer customer)
+{
+    _mock.Setup(customerRepository => customerRepository.FindByIdAsync(It.IsAny<Guid>())).ReturnsAsync(customer);
+    return this;
+}
+```
+
+```csharp
+public CustomerRepositoryBuilder WithFindByIdTrackingAsync(Customer customer)
+{
+    _mock.Setup(customerRepository => customerRepository.FindByIdTrackingAsync(It.IsAny<Guid>())).ReturnsAsync(customer);
+    return this;
+}
+```
+
+```csharp
+public CustomerRepositoryBuilder WithCreateAsync(Action<Customer> callback = null)
+{
+    _mock.Setup(customerRepository => customerRepository.CreateAsync(It.IsAny<Customer>()))
+        .Callback<Customer>(customer => callback?.Invoke(customer))
+        .Returns(Task.CompletedTask);
+    return this;
+}
+```
+
+```csharp
+public CustomerRepositoryBuilder WithUpdateAsync(Action<Customer> callback = null)
+{
+    _mock.Setup(customerRepository => customerRepository.UpdateAsync(It.IsAny<Customer>()))
+        .Callback<Customer>(customer => callback?.Invoke(customer))
+        .Returns(Task.CompletedTask);
+    return this;
+}
+```
+
+```csharp
+public ICustomerRepository Build() => _mock.Object;
+```
+
+```csharp
+public Mock<ICustomerRepository> BuildMock() => _mock;
+```
+
+File `test/{Name}.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs`, for `Product`, with `WithFindBySkuTrackingAsync` in place of `WithFindByIdTrackingAsync`:
+
+```csharp
+public class ProductRepositoryBuilder
+```
+
+```csharp
+private readonly Mock<IProductRepository> _mock = new();
+```
+
+```csharp
+public static ProductRepositoryBuilder Create() => new();
+```
+
+```csharp
+public ProductRepositoryBuilder WithFindByIdAsync(Product product)
+{
+    _mock.Setup(productRepository => productRepository.FindByIdAsync(It.IsAny<Guid>())).ReturnsAsync(product);
+    return this;
+}
+```
 
 ```csharp
 public ProductRepositoryBuilder WithFindBySkuTrackingAsync(Product product)
@@ -322,6 +400,34 @@ public ProductRepositoryBuilder WithFindBySkuTrackingAsync(Product product)
     _mock.Setup(productRepository => productRepository.FindBySkuTrackingAsync(It.IsAny<string>())).ReturnsAsync(product);
     return this;
 }
+```
+
+```csharp
+public ProductRepositoryBuilder WithCreateAsync(Action<Product> callback = null)
+{
+    _mock.Setup(productRepository => productRepository.CreateAsync(It.IsAny<Product>()))
+        .Callback<Product>(product => callback?.Invoke(product))
+        .Returns(Task.CompletedTask);
+    return this;
+}
+```
+
+```csharp
+public ProductRepositoryBuilder WithUpdateAsync(Action<Product> callback = null)
+{
+    _mock.Setup(productRepository => productRepository.UpdateAsync(It.IsAny<Product>()))
+        .Callback<Product>(product => callback?.Invoke(product))
+        .Returns(Task.CompletedTask);
+    return this;
+}
+```
+
+```csharp
+public IProductRepository Build() => _mock.Object;
+```
+
+```csharp
+public Mock<IProductRepository> BuildMock() => _mock;
 ```
 
 ## Domain tests

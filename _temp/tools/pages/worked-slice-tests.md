@@ -34,9 +34,13 @@ A repository builder wraps a `Mock<I{Aggregate}Repository>`, one `With...` per m
 
 @@member test/Boilerplate.Tests/TestSupport/Domain/Orders/OrderRepositoryBuilder.cs::OrderRepositoryBuilder::BuildMock@@
 
-`CustomerRepositoryBuilder` has the same members for `Customer`. `ProductRepositoryBuilder` has them for `Product` plus:
+File `test/{Name}.Tests/TestSupport/Domain/Customers/CustomerRepositoryBuilder.cs`, the same members for `Customer`:
 
-@@member test/Boilerplate.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs::ProductRepositoryBuilder::WithFindBySkuTrackingAsync@@
+@@members test/Boilerplate.Tests/TestSupport/Domain/Customers/CustomerRepositoryBuilder.cs::CustomerRepositoryBuilder@@
+
+File `test/{Name}.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs`, for `Product`, with `WithFindBySkuTrackingAsync` in place of `WithFindByIdTrackingAsync`:
+
+@@members test/Boilerplate.Tests/TestSupport/Domain/Products/ProductRepositoryBuilder.cs::ProductRepositoryBuilder@@
 
 ## Domain tests
 

@@ -1,7 +1,10 @@
 using Boilerplate.Shared.Persistence;
 using Boilerplate.Shared.Exceptions;
 using Boilerplate.Shared.Domain;
+using Boilerplate.Shared.Diagnostics;
 using FluentValidation;
+using System.Diagnostics;
+using System.Net;
 
 namespace Boilerplate.Shared.Application;
 
@@ -13,12 +16,42 @@ public sealed class CommandPipeline<TCommand>(
 {
     public async Task<CommandResult<TContent>> ExecuteAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
     {
+        using var activity = Telemetry.Source.StartActivity(typeof(TCommand).Name);
+        var startedAt = Stopwatch.GetTimestamp();
+        var outcome = Telemetry.Succeeded;
+
+        try
+        {
+            return await RunAsync(command, onHandle);
+        }
+        catch (Exception exception)
+        {
+            outcome = exception is ExceptionBase { HttpStatusCode: < HttpStatusCode.InternalServerError } ? Telemetry.Refused : Telemetry.Failed;
+            activity?.SetStatus(ActivityStatusCode.Error, exception.GetType().Name);
+
+            throw;
+        }
+        finally
+        {
+            Telemetry.CommandDuration.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, new KeyValuePair<string, object>("command", typeof(TCommand).Name), new KeyValuePair<string, object>("outcome", outcome));
+        }
+    }
+
+    private async Task<CommandResult<TContent>> RunAsync<TContent>(TCommand command, Func<TCommand, Task<CommandResult<TContent>>> onHandle)
+    {
         if (command is not IContextCommand contextCommand)
         {
             return await HandleAsync(command, onHandle);
         }
 
         contextCommand.Context = CommandContext.Complete(contextCommand.Context);
+        contextCommand.Context = contextCommand.Context with { Chain = [.. contextCommand.Context.Chain, typeof(TCommand).Name] };
+
+        if (contextCommand.Context.Chain.Count > LoopGuardConstants.MaxChain)
+        {
+            throw new LoopDetectedException(contextCommand.Context.Chain);
+        }
+
         eventContext.EnterCommand(contextCommand.Context);
 
         try

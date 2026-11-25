@@ -19,17 +19,17 @@ This project was started with mortis-starter. The table below records what was c
 | naming.routes | kebab-case |  |
 | naming.events | bare |  |
 | exceptions | catalogued |  |
-| queries | commands | not built yet in phase 1; this variant holds only built options |
+| queries | read-models |  |
 | tenancy.mode | interface |  |
 | tenancy.key | guid |  |
 | tenancy.resolver | claim |  |
 | languages.mode | data |  |
 | languages.default | en |  |
 | languages.supported | en, tr |  |
-| testing | unit | not built yet in phase 1; this variant holds only built options |
+| testing | architecture |  |
 | auth | jwt |  |
 | hosts.worker | separate |  |
-| addons | correlation | not built yet in phase 1; this variant holds only built options |
+| addons | correlation, api-conventions, loop-guard, observability, idempotent-commands, soft-delete, caching, scheduler, secrets, events-project |  |
 | example | true | the reference variants all carry the example domain |
 
 ## Working in this project

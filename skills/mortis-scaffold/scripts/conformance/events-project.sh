@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Conformance: the events-project add-on. Queue events live in a contracts project, and a second service builds against the contracts alone.
-# NOT RUN YET (decision 50): written in phase 1 from events-project.md, first run in phase 2.
 # Needs: PROJECT NAME LANG_SH WORK EXAMPLE; dotnet.
 # Applies when: addons contains events-project
 set -uo pipefail
@@ -17,6 +16,7 @@ cat > "$CONSUMER/SampleConsumer.csproj" <<XML
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>

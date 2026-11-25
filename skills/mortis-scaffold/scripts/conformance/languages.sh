@@ -43,7 +43,7 @@ expect_equal "languages: the read also carries every translation" "Civata-$S|Bol
 
 call "$TR" "" -X POST -d "{\"name\":\"Lang\",\"email\":\"lang-$S@example.com\"}" "http://localhost:$PORT/customers"
 CUSTOMER="$(field "['id']")"
-call "$TR" "" -X POST -d "{\"orderNumber\":\"LG-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"L-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "http://localhost:$PORT/orders"
+call "$TR" "" -X POST -d "{\"orderNumber\":\"LG-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"L-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" "http://localhost:$PORT/orders"
 ORDER_CORRELATION="$(log_field "$PROJECT/.mortis/api.log" "l.get('Message') == 'CreateOrderCommand started' and l.get('UserId') == 'lang-tr'" CorrelationId)"
 EVENTS_LOG="$PROJECT/.mortis/api.log"; [ "${WORKER:-none}" = "separate" ] && [ "${OUTBOX:-none}" != "none" ] && EVENTS_LOG="$PROJECT/.mortis/worker.log"
 expect_equal "languages: the event consumer's command runs in the language of the original request" "9|1" "$(eventually "select stock from products where sku = 'L-$S'" "9" 20)|$(log_count "$EVENTS_LOG" "l.get('Message') == 'DecreaseProductStockCommand started' and l.get('CorrelationId') == '$ORDER_CORRELATION' and l.get('Language') == 'tr'")"

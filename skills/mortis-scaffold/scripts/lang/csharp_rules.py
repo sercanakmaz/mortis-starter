@@ -33,7 +33,7 @@ def public_types(path):
     names = []
     for line in shape_of_file(path):
         if line.startswith("type "):
-            match = re.search(r"\b(?:class|record|interface|struct|enum)\s+(\w+)", line)
+            match = re.search(r"\b(?:record\s+struct|record\s+class|class|record|interface|struct|enum)\s+(\w+)", line)
             if match:
                 names.append(match.group(1))
     return names
@@ -53,7 +53,7 @@ def test_class_members(text):
             continue
         before = masked[:match.start()].rstrip().splitlines()
         previous = before[-1].strip() if before else ""
-        if previous not in ("[Fact]",) and not previous.startswith(("[Theory]", "[InlineData", "[MemberData")):
+        if previous not in ("[Fact]", "[SkippableFact]") and not previous.startswith(("[Theory]", "[SkippableTheory]", "[InlineData", "[MemberData")):
             problems.append(match.group(3).strip()[:60])
     return problems
 
@@ -83,7 +83,7 @@ def check(root):
                 problems.append(f"{relative}: private method {name} in a handler or domain service")
         if re.search(r"^src/[^/]+\.Application/.+Command\.cs$", relative):
             masked_text = mask(text)
-            if len(re.findall(r"\[JsonIgnore\]", masked_text)) > 1 or re.search(r"\b(UserId|UserEmail|CorrelationId|TenantId)\s*\{\s*get", masked_text):
+            if len(re.findall(r"\bCommandContext\s+\w+\s*\{\s*get", masked_text)) > 1 or re.search(r"\b(UserId|UserEmail|CorrelationId|TenantId)\s*\{\s*get", masked_text):
                 problems.append(f"{relative}: a command declares its context in one line, Context, and nothing else")
         if relative.startswith("src/") and re.search(r'new BusinessRuleException\(\s*"', text):
             problems.append(f"{relative}: a rule code is a constant of the aggregate's Constants, never a string at the throw")

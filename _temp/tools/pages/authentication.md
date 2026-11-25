@@ -82,7 +82,11 @@ File `src/{Name}.Console/ConsoleTokens.cs`. It only writes development tokens fo
 
 @@data variant:advanced/src/Boilerplate.Console/Program.cs csharp@@
 
-The Console project copies `appsettings.Development.json` to its output, next to `appsettings.json`.
+The Console project copies `appsettings.Development.json` to its output, next to `appsettings.json`; add to the `ItemGroup` of `None Update` lines in `{Name}.Console.csproj`:
+
+```xml
+    <None Update="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+```
 
 ## Settings
 
@@ -107,7 +111,7 @@ The conformance suite runs the hosts with `DOTNET_ENVIRONMENT=Development` so th
 
 ## Tests
 
-`test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs`, with `FakeAuthSettings` in `TestSupport/Infrastructure/Authentication/`:
+`test/{Name}.Tests/Infrastructure/Authentication/AuthSettingsTests.cs`, with `FakeAuthSettings` in `TestSupport/Infrastructure/Authentication/` (shown with tenancy; without it, drop every `TenantClaim` member, assertion and `tenant` argument, as the standard reference solution does):
 
 @@members variant:advanced/test/Boilerplate.Tests/Infrastructure/Authentication/AuthSettingsTests.cs::AuthSettingsTests@@
 
@@ -117,7 +121,11 @@ The conformance suite runs the hosts with `DOTNET_ENVIRONMENT=Development` so th
 
 @@members variant:advanced/test/Boilerplate.Tests/Console/ConsoleTokensTests.cs::ConsoleTokensTests@@
 
-`ContextCommandFilterTests` and `ActionExecutingContextBuilder` use the `sub` and `email` claims; `ConsoleCommandRunnerTests` passes the context (`hosts.md`). The 401, the audit columns and the refusal outside Development are proven by `scripts/conformance/auth.sh`.
+With jwt the filter takes `IOptions<AuthSettings>`, so `ContextCommandFilterTests` (in `testing-kernel.md`) builds it as `new ContextCommandFilter(Options.Create(new AuthSettings()))` in every test (usings `{Name}.Infrastructure.Authentication`, `Microsoft.Extensions.Options`) and adds one test:
+
+@@member variant:standard/test/Boilerplate.Tests/Api/Filters/ContextCommandFilterTests.cs::ContextCommandFilterTests::OnActionExecutionAsync_Should_ReadTheClaimNamesFromTheSettings@@
+
+`ActionExecutingContextBuilder` uses the `sub` and `email` claims; `ConsoleCommandRunnerTests` passes the context (`hosts.md`). The 401, the audit columns and the refusal outside Development are proven by `scripts/conformance/auth.sh`.
 
 ## Decision record
 

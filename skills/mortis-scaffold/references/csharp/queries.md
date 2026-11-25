@@ -2,7 +2,7 @@
 
 Applies when `queries` is `split` or `read-models`. Projects `{Name}.Shared` (folder `Application/`), `{Name}.Domain` (the reader ports), `{Name}.Application`, `{Name}.Infrastructure` (folder `Persistence/`) and the hosts. Layer 1: `options/queries.md`, `architecture/queries.md`. Read models are on `read-models.md`.
 
-**Not built or run yet** (decision 46): every snippet on this page is written by hand against the reference solutions' code; phase 2 compiles and proves it. `docs/unverified.md` lists it.
+**Built** in the standard reference solution (`queries` = `split`) and the advanced one (`read-models`, with tenancy and translated data), decision 52: compiled, tested and verified there. Read models are on `read-models.md`.
 
 With `queries` = `commands` (the core), a read is a `Get*Command` that loads the aggregate and maps it (`application.md`); nothing on this page is generated.
 
@@ -301,7 +301,33 @@ public class ProductReader(AppDbContext context) : IProductReader
 
 - The page is one statement that selects only the view's columns; the total is a second `count(*)` with the same filter. `Page` is public so a test can read its SQL.
 - Every sort ends on a unique column, so pages do not overlap.
-- With `languages.mode` = `data`, `Name` is a `LocalizedText` in jsonb: the view carries the `LocalizedText` and `ProductDto.From` takes the caller's language (`languages.md`), and a name filter or sort reads the language's path. With tenancy the query filter of `AppDbContext` applies to readers too. With MongoDB a reader uses a projection on the collection through the repository base (`infrastructure-mongo.md`).
+- With tenancy the query filter of `AppDbContext` applies to readers too. With MongoDB a reader uses a projection on the collection through the repository base (`infrastructure-mongo.md`).
+
+### With `languages.mode` = `data`
+
+`Name` is a `LocalizedText` in a jsonb column, which EF cannot search or sort inside. `ProductConfiguration` adds two stored generated columns the reader filters and sorts on, so the database does the work and the page stays one statement:
+
+```csharp
+    public const string NameSortProperty = "NameSort";
+    public const string NameSearchProperty = "NameSearch";
+```
+
+```csharp
+        builder.Property<string>(NameSortProperty).HasComputedColumnSql($"name ->> '{Languages.Default}'", stored: true);
+        builder.Property<string>(NameSearchProperty).HasComputedColumnSql("name::text", stored: true);
+```
+
+`name_sort` is the default language's text (the sort is by the default language for every caller); `name_search` is the whole jsonb as text, so `nameContains` matches the name in any language. The view carries the `LocalizedText`: `public record ProductView(Guid Id, string Sku, LocalizedText Name, int Stock, int? CategoryId);`. In `ProductReader` the name sort and filter read the columns:
+
+```csharp
+            ProductSort.NameAscending => filtered.OrderBy(product => EF.Property<string>(product, ProductConfiguration.NameSortProperty)).ThenBy(product => product.Id),
+```
+
+```csharp
+            products = products.Where(product => EF.Functions.ILike(EF.Property<string>(product, ProductConfiguration.NameSearchProperty), "%" + EscapeLike(filter.NameContains) + "%", "\\"));
+```
+
+`ProductDto.From(ProductView view, string language)` picks the caller's text like `Map` does (`Name = view.Name.Get(language, Languages.Default)`, `Names = view.Name.Texts`); `GetProductQueryHandler` returns `ProductDto.From(productView, query.Context.Language)` and `ListProductsQueryHandler` maps each item with `query.Context.Language`. With tenancy, a reader test builds its context with a tenant (`AppDbContextBuilder.Create().WithTenantScope(TenantScopeBuilder.Create().WithTenant(...).Build())`), because the query filter reads the tenant even for `ToQueryString`.
 
 `OrderReader` projects the lines in the same statement, and computes the total the way `Order.TotalAmount` does (`OrderView` and `OrderLineView` are records with these fields, in the same order):
 
@@ -335,25 +361,59 @@ Controllers take `IQueryDispatcher` and bind the query from the route or the que
     }
 ```
 
-`ContextCommandFilter` fills queries as well as commands: after the command loop, `foreach (var query in context.ActionArguments.Values.OfType<IQuery>()) query.Context = commandContext;`.
-
-The Console runs queries by name like commands. `ConsoleCommandRunner` looks for `{name}Command` first, then `{name}Query`, and asks a query through the dispatcher:
+`ContextCommandFilter` fills queries as well as commands, after the command loop:
 
 ```csharp
-        var queryType = applicationAssembly.GetTypes().SingleOrDefault(type => type.Name == name + "Query" && typeof(IQuery).IsAssignableFrom(type));
-
-        if (queryType is not null)
+        foreach (var query in context.ActionArguments.Values.OfType<IQuery>())
         {
-            var query = (IQuery)Deserialize(queryType, argument);
-
             query.Context = commandContext;
-
-            return await (Task<object>)typeof(ConsoleCommandRunner).GetMethod(nameof(AskAsync), BindingFlags.NonPublic | BindingFlags.Instance)
-                .MakeGenericMethod(ResultTypeOf(queryType)).Invoke(this, [query]);
         }
 ```
 
-`AskAsync<TResult>(IQuery<TResult> query)` awaits `queryDispatcher.Ask(query)` and returns the result as `object`; `ResultTypeOf` reads `TResult` from the query's `IQuery<>` interface. The runner takes `IQueryDispatcher` next to `ICommandDispatcher`.
+The Console runs queries by name like commands. `ConsoleCommandRunner` takes the query dispatcher as an optional third constructor parameter (`IQueryDispatcher queryDispatcher = null`; `Program.cs` passes it), looks for `{name}Command` first, then for `{name}Query`, and asks a query through the dispatcher:
+
+```csharp
+        var queryType = commandType is null && queryDispatcher is not null
+            ? commandAssembly.GetTypes().FirstOrDefault(type => !type.IsAbstract && typeof(IQuery).IsAssignableFrom(type) && type.Name.Equals(name + ConsoleConstants.QuerySuffix, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        if (queryType is not null)
+        {
+            var query = (IQuery)await DeserializeAsync(queryType, argument);
+            query.Context = commandContext;
+
+            var resultType = queryType.GetInterfaces().First(contract => contract.IsGenericType && contract.GetGenericTypeDefinition() == typeof(IQuery<>)).GetGenericArguments()[0];
+            var ask = typeof(IQueryDispatcher).GetMethod(nameof(IQueryDispatcher.Ask)).MakeGenericMethod(resultType);
+
+            return await (dynamic)ask.Invoke(queryDispatcher, [query]);
+        }
+```
+
+`DeserializeAsync(Type type, string argument)` is the command path's JSON reading (`@file` or inline, `ConsoleConstants.InputOptions`, `invalid_parameter` on bad JSON), moved into a private method both paths use:
+
+```csharp
+    private static async Task<object> DeserializeAsync(Type type, string argument)
+    {
+        var json = string.IsNullOrWhiteSpace(argument) ? "{}"
+            : argument.StartsWith(ConsoleConstants.FilePrefix) ? await File.ReadAllTextAsync(argument[ConsoleConstants.FilePrefix.Length..])
+            : argument;
+
+        object value;
+
+        try
+        {
+            value = JsonSerializer.Deserialize(json, type, ConsoleConstants.InputOptions);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidParameterException("arguments", exception.Message, exception);
+        }
+
+        return value ?? throw new InvalidParameterException("arguments", "a JSON object is required");
+    }
+```
+
+`ConsoleConstants` gains `QuerySuffix = "Query"`.
 
 ## Tests
 
@@ -379,7 +439,7 @@ public class QueryRulesTests
 }
 ```
 
-`test/{Name}.Tests/Infrastructure/Persistence/Products/ProductReaderTests.cs`, the SQL of a page, read without a database:
+`test/{Name}.Tests/Infrastructure/Persistence/Products/ProductReaderTests.cs`, the SQL of a page, read without a database (with `database` = `mongo` it is replaced by the test of `infrastructure-mongo.md` "Tests", and the readers by its "Readers"):
 
 ```csharp
 public class ProductReaderTests

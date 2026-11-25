@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Boilerplate.Tests.TestSupport.Shared.Diagnostics;
 using Boilerplate.Tests.TestSupport.Shared.Domain;
 using Boilerplate.Infrastructure.Messaging.Outbox;
 
@@ -27,4 +29,26 @@ public class OutboxMessageTests
 
         Assert.Equal(fakeQueueEvent, readBack);
     }
+
+    [Fact]
+    public void From_InsideAnActivity_Should_StoreThatActivitysIdAsTraceParent()
+    {
+        using var recordedActivities = new RecordedActivities();
+        using var activity = recordedActivities.TestSource.StartActivity("request");
+
+        var outboxMessage = OutboxMessage.From(new FakeQueueEvent("first"));
+
+        Assert.Equal(activity!.Id, outboxMessage.TraceParent);
+    }
+
+    [Fact]
+    public void From_OutsideAnyActivity_Should_StoreNoTraceParent()
+    {
+        Activity.Current = null;
+
+        var outboxMessage = OutboxMessage.From(new FakeQueueEvent("first"));
+
+        Assert.Null(outboxMessage.TraceParent);
+    }
+
 }

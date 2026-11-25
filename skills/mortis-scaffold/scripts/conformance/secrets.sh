@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Conformance: the secrets add-on. A stored secret is unreadable in the database and readable through the port.
-# NOT RUN YET (decision 50): written in phase 1 from secrets.md, first run in phase 2.
 # Needs: PROJECT NAME LANG_SH WORK DATABASE API_PORT, TOKEN with auth = jwt, a migrated PostgreSQL, psql, curl; Secrets settings (the development key).
 # Applies when: addons contains secrets, example = true, database = postgres; after example-http.sh
 set -uo pipefail

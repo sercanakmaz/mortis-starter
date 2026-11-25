@@ -1,0 +1,73 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: bash tests/check_installable.sh
+      - run: python3 -I tests/check_docs.py
+      - run: python3 -I tests/check_architecture.py
+      - run: python3 -I tests/test_validate_decisions.py
+      - run: python3 -I tests/check_variants.py
+      - run: python3 -I tests/check_review.py
+
+  examples:
+    runs-on: ubuntu-latest
+    needs: documents
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [lean, standard]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGPORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet tool install --global dotnet-ef --version 10.0.15
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: bash skills/mortis-scaffold/scripts/verify.sh examples/csharp/${{ matrix.preset }}
+
+  go-example:
+    runs-on: ubuntu-latest
+    needs: documents
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGPORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: bash skills/mortis-scaffold/scripts/verify.sh examples/go/lean

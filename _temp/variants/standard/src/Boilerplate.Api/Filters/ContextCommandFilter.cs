@@ -22,6 +22,11 @@ public class ContextCommandFilter(IOptions<AuthSettings> authSettings) : IAsyncA
             contextCommand.Context = commandContext;
         }
 
+        foreach (var query in context.ActionArguments.Values.OfType<IQuery>())
+        {
+            query.Context = commandContext;
+        }
+
         await next();
     }
 }

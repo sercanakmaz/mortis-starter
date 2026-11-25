@@ -6,7 +6,7 @@
 
 ## Decision
 
-A recurring job implements `IRecurringJob` (a name, a default cron, `RunAsync` that sends commands). `SchedulerService` claims each due tick with an insert into `scheduled_job_runs` keyed by job and tick; only the winner runs it. Each job runs as the service user its settings name; there is no system user. One-shot jobs live in `scheduled_jobs`, claimed with `for update skip locked`.
+A recurring job implements `IRecurringJob` (a name, a default cron, `RunAsync` that sends commands). `SchedulerService` claims each due tick with an insert into `scheduled_job_runs` keyed by job and tick; only the winner runs it. Each job runs as the service user its settings name; there is no system user.
 
 ## What varies
 
@@ -29,4 +29,4 @@ The jobs, their schedules and their users.
 
 ## How it is enforced
 
-`SchedulerTicks` tests, `SchedulerClaimTests`, and `scheduler.sh` (with two workers a job fires once per tick).
+`SchedulerTicks` tests and `scheduler.sh` (with two workers a job fires once per tick).

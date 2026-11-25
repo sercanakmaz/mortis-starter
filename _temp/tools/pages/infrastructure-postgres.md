@@ -71,7 +71,7 @@ File `Persistence/EfRepository.cs`, the base of every repository:
 
 ## UnitOfWork
 
-File `Persistence/UnitOfWork.cs`. Needs `using Microsoft.EntityFrameworkCore.Storage;`.
+File `Persistence/UnitOfWork.cs`. Needs `using Microsoft.EntityFrameworkCore.Storage;`. This is the `exceptions` = `coded` version; with `minimal` its `SaveChangesAsync` is the one on `failures.md` and `DatabaseExceptionHandler` is not written.
 
 @@decl src/Boilerplate.Infrastructure/Persistence/UnitOfWork.cs::UnitOfWork@@
 
@@ -189,7 +189,10 @@ Never written by hand. After the mappings exist, from the solution root:
 ```bash
 dotnet tool install --global dotnet-ef --version 10.0.15
 dotnet ef migrations add Initial --project src/{Name}.Infrastructure --output-dir Persistence/Migrations
+dotnet format
 ```
+
+`dotnet format` right after: the files `dotnet ef` writes have a byte-order mark and block-scoped namespaces, which `dotnet format --verify-no-changes` (the final check) refuses. Their `/// <inheritdoc />` lines are tool output and the comment rule exempts `Migrations/`.
 
 This writes `*_Initial.cs`, `*_Initial.Designer.cs` and `AppDbContextModelSnapshot.cs`. A project with neither an aggregate nor an outbox has no migration; with an outbox the table is in `Initial`. Hosts never migrate; `dotnet ef database update --project src/{Name}.Infrastructure` does.
 

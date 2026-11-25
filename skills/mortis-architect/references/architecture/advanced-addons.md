@@ -1,13 +1,14 @@
 # Advanced add-ons
 
-The add-ons a project chooses when it grows: what each adds, in the notation of `pseudo-code.md`, and the rule it must keep. The code of one language is on its own page (`soft-delete.md`, `caching.md`, `scheduler.md`, `storage.md`, `secrets.md`, `loop-guard.md`, `contexts.md`, `events-project.md`). None of them is generated yet (decision 50).
+The add-ons a project chooses when it grows: what each adds, in the notation of `pseudo-code.md`, and the rule it must keep. The code of one language is on its own page (`soft-delete.md`, `caching.md`, `scheduler.md`, `storage.md`, `secrets.md`, `loop-guard.md`, `contexts.md`, `events-project.md`). Six are built and proved in the C# advanced reference solution (decision 52); `storage` and `contexts` are knowledge only, and `contexts` is in no preset (decision 53).
 
 ## soft-delete
 
 ```
 aggregate : ISoftDeletable     Delete(user) / Restore(user), each raising an event
 every query                    filtered: not deleted (a named filter, so the tenant filter stays when it is ignored)
-natural unique keys            unique among rows not deleted, so a deleted key can be reused
+natural unique keys            unique among rows not deleted, so a deleted key can be reused;
+                               a key another table references keeps a real unique constraint and stays taken
 ```
 
 - Delete is a state change, not a removal: audit and undo keep working. Restore can fail when the key was reused meanwhile (409 `duplicate`).

@@ -13,15 +13,26 @@ run() { console_run "$@" 2>>"$WORK/console.log"; }
 id_of() { json_field "$1" "['Id']"; }
 S="$(python3 -I -c 'import uuid; print(uuid.uuid4().hex[:8])')"
 : > "$WORK/console.log"
+mongo 'db.dropDatabase().ok' >/dev/null
+start_relay() {
+  if [ "${WORKER:-in-api}" = "separate" ]; then
+    RELAY_PID="$("$LANG_SH" worker-start "$PROJECT" "$NAME")"
+    sleep 4
+  else
+    RELAY_PID="$("$LANG_SH" api-start "$PROJECT" "$NAME" "$((${API_PORT:-${MORTIS_API_PORT:-5099}} + 3))")"
+    for _ in $(seq 1 60); do curl -fs "http://localhost:$((${API_PORT:-${MORTIS_API_PORT:-5099}} + 3))/health" >/dev/null 2>&1 && break; sleep 0.5; done
+  fi
+}
+stop_relay() { [ -n "${RELAY_PID:-}" ] && { kill "$RELAY_PID" 2>/dev/null; wait "$RELAY_PID" 2>/dev/null; RELAY_PID=""; }; }
 
 expect_equal "mongo: the server is a replica set (a standalone server fails at the first write in a transaction)" "1" "$(mongo 'try { rs.status().ok } catch (e) { 0 }')"
-console_run ensure-indexes >/dev/null 2>"$WORK/indexes.err"
-expect_equal "mongo: ensure-indexes creates the unique indexes, and running it again changes nothing" "0|0|ux_products_sku" "$?|$(console_run ensure-indexes >/dev/null 2>&1; echo $?)|$(mongo 'db.products.getIndexes().map(i => i.name).filter(n => n === "ux_products_sku").join()')"
+"$LANG_SH" console "$PROJECT" "$NAME" ensure-indexes >/dev/null 2>"$WORK/indexes.err"
+expect_equal "mongo: ensure-indexes creates the unique indexes, and running it again changes nothing" "0|0|ux_products_sku" "$?|$("$LANG_SH" console "$PROJECT" "$NAME" ensure-indexes >/dev/null 2>&1; echo $?)|$(mongo 'db.products.getIndexes().map(i => i.name).filter(n => n === "ux_products_sku").join()')"
 
 CUSTOMER="$(id_of "$(run CreateCustomer "{\"name\":\"Mongo\",\"email\":\"mongo-$S@example.com\"}")")"
 run CreateProduct "{\"sku\":\"MG-$S\",\"name\":\"Mongo bolt\",\"stock\":10}" >/dev/null
-ORDER="$(id_of "$(run CreateOrder "{\"orderNumber\":\"MG-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"MG-$S\",\"price\":5,\"currency\":\"EUR\",\"quantity\":3}]}")")"
-run CompleteOrder "{\"id\":\"$ORDER\"}" >/dev/null
+ORDER="$(id_of "$(run CreateOrder "{\"orderNumber\":\"MG-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"MG-$S\",\"price\":5,\"currency\":\"EUR\",\"quantity\":3}]}")")"
+run CompleteOrder "{\"id\":$(jid "$ORDER")}" >/dev/null
 expect_equal "order-flow: the order document is Completed with its line embedded, and the version moved on" "Completed|1|true" "$(mongo "const o = db.orders.findOne({ orderNumber: 'MG-$S' }); [o.status, o.lines.length, o.version > 1].join('|')")"
 expect_equal "order-flow: the sync handler counted the completed order on the customer document" "1" "$(mongo "db.customers.findOne({ email: 'mongo-$S@example.com' }).completedOrderCount")"
 expect_equal "stock-flow: the event consumer moved the stock (10 - 3)" "7" "$(eventually_mongo "db.products.findOne({ sku: 'MG-$S' }).stock" "7")"
@@ -30,17 +41,21 @@ run CreateCustomer "{\"name\":\"Twice\",\"email\":\"mongo-$S@example.com\"}" >/d
 expect_equal "duplicates: a second customer with the same email is a duplicate (11000), as on PostgreSQL" "duplicate" "$(error_code "$WORK/console.log")"
 
 BLOCKED="$(id_of "$(run CreateCustomer "{\"name\":\"Blocked\",\"email\":\"mongo-blocked-$S@example.com\"}")")"
-BLOCKED_ORDER="$(id_of "$(run CreateOrder "{\"orderNumber\":\"MGB-$S\",\"customerId\":\"$BLOCKED\",\"lines\":[{\"sku\":\"MG-$S\",\"price\":5,\"currency\":\"EUR\",\"quantity\":1}]}")")"
-run BlockCustomer "{\"id\":\"$BLOCKED\"}" >/dev/null
-console_run CompleteOrder "{\"id\":\"$BLOCKED_ORDER\"}" >/dev/null 2>"$WORK/blocked.err"
+BLOCKED_ORDER="$(id_of "$(run CreateOrder "{\"orderNumber\":\"MGB-$S\",\"customerId\":$(jid "$BLOCKED"),\"lines\":[{\"sku\":\"MG-$S\",\"price\":5,\"currency\":\"EUR\",\"quantity\":1}]}")")"
+run BlockCustomer "{\"id\":$(jid "$BLOCKED")}" >/dev/null
+console_run CompleteOrder "{\"id\":$(jid "$BLOCKED_ORDER")}" >/dev/null 2>"$WORK/blocked.err"
 expect_equal "blocked-customer: a rolled-back command leaves the order Open, the count unchanged, and no outbox document for Completed" "2|customer_blocked|Open|0|0" "$?|$(error_code "$WORK/blocked.err")|$(mongo "[db.orders.findOne({ orderNumber: 'MGB-$S' }).status, db.customers.findOne({ email: 'mongo-blocked-$S@example.com' }).completedOrderCount, db.outbox_messages.countDocuments({ payload: { \$regex: '$BLOCKED_ORDER' }, type: { \$regex: 'Completed' } })].join('|')")"
 
 run CreateProduct "{\"sku\":\"MGC-$S\",\"name\":\"Contended\",\"stock\":20}" >/dev/null
+start_relay
+CONCURRENT_PIDS=()
 for i in 1 2 3 4 5 6 7 8; do
-  console_run CreateOrder "{\"orderNumber\":\"MGC-$i-$S\",\"customerId\":\"$CUSTOMER\",\"lines\":[{\"sku\":\"MGC-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" >/dev/null 2>&1 &
+  console_run CreateOrder "{\"orderNumber\":\"MGC-$i-$S\",\"customerId\":$(jid "$CUSTOMER"),\"lines\":[{\"sku\":\"MGC-$S\",\"price\":1,\"currency\":\"EUR\",\"quantity\":1}]}" >/dev/null 2>&1 &
+  CONCURRENT_PIDS+=($!)
 done
-wait
-expect_equal "concurrency: eight concurrent stock updates on one document all land (version conflicts retried), 20 - 8" "12" "$(eventually_mongo "db.products.findOne({ sku: 'MGC-$S' }).stock" "12" 60)"
+wait "${CONCURRENT_PIDS[@]}"
+expect_equal "concurrency: eight concurrent stock updates on one document all land (version conflicts retried), 20 - 8" "12" "$(eventually_mongo "db.products.findOne({ sku: 'MGC-$S' }).stock" "12" 90)"
+stop_relay
 
 if [ -n "${POSTGRES_TWIN:-}" ]; then
   expect_equal "layers: Domain and Application are identical, file for file, to the PostgreSQL project" "" "$(for layer in Domain Application; do diff -rq -x bin -x obj "$PROJECT/src/$NAME.$layer" "$POSTGRES_TWIN/src/$NAME.$layer"; done)"

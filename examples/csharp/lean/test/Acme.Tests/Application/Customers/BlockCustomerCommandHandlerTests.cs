@@ -1,0 +1,53 @@
+using Moq;
+using Acme.Application.Customers;
+using Acme.Domain.Aggregates.Customers;
+using Acme.Domain.Aggregates.Customers.Events;
+using Acme.Shared.Application;
+using Acme.Shared.Domain;
+using Acme.Shared.Exceptions;
+using Acme.Shared.Persistence;
+using Acme.Tests.TestSupport.Domain.Customers;
+using Acme.Tests.TestSupport.Shared.Application;
+using Acme.Tests.TestSupport.Shared.Persistence;
+
+namespace Acme.Tests.Application.Customers;
+
+public class BlockCustomerCommandHandlerTests
+{
+    [Fact]
+    public async Task Handle_Should_BlockTheTrackedCustomerAndUpdateIt()
+    {
+        var calls = new List<string>();
+        Customer writtenCustomer = null;
+        var customerRepository = CustomerRepositoryBuilder.Create()
+            .WithFindByIdTrackingAsync(FakeCustomer.Create().WithoutEvents())
+            .WithUpdateAsync(updatedCustomer =>
+            {
+                writtenCustomer = updatedCustomer;
+                calls.Add(nameof(ICustomerRepository.UpdateAsync));
+            })
+            .Build();
+        var commandPipeline = CommandPipelineBuilder<BlockCustomerCommand>.Create()
+            .WithUnitOfWork(UnitOfWorkBuilder.Create().WithRecordedCalls(calls).Build())
+            .Build();
+        var commandHandler = new BlockCustomerCommandHandler(customerRepository, commandPipeline);
+
+        var commandResult = await commandHandler.Handle(new BlockCustomerCommand(Guid.CreateVersion7()) { Context = new CommandContext { User = new AuditUser("user-1", "user-1@localhost") } });
+
+        Assert.True(commandResult.Content.IsBlocked);
+        Assert.Equal("user-1", writtenCustomer.UpdatedUserId);
+        Assert.IsType<Blocked>(Assert.Single(writtenCustomer.DomainEvents));
+        Assert.Equal([nameof(IUnitOfWork.BeginTransactionAsync), nameof(ICustomerRepository.UpdateAsync), nameof(IUnitOfWork.CommitTransactionAsync)], calls);
+    }
+
+    [Fact]
+    public async Task Handle_WithAnUnknownCustomer_Should_ThrowNotFoundAndNotWrite()
+    {
+        var customerRepositoryBuilder = CustomerRepositoryBuilder.Create().WithFindByIdTrackingAsync(null).WithUpdateAsync();
+        var commandHandler = new BlockCustomerCommandHandler(customerRepositoryBuilder.Build(), CommandPipelineBuilder<BlockCustomerCommand>.Create().Build());
+
+        await Assert.ThrowsAsync<NotFoundException>(() => commandHandler.Handle(new BlockCustomerCommand(Guid.CreateVersion7())));
+
+        customerRepositoryBuilder.BuildMock().Verify(customerRepository => customerRepository.UpdateAsync(It.IsAny<Customer>()), Times.Never);
+    }
+}

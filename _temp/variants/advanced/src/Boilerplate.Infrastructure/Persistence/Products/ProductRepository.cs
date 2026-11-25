@@ -11,4 +11,9 @@ public class ProductRepository(AppDbContext context, IUnitOfWork unitOfWork, Eve
     {
         return DbSet.FirstOrDefaultAsync(product => product.Sku == sku);
     }
+
+    public Task<Product> FindByIdIncludingDeletedTrackingAsync(Guid id)
+    {
+        return DbSet.IgnoreQueryFilters([PersistenceConstants.SoftDeleteFilter]).SingleOrDefaultAsync(product => product.Id == id);
+    }
 }

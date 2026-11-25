@@ -5,6 +5,7 @@ using FluentValidation;
 
 namespace Boilerplate.Application.Customers;
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Skip)]
 public record CreateCustomerCommand : ICommand<CustomerDto>, IContextCommand, ITransactionalCommand
 {
     [JsonIgnore] public CommandContext Context { get; set; }
