@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="../variants/advanced/src/Boilerplate.Infrastructure/Boilerplate.Infrastructure.csproj" />
     <ProjectReference Include="../variants/advanced/src/Boilerplate.Application/Boilerplate.Application.csproj" />
+    <ProjectReference Include="../variants/advanced/src/Boilerplate.Contracts/Boilerplate.Contracts.csproj" />
   </ItemGroup>
 </Project>

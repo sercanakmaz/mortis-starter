@@ -122,4 +122,6 @@ Registration is explicit, one line per endpoint and consumer, as everywhere else
 3. Our consumer receives an event published by MassTransit 8, with either serializer.
 4. We bind to an exchange MassTransit declared, and MassTransit binds to one we declared, without a "precondition failed" error (same durability, type and arguments).
 5. A failing consumer leaves the message in `<queue>_error` with the fault headers.
-6. The Go bus passes the same five checks against the C# services.
+6. The Go bus passes the same five checks against the C# services. Done (2026-11-25): `_temp/interop/GoInteropTests.cs` against our C# bus and MassTransit 8 with both serializers, and `tests/check_interop_bus.sh` against the C# Worker and outbox. Go has no namespaces, so a Go event maps its `EventName` to the C# wire name when they differ (a `MessageNameAttribute`, a Contracts project): `Publisher.WireNames`, `Endpoint.EventName`.
+
+Found while building check 6: neither bus moves a message no consumer handles to `<queue>_skipped`, as "Topology" says; both log it and acknowledge it. The context travels both in the message body (the event's own `tenantId`, `userId`, `userEmail`, `language`) and in the `Mortis-*` headers; the C# consumer reads the body, the Go consumer reads the body and falls back to the headers.

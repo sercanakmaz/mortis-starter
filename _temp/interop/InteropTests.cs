@@ -1,6 +1,6 @@
 using Boilerplate.Infrastructure.Messaging;
 using Xunit;
-using Boilerplate.Domain.Aggregates.Orders.Events;
+using Boilerplate.Contracts.Orders;
 using Boilerplate.Infrastructure.Messaging.RabbitMq;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
