@@ -145,6 +145,7 @@ func consume(connection *amqp.Connection, logger *slog.Logger, arguments []strin
 func declare(connection *amqp.Connection, logger *slog.Logger, arguments []string) error {
 	flags := flag.NewFlagSet("declare", flag.ExitOnError)
 	queue := flags.String("queue", "", "")
+	purge := flags.Bool("purge", false, "drop the messages earlier runs left in the queue")
 	_ = flags.Parse(arguments)
 
 	channel, err := connection.Channel()
@@ -152,7 +153,13 @@ func declare(connection *amqp.Connection, logger *slog.Logger, arguments []strin
 		return err
 	}
 	defer channel.Close()
-	return endpointFor(connection, logger, *queue, nil, 0).Declare(channel)
+	if err := endpointFor(connection, logger, *queue, nil, 0).Declare(channel); err != nil {
+		return err
+	}
+	if *purge {
+		_, err = channel.QueuePurge(*queue, false)
+	}
+	return err
 }
 
 func endpointFor(connection *amqp.Connection, logger *slog.Logger, queue string, consumer shared.Consumer, retry int) *rabbitmq.Endpoint {

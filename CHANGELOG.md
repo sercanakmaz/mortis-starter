@@ -10,6 +10,9 @@ All notable changes to the skills and the template. Newest first.
 - `plans/` moves to `docs/plans/` (decision 61).
 - `TODO.md` is the single backlog; `docs/unverified.md` is merged into it.
 
+### Fixed
+- `tests/check_interop_bus.sh` purges the Go queue first (`gobus declare --purge`): a line an earlier run left behind with the same sku was read in place of this run's.
+
 ### Removed
 - The original hand-written solution and the copy-and-rename script (`_temp/template/`), never read by any tool, and `tests/smoke.sh`, which ran that script.
 

@@ -34,7 +34,7 @@ psql -d postgres -tAc "create database $DATABASE" >/dev/null
 (cd "$PROJECT" && dotnet build -v q >/dev/null 2>&1) || { echo "FAIL  the C# project builds"; exit 1; }
 (cd "$ROOT/reference/interop/go-worker" && go build -o "$WORK/gobus" ./cmd/gobus) || { echo "FAIL  the Go bus builds"; exit 1; }
 "$LANG_SH" migrate "$PROJECT" "$NAME" >/dev/null || { echo "FAIL  the C# migrations apply"; exit 1; }
-"$WORK/gobus" declare --queue interop-bus-go >/dev/null
+"$WORK/gobus" declare --queue interop-bus-go --purge >/dev/null
 
 WORKER_PID="$(MORTIS_LOG="$WORK/worker.log" "$LANG_SH" worker-start "$PROJECT" "$NAME")"
 sleep 6
