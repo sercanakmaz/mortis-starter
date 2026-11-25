@@ -5,6 +5,7 @@ All notable changes to the skills and the template. Newest first.
 ## 2026-11 (phase 2)
 
 ### Added
+- MIT licence (`LICENSE`, the plugin manifest).
 - Tenancy with text tenant ids, built and verified (`tenancy.md`).
 - Phase 3 step 03: the shared outbox between a C# Api and a Go worker, proven by `tests/check_interop_outbox.sh`; `events.outbox` = `background` with a separate Worker built on the standard preset.
 - Phase 2 step 04: MongoDB built and verified on the standard preset (`infrastructure-mongo.md` now from a build, with four corrections), and `int` keys, `as-code` names, `snake_case` JSON and `prefixed` events built and verified on the lean preset; the conformance checks read these options. Fresh-model generation passed `verify.sh` on the first run for both.

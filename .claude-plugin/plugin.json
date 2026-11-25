@@ -1,9 +1,19 @@
 {
   "name": "mortis-starter",
   "version": "0.2.0",
-  "description": "Starts and grows backend projects from a decisions file: mortis-architect interviews and writes MORTIS.md, mortis-scaffold generates and verifies the project, mortis-develop adds to it by recipe, mortis-review checks a change. C# today; Go is planned.",
+  "description": "Starts and grows backend projects from a decisions file: mortis-architect interviews and writes MORTIS.md, mortis-scaffold generates and verifies the project, mortis-develop adds to it by recipe, mortis-review checks a change. C# for every preset, Go for the lean preset.",
   "author": {
     "name": "Sercan Akmaz"
   },
-  "keywords": ["backend", "scaffold", "ddd", "csharp", "dotnet", "postgresql", "rabbitmq"]
+  "keywords": [
+    "backend",
+    "scaffold",
+    "ddd",
+    "csharp",
+    "dotnet",
+    "postgresql",
+    "rabbitmq",
+    "go"
+  ],
+  "license": "MIT"
 }

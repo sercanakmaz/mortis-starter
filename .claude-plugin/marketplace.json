@@ -7,7 +7,7 @@
     {
       "name": "mortis-starter",
       "source": "./",
-      "description": "Start, grow and review backend projects from a decisions file (C#)."
+      "description": "Start, grow and review backend projects from a decisions file (C#; Go for the lean preset)."
     }
   ]
 }

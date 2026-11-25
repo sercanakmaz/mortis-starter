@@ -1,6 +1,6 @@
 # mortis-starter
 
-Four Claude Code skills that start a backend project from a short interview and keep it in shape as it grows. Today they generate .NET 10 backends built from domain-driven-design building blocks (commands through a dispatcher, aggregates that raise events, PostgreSQL through EF Core, an outbox, optionally RabbitMQ). Go is planned (`docs/roadmap.md`).
+Four Claude Code skills that start a backend project from a short interview and keep it in shape as it grows. Today they generate .NET 10 backends built from domain-driven-design building blocks (commands through a dispatcher, aggregates that raise events, PostgreSQL through EF Core, an outbox, optionally RabbitMQ). Go is supported for the lean preset (pgx, PostgreSQL), and a Go worker can share the outbox with a C# service (`docs/roadmap.md`).
 
 | Skill | What it does | State |
 |---|---|---|
@@ -79,3 +79,7 @@ for p in lean standard; do bash skills/mortis-scaffold/scripts/verify.sh example
 ```
 
 `verify.sh` needs `PGHOST`, `PGUSER`, `PGPASSWORD` for a PostgreSQL 16, and `psql`, `curl`, `python3`. Continuous integration (`.github/workflows/checks.yml`) runs the document checks and `verify.sh` on the saved examples; generation runs are made by hand before a release.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
