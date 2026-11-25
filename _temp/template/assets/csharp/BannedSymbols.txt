@@ -1,6 +1,0 @@
-M:System.Guid.NewGuid;Use Guid.CreateVersion7(): ids are time-sortable everywhere in this solution.
-P:System.DateTime.Now;Use DateTime.UtcNow. Every timestamp is UTC; server-local time differs per node.
-P:System.DateTime.Today;Use DateTime.UtcNow.Date.
-P:System.DateTimeOffset.Now;Use DateTimeOffset.UtcNow.
-P:System.Threading.Tasks.Task`1.Result;Await the task. Blocking deadlocks under load and hides the exception in an AggregateException.
-M:System.Threading.Tasks.Task.Wait;Await the task instead of blocking.

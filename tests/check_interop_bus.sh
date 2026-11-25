@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Phase 3 step 03, the bus: the C# advanced build (tenancy, background outbox, RabbitMQ, a separate Worker) and the Go bus of
-# _temp/interop/go-worker exchange the example's LineAdded event through RabbitMQ, with the context intact:
+# reference/interop/go-worker exchange the example's LineAdded event through RabbitMQ, with the context intact:
 #   C# to Go: an order created with the C# Console is relayed by the C# Worker's outbox to RabbitMQ; a Go endpoint receives it with its tenant, user and correlation.
 #   Go to C#: an event the Go publisher sends moves the stock through the C# Worker's consumer, in the right tenant, as the Go user.
 # The MassTransit 8 side (wire-format checks 1 to 5 for Go) is tests/check_interop.sh. Needs PostgreSQL (PG*), RabbitMQ at
 # localhost:5672 (guest/guest), .NET and Go. Usage: bash tests/check_interop_bus.sh
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT="$ROOT/_temp/variants/advanced"
+PROJECT="$ROOT/reference/variants/advanced"
 LANG_SH="$ROOT/skills/mortis-scaffold/scripts/lang/csharp.sh"
 NAME=Boilerplate
 DATABASE=mortis_interop_bus
@@ -32,7 +32,7 @@ field() { python3 -I -c "import json,sys; d=json.loads(sys.stdin.read()); print(
 psql -d postgres -tAc "drop database if exists $DATABASE with (force)" >/dev/null
 psql -d postgres -tAc "create database $DATABASE" >/dev/null
 (cd "$PROJECT" && dotnet build -v q >/dev/null 2>&1) || { echo "FAIL  the C# project builds"; exit 1; }
-(cd "$ROOT/_temp/interop/go-worker" && go build -o "$WORK/gobus" ./cmd/gobus) || { echo "FAIL  the Go bus builds"; exit 1; }
+(cd "$ROOT/reference/interop/go-worker" && go build -o "$WORK/gobus" ./cmd/gobus) || { echo "FAIL  the Go bus builds"; exit 1; }
 "$LANG_SH" migrate "$PROJECT" "$NAME" >/dev/null || { echo "FAIL  the C# migrations apply"; exit 1; }
 "$WORK/gobus" declare --queue interop-bus-go >/dev/null
 

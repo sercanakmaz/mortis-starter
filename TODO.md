@@ -25,7 +25,7 @@ How to keep it:
 | # | Item | Evidence so far | How to prove it | Size |
 |---|---|---|---|---|
 | U1 | Every conformance check can fail | The checks pass on every build; none has been broken on purpose to show it turns red | Break one rule per check in a copy of a variant; expect exactly that check to fail | M |
-| U2 | `verify.sh` on MongoDB | Runs only `kernel.sh`, `database-mongo.sh`, `testing.sh` and the add-on scripts; `example-console.sh`, `example-http.sh`, `auth.sh`, `queries.sh`, `api-conventions.sh` and `outbox.sh` read PostgreSQL with SQL. Run A's HTTP behaviour was checked by hand | Read state through the Api or `mongosh` in place of `psql`; run them on `_temp/variants-extra/standard-a` | M |
+| U2 | `verify.sh` on MongoDB | Runs only `kernel.sh`, `database-mongo.sh`, `testing.sh` and the add-on scripts; `example-console.sh`, `example-http.sh`, `auth.sh`, `queries.sh`, `api-conventions.sh` and `outbox.sh` read PostgreSQL with SQL. Run A's HTTP behaviour was checked by hand | Read state through the Api or `mongosh` in place of `psql`; run them on `reference/variants-extra/standard-a` | M |
 | U3 | `permissions.md`, `conformance/permissions.sh`, ADR 0019 | Written by hand (decision 47); never compiled or run; no kernel-shape lines | Build it in a variant (decision 52), then a generation run | M |
 | U4 | `storage.md`, `contexts.md`, `conformance/storage.sh`, `contexts.sh`, ADRs 0027 and 0030, their `shape-advanced.txt` lines | Written by hand; never compiled or run. `storage` is in no preset; `contexts` was deferred (decision 53) | As U3 | M each |
 | U5 | The architect's interactive interview (questions in rounds) | Only the unattended path has run | A model run with a person answering, or a scripted answerer | S |
@@ -43,9 +43,9 @@ The architect's rules (`scripts/*.py`, `references/schema.json`) accept these; t
 | O1 | Tenancy on MongoDB (tenant filter in `MongoRepository`, tenant-first unique indexes) | Hand-written on `infrastructure-mongo.md`; run A was the standard preset without tenancy (decision 56) | M |
 | O2 | MongoDB with `events.transport` = `rabbitmq`; `LocalizedText` on MongoDB | Hand-written notes on `infrastructure-mongo.md` | M each |
 | O3 | Tenancy with `events.transport` = `in-process` or `database` | The pages say where `EventPublisher` and `OutboxWorker` enter the tenant | M |
-| O4 | `tenancy.resolver` = `header` or `subdomain` | Page notes only (`tenancy.key` = `text` is built: `_temp/variants-extra/advanced-t`) | S each |
-| O5 | `keys.default` = `long` | Page snippets only (`int` is built: `_temp/variants-extra/lean-b`) | S |
-| O6 | `hosts.worker` = `separate` with `after-command`; `in-api` with `background`; `events.transport` = `rabbitmq` with `in-api` (the Api would host the receive endpoint) | Page snippets only (`separate` with `background` is built: `_temp/variants-extra/standard-w`) | S each |
+| O4 | `tenancy.resolver` = `header` or `subdomain` | Page notes only (`tenancy.key` = `text` is built: `reference/variants-extra/advanced-t`) | S each |
+| O5 | `keys.default` = `long` | Page snippets only (`int` is built: `reference/variants-extra/lean-b`) | S |
+| O6 | `hosts.worker` = `separate` with `after-command`; `in-api` with `background`; `events.transport` = `rabbitmq` with `in-api` (the Api would host the receive endpoint) | Page snippets only (`separate` with `background` is built: `reference/variants-extra/standard-w`) | S each |
 | O7 | The outbox's raw SQL with `naming.database` = `as-code` | Written for `snake_case` only; the as-code build has no outbox | S |
 | O8 | `languages.mode` = `messages` without `data`; `ErrorCatalogue` with messages; translated validation messages; searching by a translated field | Page snippets and notes; the pages describe the JSON path and the per-language index | M |
 | O9 | Any other combination the rules accept | Only the combinations above and the builds named in this section's lead are built | M per combination |
@@ -59,10 +59,11 @@ The architect's rules (`scripts/*.py`, `references/schema.json`) accept these; t
 | R3 | `TenantScope.Bypass` used by a real job that crosses tenants | Unit-tested; no example job crosses tenants | S |
 | R4 | Enums or nested types in a message on the bus | Wire-format checks 1 to 6 pass against MassTransit 8.5.12 with both serializers, C# and Go; the example events have neither | S |
 | R5 | `<queue>_skipped` | Neither the C# nor the Go bus moves a message no consumer handles there, as the wire-format spec's topology says; both log and acknowledge it. Implement it or change the spec | S |
+| R6 | The generated pages drift from their tools | Rerunning `expand_pages.py` and `build_project_docs.py` moves the namespace rows of `ConsoleArgumentsTests` and `ConsoleCommandRunnerTests` from `testing-kernel.md` to `hosts.md`, because `build_manifest.py` files every `Console/` test under `hosts.md` while `ConsoleCommandRunnerTests`' code is on `testing-kernel.md`. `check_docs.py` passes either way, so it does not check that the committed pages equal a fresh run. Fix the page rule, then add that check | S |
 
 ## Go
 
 | # | Item | Evidence so far | Size |
 |---|---|---|---|
-| G1 | A Go standard preset: the outbox and the RabbitMQ bus as Go skill pages | Both built and proven only in `_temp/interop/go-worker` (decisions 57 and 59) | L |
+| G1 | A Go standard preset: the outbox and the RabbitMQ bus as Go skill pages | Both built and proven only in `reference/interop/go-worker` (decisions 57 and 59) | L |
 | G2 | A small-model generation run of the Go lean preset | Optional in the plan; not run | S |

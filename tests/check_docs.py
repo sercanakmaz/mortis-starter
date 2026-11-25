@@ -6,7 +6,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCAFFOLD = os.path.join(ROOT, "skills", "mortis-scaffold")
-VARIANTS = os.path.join(ROOT, "_temp", "variants")
+VARIANTS = os.path.join(ROOT, "reference", "variants")
 PRESETS = ("lean", "advanced", "standard")
 TEMPLATE = VARIANTS
 CSHARP = os.path.join(SCAFFOLD, "references", "csharp")
@@ -55,7 +55,7 @@ def built_nowhere(entry):
     return entry.get("unbuilt", False)
 
 
-def check_manifest_covers_template():
+def check_manifest_coversreferencelate():
     if not os.path.isdir(TEMPLATE):
         return
     paths = {e["path"] for e in manifest()["files"]}
@@ -247,7 +247,7 @@ def check_recipe_tags():
 
 
 def main():
-    check_manifest_covers_template()
+    check_manifest_coversreferencelate()
     check_kernel_shape()
     check_snippets_cover_members()
     check_one_way()

@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REVIEW = ROOT / "skills" / "mortis-review" / "scripts" / "review.py"
-VARIANTS = ROOT / "_temp" / "variants"
+VARIANTS = ROOT / "reference" / "variants"
 failures = []
 
 

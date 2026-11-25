@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ARCH = ROOT / "skills" / "mortis-architect" / "references" / "architecture"
-TEMPLATE_SHARED = ROOT / "_temp" / "variants" / "lean" / "src" / "Boilerplate.Shared"
+TEMPLATE_SHARED = ROOT / "reference" / "variants" / "lean" / "src" / "Boilerplate.Shared"
 TYPE_MAP = ROOT / "tests" / "fixtures" / "shared-type-map.json"
 QUESTIONS = ROOT / "tests" / "fixtures" / "placement-questions.json"
 

@@ -16,11 +16,6 @@ What is left and what is not yet proven: [TODO.md](TODO.md). The finished plan a
 Requirements: Claude Code, the .NET SDK 10, Docker (for PostgreSQL, and RabbitMQ in the advanced preset).
 
 ```bash
-# as a plugin
-claude plugin marketplace add <this repository's URL or path>
-claude plugin install mortis-starter@mortis
-
-# or by hand
 bash scripts/install.sh            # copies skills/* into ~/.claude/skills
 bash scripts/install.sh --link     # symlinks instead, so edits here take effect at once
 ```
@@ -60,7 +55,8 @@ test/<Name>.Tests          fakes, builders, tests; test/<Name>.IntegrationTests 
 
 ## How the skills are kept honest
 
-- Three reference solutions in `_temp/variants/` (lean, standard, advanced) are the source of truth (decision 37). Every snippet on a page is checked against them, and every one passes `verify.sh`, which builds, tests, formats and runs the conformance scripts against a real PostgreSQL (and RabbitMQ for advanced).
+- Only `skills/` is installed. `reference/` holds the reference builds the pages are expanded from; no skill points there, so a model using the skills never sees it.
+- Three reference solutions in `reference/variants/` (lean, standard, advanced) are the source of truth (decision 37). Every snippet on a page is checked against them, and every one passes `verify.sh`, which builds, tests, formats and runs the conformance scripts against a real PostgreSQL (and RabbitMQ for advanced).
 - Generated projects are never fixed by hand: a defect a generation run finds is fixed in the skills and logged in `docs/generation-log.md`.
 - [docs/decisions.md](docs/decisions.md): every decision about these skills. [TODO.md](TODO.md): what is left and what is not yet proved, with the evidence. [CHANGELOG.md](CHANGELOG.md): what changed.
 
@@ -74,7 +70,7 @@ python3 -I tests/test_validate_decisions.py     # the MORTIS.md validator
 python3 -I tests/check_variants.py              # the three reference solutions agree with each other and the manifest
 python3 -I tests/check_review.py                # review.py: no finding on the variants, exactly the planted one on each fixture
 bash tests/check_interop.sh                     # the RabbitMQ bus against MassTransit 8 (needs RabbitMQ)
-for p in lean standard advanced; do bash skills/mortis-scaffold/scripts/verify.sh _temp/variants/$p; done
+for p in lean standard advanced; do bash skills/mortis-scaffold/scripts/verify.sh reference/variants/$p; done
 for p in lean standard; do bash skills/mortis-scaffold/scripts/verify.sh examples/csharp/$p; done
 ```
 

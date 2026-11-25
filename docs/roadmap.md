@@ -7,7 +7,7 @@ The goal: a family of skills that starts a backend project by asking what the pr
 | Question | Decision |
 |---|---|
 | How a chosen combination becomes code | Claude writes it from the skills' references. **The skills hold knowledge and checks, never a project**; nothing under `skills/` is project source. [specs/generation-and-verification.md](specs/generation-and-verification.md) |
-| The name | The product, the repository and the plugin are **mortis-starter**. Domain-driven design is one part of it. The four skills are `mortis-architect`, `mortis-scaffold`, `mortis-develop`, `mortis-review`. |
+| The name | The product and the repository are **mortis-starter**; it is installed as skills (decision 60). Domain-driven design is one part of it. The four skills are `mortis-architect`, `mortis-scaffold`, `mortis-develop`, `mortis-review`. |
 | Code in the finished skills | Snippets, never whole files. |
 | Which models must succeed | Small models (Haiku-class) and up. |
 | Where ideas came from | Recorded only in the temporary `_sources/` folder. |
@@ -37,7 +37,7 @@ Layer 1 is the contract. An option exists in a language only when layer 1 descri
 
 | Phase | What happens | Generated code? |
 |---|---|---|
-| **1. Build the skills** | The architecture layer, the interview and `MORTIS.md`, the scaffold skill's foundations, the knowledge of every option (context, keys, correlation, exceptions, outbox, bus, testing, tenancy, language, MongoDB, queries, authentication, API and observability), the develop and review skills | No generation by a model. Three hand-kept reference solutions, one per preset (`_temp/variants/`), are built, tested and verified at every step (decision 37) |
+| **1. Build the skills** | The architecture layer, the interview and `MORTIS.md`, the scaffold skill's foundations, the knowledge of every option (context, keys, correlation, exceptions, outbox, bus, testing, tenancy, language, MongoDB, queries, authentication, API and observability), the develop and review skills | No generation by a model. Three hand-kept reference solutions, one per preset (`reference/variants/`), are built, tested and verified at every step (decision 37) |
 | **2. Generate C# with the maintainer** | The lean, standard and advanced presets and two combined variants are generated, judged by `verify.sh`, and the skills are fixed until they pass. Then sameness and small models are measured, the develop and review skills are exercised, and the plugin is packaged | A few deliberate runs |
 | **3. Go** | The Go pages are written from the architecture layer, then Go projects are generated the same way; C# and Go services are shown working together | A few deliberate runs |
 

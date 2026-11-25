@@ -1,4 +1,4 @@
-"""Keeps the three reference solutions in _temp/variants/ from drifting apart.
+"""Keeps the three reference solutions in reference/variants/ from drifting apart.
 
 1. A file in two variants is identical in both, unless DIFFERS_BY names it and one of its keys has a different value in the
    two variants' MORTIS.md.
@@ -12,7 +12,7 @@ from itertools import combinations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VARIANTS = ROOT / "_temp" / "variants"
+VARIANTS = ROOT / "reference" / "variants"
 PRESETS = ("lean", "standard", "advanced")
 SCRIPTS = ROOT / "skills" / "mortis-scaffold" / "scripts"
 MANIFEST = ROOT / "skills" / "mortis-scaffold" / "references" / "csharp" / "manifest.json"

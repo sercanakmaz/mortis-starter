@@ -1,0 +1,43 @@
+# Kernel shape of the MongoDB infrastructure (database = mongo). Built and verified in reference/variants-extra/standard-a (phase 2 step 04 run A); build_shape.py appends it.
+[database=mongo] member {Name}.Console.ConsoleConstants: public const string EnsureIndexesCommand = "ensure-indexes"
+[database=mongo,events.outbox=background|after-command] type {Name}.Infrastructure.Messaging.Outbox: public static class OutboxConstants
+[database=mongo,events.outbox=background|after-command] member {Name}.Infrastructure.Messaging.Outbox.OutboxConstants: public const string TransientTransactionErrorLabel = "TransientTransactionError"
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class ConcurrencyConflictException(string name) : Exception($"{name} was changed by someone else since it was loaded.")
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoClassMaps
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoClassMaps: public static void Register()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoExceptionHandler
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static async Task<T> Run<T>(Func<Task<T>> write)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoExceptionHandler: public static Task Run(Func<Task> write)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexes(IMongoDatabase database)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexes: public async Task EnsureAsync()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoIndexesService(MongoIndexes mongoIndexes, IHostEnvironment hostEnvironment) : IHostedService
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StartAsync(CancellationToken cancellationToken)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoIndexesService: public Task StopAsync(CancellationToken cancellationToken)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public static class MongoModule
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoModule: public static IServiceCollection AddMongoModule(this IServiceCollection services, IConfiguration configuration)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public abstract class MongoRepository<TAggregate, TKey>(IMongoDatabase database, MongoUnitOfWork unitOfWork, EventContext eventContext, string collectionName) : IRepository<TAggregate, TKey> where TAggregate : AggregateRoot<TKey>
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task CreateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task UpdateAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task DeleteAsync(TAggregate aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual async Task<TAggregate> FindByIdAsync(TKey id)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: public virtual Task<TAggregate> FindByIdTrackingAsync(TKey id)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected async Task<TAggregate> FindOneTrackingAsync(FilterDefinition<BsonDocument> filter)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected async Task<IReadOnlyList<TAggregate>> FindManyAsync(FilterDefinition<BsonDocument> filter)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoRepository: protected IFindFluent<BsonDocument, BsonDocument> Find(FilterDefinition<BsonDocument> filter)
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoSession(IMongoClient mongoClient) : IDisposable
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public IClientSessionHandle Handle { get; private set; }
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public async Task<IClientSessionHandle> StartAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoSession: public void Dispose()
+[database=mongo] type {Name}.Infrastructure.Persistence.Mongo: public class MongoUnitOfWork(MongoSession mongoSession, EventContext eventContext, EventHandlerExecutor eventHandlerExecutor, OutboxRepository outboxRepository, OutboxWorker outboxWorker) : IUnitOfWork
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public IClientSessionHandle Session
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public bool HasTransaction
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public Task<int> SaveChangesAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task BeginTransactionAsync(string transactionKey)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task CommitTransactionAsync(string transactionKey)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public async Task RollbackTransactionAsync()
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void OnCommitted(Func<Task> action)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public void Remember(object aggregate, long version)
+[database=mongo] member {Name}.Infrastructure.Persistence.Mongo.MongoUnitOfWork: public long VersionOf(object aggregate)
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string VersionElement = "version"
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string CountersCollection = "counters"
+[database=mongo] member {Name}.Infrastructure.Persistence.PersistenceConstants: public const string OutboxCollection = "outbox_messages"

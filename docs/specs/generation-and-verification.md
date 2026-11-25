@@ -21,7 +21,7 @@ skills/                              installed on a user's machine
       scripts/conformance/           language-neutral checks, selected by MORTIS.md
   mortis-develop/  mortis-review/
 
-_temp/template/                      temporary: the hand-written C# solution and its copy script, source material
+reference/template/                      temporary: the hand-written C# solution and its copy script, source material
                                      for the kernel pages; deleted at the end of phase 2
 
 examples/                            NOT installed; only projects the skills generated and that passed
@@ -53,7 +53,7 @@ Because generation must pass on small models too (decided: Haiku-class and up), 
 
 Things that are data rather than code are written out in full because prose would be a worse copy: `Directory.Build.props`, `BannedSymbols.txt`, `.editorconfig`, `global.json`, the package list with the versions the examples were verified against, the wire-format envelope.
 
-The only full source in the repository is under `_temp/` (until phase 2 ends) and `examples/`. Nothing else in the repository may hold project source, and nothing in `skills/` ever does. `tests/check_installable.sh` enforces the file types, the snippet rules, and that no document outside `_sources/` names a codebase that was studied.
+The only full source in the repository is under `reference/` (until phase 2 ends) and `examples/`. Nothing else in the repository may hold project source, and nothing in `skills/` ever does. `tests/check_installable.sh` enforces the file types, the snippet rules, and that no document outside `_sources/` names a codebase that was studied.
 
 ## Making runs alike
 

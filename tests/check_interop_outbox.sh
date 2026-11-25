@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Phase 3 step 03, the shared outbox: a C# Api (events.outbox = background, hosts.worker = separate, so it only writes rows)
-# and the Go worker of _temp/interop/go-worker share one PostgreSQL database and one outbox table. An order created through
+# and the Go worker of reference/interop/go-worker share one PostgreSQL database and one outbox table. An order created through
 # the C# Api must move the stock through the Go event consumers, as the user who created it, and leave no row behind.
 # Needs PostgreSQL (PG* variables) and .NET and Go on the PATH. Usage: bash tests/check_interop_outbox.sh
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT="$ROOT/_temp/variants-extra/standard-w"
-GO_WORKER="$ROOT/_temp/interop/go-worker"
+PROJECT="$ROOT/reference/variants-extra/standard-w"
+GO_WORKER="$ROOT/reference/interop/go-worker"
 LANG_SH="$ROOT/skills/mortis-scaffold/scripts/lang/csharp.sh"
 NAME=Boilerplate
 PORT="${MORTIS_INTEROP_PORT:-5600}"
