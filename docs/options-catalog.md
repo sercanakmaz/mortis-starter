@@ -1,6 +1,6 @@
 # Options catalog
 
-What a person starting a project can choose, and what each option costs. Nothing here is built yet unless the "Built" column says so. The build order is in [roadmap.md](roadmap.md) and each step's brief is in [`plans/`](../plans/README.md). The exact keys and values are in [specs/decisions-file.md](specs/decisions-file.md).
+What a person starting a project can choose, and what each option costs. Nothing here is built yet unless the "Built" column says so. The build order is in [roadmap.md](roadmap.md) and each step's brief is in [`docs/plans/`](plans/README.md). The exact keys and values are in [specs/decisions-file.md](specs/decisions-file.md).
 
 The **Built** column says whether the option exists in the hand-written C# solution today (`reference/template/`). Marks such as (W1) point to the sources at the end.
 
@@ -106,7 +106,7 @@ One model: a shared database where an aggregate or entity opts in by implementin
 
 A database or schema per tenant is **not offered**: it is exceptional, and it multiplies migrations and connection handling. One rule matters most in the shared model: a background job or consumer must set the tenant before it resolves anything that touches the database.
 
-The host resolves the tenant (header, claim or subdomain) and puts it on the command's context; events, outbox rows and bus messages carry it. Details: [phase 1, step 11](../plans/phase-1-skills/11-multi-tenancy.md).
+The host resolves the tenant (header, claim or subdomain) and puts it on the command's context; events, outbox rows and bus messages carry it. Details: [phase 1, step 11](plans/phase-1-skills/11-multi-tenancy.md).
 
 ### 2.6 Multi-language (add-on)
 

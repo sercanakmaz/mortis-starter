@@ -9,7 +9,7 @@ Four Claude Code skills that start a backend project from a short interview and 
 | `mortis-develop` | Adds to a generated project by recipe (aggregate, child entity, command, query, event, handler, consumer, read model, tenant ownership, translated field, key type, turning an option on), test first | Used by models in four develop runs (C# standard and advanced, the outbox on lean, Go lean) |
 | `mortis-review` | `review.sh` runs 14 mechanical checks of the project's rules; a checklist covers the judgement calls | Its fixtures pass; applied after the four develop runs |
 
-What is left and what is not yet proven: [TODO.md](TODO.md). The finished plan and the state of every step: `plans/PROGRESS.md`.
+What is left and what is not yet proven: [TODO.md](TODO.md). The finished plan and the state of every step: [docs/plans/PROGRESS.md](docs/plans/PROGRESS.md).
 
 ## Two-minute start
 

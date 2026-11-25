@@ -1,6 +1,6 @@
 # How a project is generated, and how we know the skills work
 
-Decided on 2026-11-16. Built in [phase 1, step 03](../../plans/phase-1-skills/03-scaffold-foundations.md) and proven in [phase 2](../../plans/phase-2-csharp/README.md).
+Decided on 2026-11-16. Built in [phase 1, step 03](../plans/phase-1-skills/03-scaffold-foundations.md) and proven in [phase 2](../plans/phase-2-csharp/README.md).
 
 ## The rule
 
@@ -122,7 +122,7 @@ The business example (orders, customers, products) is itself described in layer 
 
 ## How we know it works
 
-Generation costs model time and tokens, so it is **not** done while the skills are being written. The work has three phases ([plans/](../../plans/README.md)):
+Generation costs model time and tokens, so it is **not** done while the skills are being written. The work has three phases ([plans/](../plans/README.md)):
 
 | Phase | Generation | What is checked |
 |---|---|---|

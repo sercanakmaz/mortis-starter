@@ -32,7 +32,7 @@ if [ -f "$NAMES" ]; then
   if [ -n "$PATTERN" ]; then
     while IFS= read -r file; do
       problem "an origin is named in ${file#$REPO_DIR/}"
-    done < <(grep -rliIE --exclude-dir=__pycache__ "$PATTERN" "$SKILLS" "$REPO_DIR/docs" "$REPO_DIR/plans" "$REPO_DIR/README.md" "$REPO_DIR/CHANGELOG.md" "$REPO_DIR/tests" 2>/dev/null | grep -v "/_sources/")
+    done < <(grep -rliIE --exclude-dir=__pycache__ "$PATTERN" "$SKILLS" "$REPO_DIR/docs" "$REPO_DIR/README.md" "$REPO_DIR/CHANGELOG.md" "$REPO_DIR/tests" 2>/dev/null | grep -v "/_sources/")
   fi
 else
   echo "note: _sources/names.txt is absent; the origin check did not run"

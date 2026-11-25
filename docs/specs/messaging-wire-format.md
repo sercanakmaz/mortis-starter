@@ -1,6 +1,6 @@
 # Messaging: our own bus, wire-compatible with MassTransit
 
-Decided on 2026-11-16. Built in [phase 1, step 09](../../plans/phase-1-skills/09-rabbitmq-bus.md).
+Decided on 2026-11-16. Built in [phase 1, step 09](../plans/phase-1-skills/09-rabbitmq-bus.md).
 
 ## Decision
 

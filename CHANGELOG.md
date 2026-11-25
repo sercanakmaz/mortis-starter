@@ -7,6 +7,7 @@ All notable changes to the skills and the template. Newest first.
 ### Changed
 - Installed as skills only (`scripts/install.sh`); the plugin manifest and marketplace are removed (decision 60).
 - `_temp/` is renamed `reference/`, with a README that says what it is; `csharp-example.txt` moves to `reference/tools/`.
+- `plans/` moves to `docs/plans/` (decision 61).
 - `TODO.md` is the single backlog; `docs/unverified.md` is merged into it.
 
 ### Removed

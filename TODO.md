@@ -1,6 +1,6 @@
 # TODO
 
-The single list of what is left to do and what is not yet proven, ranked by what would hurt a user first. The plan's phases are finished (`plans/PROGRESS.md`); this file is the backlog from v0.2.0 on. It replaces `docs/unverified.md` (merged 2026-11-25).
+The single list of what is left to do and what is not yet proven, ranked by what would hurt a user first. The plan's phases are finished (`docs/plans/PROGRESS.md`); this file is the backlog from v0.2.0 on. It replaces `docs/unverified.md` (merged 2026-11-25).
 
 Sizes: **S** an hour or two, **M** a session, **L** several sessions. Decisions are in [docs/decisions.md](docs/decisions.md).
 

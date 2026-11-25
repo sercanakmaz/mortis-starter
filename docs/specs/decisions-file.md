@@ -1,6 +1,6 @@
 # The decisions file: MORTIS.md
 
-One file per repository, and one repository per service (decision 30). Written by `mortis-architect`, read by `mortis-scaffold`, `mortis-develop`, `mortis-review` and `verify.sh`. It sits in the root of the generated project and is committed with it. Finalised in [phase 1, step 02](../../plans/phase-1-skills/02-decision-model.md). The single source of keys, values, defaults and rules is `skills/mortis-architect/references/schema.json`; the tables below are checked against it by `tests/check_docs.py`.
+One file per repository, and one repository per service (decision 30). Written by `mortis-architect`, read by `mortis-scaffold`, `mortis-develop`, `mortis-review` and `verify.sh`. It sits in the root of the generated project and is committed with it. Finalised in [phase 1, step 02](../plans/phase-1-skills/02-decision-model.md). The single source of keys, values, defaults and rules is `skills/mortis-architect/references/schema.json`; the tables below are checked against it by `tests/check_docs.py`.
 
 ## Why markdown
 

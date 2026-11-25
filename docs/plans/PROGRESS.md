@@ -1,6 +1,6 @@
 # Progress of phases 2 and 3
 
-Finished: v0.2.0 (2026-11-25). The backlog from here on is [../TODO.md](../TODO.md).
+Finished: v0.2.0 (2026-11-25). The backlog from here on is [../TODO.md](../../TODO.md).
 
 Worked unattended from 2026-11-22 (the maintainer asked for every remaining phase and step and checks the final result). Decision 52 records how the plans' "with the maintainer" sessions are run without one.
 

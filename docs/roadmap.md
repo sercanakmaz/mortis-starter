@@ -1,6 +1,6 @@
 # Roadmap
 
-The goal: a family of skills that starts a backend project by asking what the project needs, then builds exactly that, from a lean service up to a platform with several processes and many tenants. The options are in [options-catalog.md](options-catalog.md). Each step has a brief written for the model that will do the coding: [`plans/`](../plans/README.md).
+The goal: a family of skills that starts a backend project by asking what the project needs, then builds exactly that, from a lean service up to a platform with several processes and many tenants. The options are in [options-catalog.md](options-catalog.md). Each step has a brief written for the model that will do the coding: [`plans/`](plans/README.md).
 
 ## Decided
 
@@ -20,7 +20,7 @@ The goal: a family of skills that starts a backend project by asking what the pr
 | Event delivery | Exactly three models: `none`, `after-command`, `background`. |
 | Message bus | Our own, wire-compatible with MassTransit 8. Not MassTransit, not OpenTransit. [specs/messaging-wire-format.md](specs/messaging-wire-format.md) |
 | Multi-tenancy | One shared database; an aggregate or entity opts in with `IMultiTenant`. No database or schema per tenant. |
-| Who codes | The steps are prepared here; a coding model executes them one at a time from `plans/`. Phases 2 and 3 are done together with the maintainer. |
+| Who codes | The steps are prepared here; a coding model executes them one at a time from `docs/plans/`. Phases 2 and 3 are done together with the maintainer. |
 | When code is generated | Only after the skills are complete (phase 2), never per option. |
 
 ## The three layers
