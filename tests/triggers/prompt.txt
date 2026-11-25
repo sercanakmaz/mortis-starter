@@ -1,0 +1,99 @@
+You are simulating Claude Code deciding which skill to load. The available skills (name: description) are:
+
+- mortis-architect: Interviews the person starting a backend project and writes MORTIS.md, the decisions file every later step reads. Picks a lean, standard or advanced preset from the description, asks only about what is doubtful (outbox and event delivery, broker, multi-tenancy, translated messages, exceptions, queries, testing, authentication, naming), refuses combinations that cannot work, and records a decision for every change from the preset. Also explains where code belongs (layers, aggregates, commands, events). Use whenever someone wants to start, plan, bootstrap or architect a new backend, API or service, asks which outbox, broker or tenancy model to choose, asks "where does this code go", or says "lean", "standard" or "advanced" project, even when they never mention DDD.
+- mortis-scaffold: Generates a new backend project from its MORTIS.md decisions file, writing every file from the skill's reference pages (contracts, rules and member snippets), then proves it with verify.sh (structure, kernel shape, house rules, build, tests and behaviour checks against a real database). Also brings the building blocks into an existing solution. C# (.NET 10, EF Core, PostgreSQL) for every preset; Go (pgx, PostgreSQL) for the lean preset. Use whenever the user wants to create, generate, scaffold or bootstrap a backend, API or service, has a MORTIS.md and asks to build it, asks for a .NET "starter", "boilerplate" or "clean / DDD structure", or wants an existing solution to adopt this structure, even if they never say "scaffold".
+- mortis-develop: Adds things to a project that mortis-scaffold generated, the way its MORTIS.md decisions require - an aggregate, a child entity, a value object, a command, a query, an event, a sync or async handler, an event consumer, a read model, a tenant-owned aggregate, a translated field, a key type change - and turns an option on later (add the outbox, tenancy, an add-on). Follows a recipe per request, test first, touching every file the change needs and nothing else, then runs verify.sh. Use whenever someone asks to add, extend, change or implement something in a Mortis project (a project with a MORTIS.md), asks "where else must this change", or wants to switch an option on after the project exists, even if they never name the skill.
+- mortis-review: Reviews a change or a whole Mortis project (a project with a MORTIS.md) against its rules - runs review.sh for the mechanical checks (comments, private helpers in handlers, rules outside the aggregate, hosts naming handlers, missing registrations, writing commands without a context, tenant-less unique indexes, reactions that inject repositories, helpers in test classes, banned APIs, queue-event contracts, writes in the domain, cross-context references), then walks the judgement checklist the script cannot do, and reports findings with file, line, rule and a concrete fix, most severe first. Use whenever someone asks to review, check, audit or "look over" code, a diff, a branch or a pull request in a Mortis project, or asks whether a change follows the project's rules, even if they never name the skill.
+- code-review: Reviews code changes for bugs, security issues and style in any language. Use when the user asks for a code review of a diff, file or pull request.
+- frontend-design: Guidance for distinctive visual design when building new UI or reshaping an existing one.
+- xlsx: Use this skill any time a spreadsheet file is the primary input or output.
+- docx: Use this skill whenever the user wants to create, read, edit, or manipulate Word documents.
+- pdf: Use this skill whenever the user wants to do anything with PDF files.
+- deep-research: Use when the prompt requires researching a topic across multiple sources and synthesizing a report.
+- debugging: Systematic debugging of failing tests, crashes and performance problems in any codebase.
+- dotnet-upgrade: Upgrades .NET projects between framework versions: target frameworks, package versions, breaking changes.
+
+For each user message below (the bracket says what the working folder holds), decide which ONE skill Claude should invoke before answering, or "none" if it should answer without a skill. Judge exactly as you would in a real session: invoke a skill only when its description fits the request.
+
+1. [empty folder] I want to start a new order management backend in C#, help me decide the architecture
+2. [empty folder] we're building a multi-tenant SaaS API, should tenants share one database or each get their own?
+3. [empty folder] which outbox approach should I use, background polling or publishing right after the command?
+4. [empty folder] planning a new microservice for invoices; it needs to publish events to other services. what should I choose for the broker?
+5. [empty folder] give me a lean project setup for a small internal tool backend
+6. [empty folder] I need an advanced-level backend: tenancy, RabbitMQ, read models. let's decide the options first
+7. [the current folder has a MORTIS.md] where should the code that checks stock before confirming an order go - the handler or the aggregate?
+8. [empty folder] bootstrap decisions for a new .NET service, I don't want to over-engineer it
+9. [empty folder] should my new API return error codes or just messages? and do I need translated error messages?
+10. [empty folder] I'm starting a Go backend for a booking system, help me plan it before we write code
+11. [empty folder] what's the difference between the lean, standard and advanced presets?
+12. [the current folder has a MORTIS.md] is it ok to call a repository from an event handler or should it send a command?
+13. [empty folder] help me architect a backend API for a logistics company, events between bounded parts matter
+14. [empty folder] new project: product catalog service with soft delete and caching. what decisions do we need?
+15. [empty folder] do I need integration tests with a real database for a new service or are unit tests enough? we're just starting
+16. [the current folder has a MORTIS.md] MORTIS.md looks good, generate the project
+17. [the current folder has a MORTIS.md] build it
+18. [empty folder] create a .NET 10 backend boilerplate with clean DDD structure, PostgreSQL and EF Core
+19. [empty folder] scaffold a C# API project with aggregates, commands and an outbox
+20. [the current folder is an existing project without a MORTIS.md] I want this existing solution to adopt the Mortis building blocks (command dispatcher, unit of work, aggregates)
+21. [empty folder] give me a starter project for a Go REST service with pgx and PostgreSQL, lean setup
+22. [the current folder has a MORTIS.md] generate the solution from the decisions file and run the checks
+23. [empty folder] spin up a DDD starter for .NET with an example domain so I can see how it fits together
+24. [the current folder has a MORTIS.md] the decisions are done, now write all the files
+25. [empty folder] I need a backend skeleton in C#: layers, a console host, an API host, tests
+26. [the current folder has a MORTIS.md] regenerate the project with the standard preset I just picked
+27. [empty folder] create a new ASP.NET Core service with the domain-driven folder layout and a verify script
+28. [the current folder has a MORTIS.md] go ahead and scaffold
+29. [empty folder] bootstrap a backend service from scratch, decisions already written in MORTIS.md which I'll paste: ...
+30. [empty folder] make me a .NET boilerplate with multi-tenancy and RabbitMQ
+31. [the current folder has a MORTIS.md] add a Supplier aggregate with contacts
+32. [the current folder has a MORTIS.md] I need a command to cancel an order line
+33. [the current folder has a MORTIS.md] add a query that lists products by category, paged
+34. [the current folder has a MORTIS.md] when an order is completed, the customer's completed-order count should go up - add that
+35. [the current folder has a MORTIS.md] add a Money value object for the invoice total
+36. [the current folder has a MORTIS.md] turn on the outbox, we need reliable events now
+37. [the current folder has a MORTIS.md] make the Product aggregate tenant-owned
+38. [the current folder has a MORTIS.md] we want the product name translated in Turkish and English, add that field
+39. [the current folder has a MORTIS.md] add an event consumer that sends a welcome email when a customer is created
+40. [the current folder has a MORTIS.md] change the Category key from int to Guid
+41. [the current folder has a MORTIS.md] if I rename the OrderLine quantity field, where else must this change?
+42. [the current folder has a MORTIS.md] implement a read model of order summaries for the dashboard
+43. [the current folder has a MORTIS.md] add an endpoint to block a customer
+44. [the current folder has a MORTIS.md] we need soft delete on products now, the project didn't have it
+45. [the current folder has a MORTIS.md] add a child entity Address to Customer
+46. [the current folder has a MORTIS.md] review my changes
+47. [the current folder has a MORTIS.md] can you look over this diff before I open the PR?
+48. [the current folder has a MORTIS.md] audit the whole project against its rules
+49. [the current folder has a MORTIS.md] does this handler follow the project's conventions?
+50. [the current folder has a MORTIS.md] check the branch feature/suppliers for problems
+51. [the current folder has a MORTIS.md] review the pull request I just pushed
+52. [the current folder has a MORTIS.md] is it fine that my test class has a private helper method?
+53. [the current folder has a MORTIS.md] run the reviewer on the last commit
+54. [the current folder has a MORTIS.md] I added a unique index on sku, check if it's right for a tenant-owned table
+55. [the current folder has a MORTIS.md] look over the Orders folder and tell me what breaks the house rules
+56. [the current folder has a MORTIS.md] code review please
+57. [the current folder has a MORTIS.md] did I register the new consumer everywhere it needs to be?
+58. [the current folder has a MORTIS.md] check my work on the supplier feature
+59. [the current folder has a MORTIS.md] is anything wrong with putting this validation in the command handler instead of the aggregate? here's the code
+60. [the current folder has a MORTIS.md] review src/App.Domain/Aggregates/Invoices for issues
+61. [the current folder is an existing project without a MORTIS.md] add a Supplier class with contacts to this Express.js app
+62. [the current folder is an existing project without a MORTIS.md] review this React component for accessibility
+63. [empty folder] write a Python script that renames photos by date
+64. [the current folder is an existing project without a MORTIS.md] fix the failing unit test in my Spring Boot project
+65. [empty folder] explain what domain-driven design is
+66. [empty folder] what's the difference between an aggregate and an entity in DDD?
+67. [the current folder is an existing project without a MORTIS.md] set up EF Core migrations in my existing app
+68. [empty folder] write a blog post about event sourcing
+69. [the current folder is an existing project without a MORTIS.md] code review my Django models
+70. [empty folder] compare RabbitMQ and Kafka for me
+71. [the current folder is an existing project without a MORTIS.md] add pagination to this .NET controller
+72. [empty folder] create a landing page for my startup
+73. [the current folder is an existing project without a MORTIS.md] our Go service leaks goroutines, help debug
+74. [empty folder] how do I install the .NET 10 SDK on macOS?
+75. [the current folder is an existing project without a MORTIS.md] refactor this C# class to use records
+76. [empty folder] make a spreadsheet of our Q3 budget
+77. [the current folder is an existing project without a MORTIS.md] review the Terraform for our staging cluster
+78. [empty folder] what is the outbox pattern? just explain it
+79. [the current folder is an existing project without a MORTIS.md] add a GraphQL endpoint to this Node API
+80. [the current folder is an existing project without a MORTIS.md] upgrade this project from .NET 8 to .NET 10
+
+Write a JSON object mapping each number to the skill name or "none" to the file OUTFILE, with no other text in the file. Then reply "done".

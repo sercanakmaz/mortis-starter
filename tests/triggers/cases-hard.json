@@ -1,0 +1,203 @@
+[
+ {
+  "id": 1,
+  "expected": "architect",
+  "prompt": "I'm about to start a new backend for a clinic appointment system. Where do I begin?"
+ },
+ {
+  "id": 2,
+  "expected": "architect",
+  "prompt": "multi tenant or not? we'll have maybe 5 customers at first"
+ },
+ {
+  "id": 3,
+  "expected": "architect",
+  "prompt": "do I really need an outbox for a small API that sends one email per order?"
+ },
+ {
+  "id": 4,
+  "expected": "architect",
+  "prompt": "new service, should events go through RabbitMQ or stay in-process?"
+ },
+ {
+  "id": 5,
+  "expected": "architect",
+  "prompt": "help me set up the foundations for a new API, nothing written yet"
+ },
+ {
+  "id": 6,
+  "expected": "architect",
+  "prompt": "I keep putting business rules in controllers. where do they belong in the structure you'd generate?"
+ },
+ {
+  "id": 7,
+  "expected": "architect",
+  "prompt": "pick a sensible preset for a hackathon backend"
+ },
+ {
+  "id": 8,
+  "expected": "architect",
+  "prompt": "we need Turkish and English error messages in the new service - what does that change?"
+ },
+ {
+  "id": 9,
+  "expected": "scaffold",
+  "prompt": "ok, create the solution now"
+ },
+ {
+  "id": 10,
+  "expected": "scaffold",
+  "prompt": "generate a .NET starter with the DDD layout"
+ },
+ {
+  "id": 11,
+  "expected": "scaffold",
+  "prompt": "give me a backend template in Go with PostgreSQL"
+ },
+ {
+  "id": 12,
+  "expected": "scaffold",
+  "prompt": "set up the project structure: Domain, Application, Infrastructure, Api, tests"
+ },
+ {
+  "id": 13,
+  "expected": "scaffold",
+  "prompt": "bring the dispatcher and unit-of-work building blocks into my current solution"
+ },
+ {
+  "id": 14,
+  "expected": "scaffold",
+  "prompt": "create a C# boilerplate with outbox and integration tests"
+ },
+ {
+  "id": 15,
+  "expected": "develop",
+  "prompt": "add an Invoice aggregate with lines to my Mortis project"
+ },
+ {
+  "id": 16,
+  "expected": "develop",
+  "prompt": "we need a GetSupplier query in the project you generated"
+ },
+ {
+  "id": 17,
+  "expected": "develop",
+  "prompt": "switch on tenancy in the project we scaffolded last week"
+ },
+ {
+  "id": 18,
+  "expected": "none",
+  "prompt": "add a consumer that reacts when stock drops below 5",
+  "note": "relabelled: with no project context nothing says it is a Mortis project, so no skill is right"
+ },
+ {
+  "id": 19,
+  "expected": "develop",
+  "prompt": "in our Mortis service, add a command to rename a category"
+ },
+ {
+  "id": 20,
+  "expected": "develop",
+  "prompt": "what else has to change if I add a field to Product in this MORTIS project?"
+ },
+ {
+  "id": 21,
+  "expected": "review",
+  "prompt": "review what I changed in the Mortis project today"
+ },
+ {
+  "id": 22,
+  "expected": "review",
+  "prompt": "check this PR against the project's rules (it has a MORTIS.md)"
+ },
+ {
+  "id": 23,
+  "expected": "review",
+  "prompt": "audit our generated backend for rule violations"
+ },
+ {
+  "id": 24,
+  "expected": "review",
+  "prompt": "before I merge: anything wrong with my new aggregate in the mortis project?"
+ },
+ {
+  "id": 25,
+  "expected": "none",
+  "prompt": "make a simple .NET web API that returns hello world"
+ },
+ {
+  "id": 26,
+  "expected": "none",
+  "prompt": "what's a good folder structure for a React app?"
+ },
+ {
+  "id": 27,
+  "expected": "none",
+  "prompt": "explain CQRS in simple terms"
+ },
+ {
+  "id": 28,
+  "expected": "none",
+  "prompt": "add a Supplier entity to my Rails app"
+ },
+ {
+  "id": 29,
+  "expected": "none",
+  "prompt": "review my resume"
+ },
+ {
+  "id": 30,
+  "expected": "none",
+  "prompt": "write unit tests for this C# string helper"
+ },
+ {
+  "id": 31,
+  "expected": "none",
+  "prompt": "why is my EF Core query slow?"
+ },
+ {
+  "id": 32,
+  "expected": "none",
+  "prompt": "translate this paragraph into Turkish"
+ },
+ {
+  "id": 33,
+  "expected": "none",
+  "prompt": "set up a GitHub Actions workflow for my Node project"
+ },
+ {
+  "id": 34,
+  "expected": "none",
+  "prompt": "what's new in .NET 10?"
+ },
+ {
+  "id": 35,
+  "expected": "none",
+  "prompt": "configure RabbitMQ on Kubernetes"
+ },
+ {
+  "id": 36,
+  "expected": "none",
+  "prompt": "design a database schema for a library system"
+ },
+ {
+  "id": 37,
+  "expected": "none",
+  "prompt": "review this SQL migration for my Laravel app"
+ },
+ {
+  "id": 38,
+  "expected": "none",
+  "prompt": "how do I add JWT auth to an existing ASP.NET Core app?"
+ },
+ {
+  "id": 39,
+  "expected": "none",
+  "prompt": "summarize the attached architecture document"
+ },
+ {
+  "id": 40,
+  "expected": "none",
+  "prompt": "give me feedback on this pull request in our Python monorepo"
+ }
+]

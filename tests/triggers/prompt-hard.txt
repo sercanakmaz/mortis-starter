@@ -1,0 +1,59 @@
+You are simulating Claude Code deciding which skill to load. The available skills (name: description) are:
+
+- mortis-architect: Interviews the person starting a backend project and writes MORTIS.md, the decisions file every later step reads. Picks a lean, standard or advanced preset from the description, asks only about what is doubtful (outbox and event delivery, broker, multi-tenancy, translated messages, exceptions, queries, testing, authentication, naming), refuses combinations that cannot work, and records a decision for every change from the preset. Also explains where code belongs (layers, aggregates, commands, events). Use whenever someone wants to start, plan, bootstrap or architect a new backend, API or service, asks which outbox, broker or tenancy model to choose, asks "where does this code go", or says "lean", "standard" or "advanced" project, even when they never mention DDD.
+- mortis-scaffold: Generates a new backend project from its MORTIS.md decisions file, writing every file from the skill's reference pages (contracts, rules and member snippets), then proves it with verify.sh (structure, kernel shape, house rules, build, tests and behaviour checks against a real database). Also brings the building blocks into an existing solution. C# (.NET 10, EF Core, PostgreSQL) for every preset; Go (pgx, PostgreSQL) for the lean preset. Use whenever the user wants to create, generate, scaffold or bootstrap a backend, API or service, has a MORTIS.md and asks to build it, asks for a .NET "starter", "boilerplate" or "clean / DDD structure", or wants an existing solution to adopt this structure, even if they never say "scaffold".
+- mortis-develop: Adds things to a project that mortis-scaffold generated, the way its MORTIS.md decisions require - an aggregate, a child entity, a value object, a command, a query, an event, a sync or async handler, an event consumer, a read model, a tenant-owned aggregate, a translated field, a key type change - and turns an option on later (add the outbox, tenancy, an add-on). Follows a recipe per request, test first, touching every file the change needs and nothing else, then runs verify.sh. Use whenever someone asks to add, extend, change or implement something in a Mortis project (a project with a MORTIS.md), asks "where else must this change", or wants to switch an option on after the project exists, even if they never name the skill.
+- mortis-review: Reviews a change or a whole Mortis project (a project with a MORTIS.md) against its rules - runs review.sh for the mechanical checks (comments, private helpers in handlers, rules outside the aggregate, hosts naming handlers, missing registrations, writing commands without a context, tenant-less unique indexes, reactions that inject repositories, helpers in test classes, banned APIs, queue-event contracts, writes in the domain, cross-context references), then walks the judgement checklist the script cannot do, and reports findings with file, line, rule and a concrete fix, most severe first. Use whenever someone asks to review, check, audit or "look over" code, a diff, a branch or a pull request in a Mortis project, or asks whether a change follows the project's rules, even if they never name the skill.
+- code-review: Reviews code changes for bugs, security issues and style in any language. Use when the user asks for a code review of a diff, file or pull request.
+- frontend-design: Guidance for distinctive visual design when building new UI or reshaping an existing one.
+- xlsx: Use this skill any time a spreadsheet file is the primary input or output.
+- docx: Use this skill whenever the user wants to create, read, edit, or manipulate Word documents.
+- pdf: Use this skill whenever the user wants to do anything with PDF files.
+- deep-research: Use when the prompt requires researching a topic across multiple sources and synthesizing a report.
+- debugging: Systematic debugging of failing tests, crashes and performance problems in any codebase.
+- dotnet-upgrade: Upgrades .NET projects between framework versions: target frameworks, package versions, breaking changes.
+
+For each user message below, sent in a fresh session in a folder you know nothing about, decide which ONE skill Claude should invoke before answering, or "none" if it should answer without a skill. Judge exactly as you would in a real session: invoke a skill only when its description fits the request.
+
+1. I'm about to start a new backend for a clinic appointment system. Where do I begin?
+2. multi tenant or not? we'll have maybe 5 customers at first
+3. do I really need an outbox for a small API that sends one email per order?
+4. new service, should events go through RabbitMQ or stay in-process?
+5. help me set up the foundations for a new API, nothing written yet
+6. I keep putting business rules in controllers. where do they belong in the structure you'd generate?
+7. pick a sensible preset for a hackathon backend
+8. we need Turkish and English error messages in the new service - what does that change?
+9. ok, create the solution now
+10. generate a .NET starter with the DDD layout
+11. give me a backend template in Go with PostgreSQL
+12. set up the project structure: Domain, Application, Infrastructure, Api, tests
+13. bring the dispatcher and unit-of-work building blocks into my current solution
+14. create a C# boilerplate with outbox and integration tests
+15. add an Invoice aggregate with lines to my Mortis project
+16. we need a GetSupplier query in the project you generated
+17. switch on tenancy in the project we scaffolded last week
+18. add a consumer that reacts when stock drops below 5
+19. in our Mortis service, add a command to rename a category
+20. what else has to change if I add a field to Product in this MORTIS project?
+21. review what I changed in the Mortis project today
+22. check this PR against the project's rules (it has a MORTIS.md)
+23. audit our generated backend for rule violations
+24. before I merge: anything wrong with my new aggregate in the mortis project?
+25. make a simple .NET web API that returns hello world
+26. what's a good folder structure for a React app?
+27. explain CQRS in simple terms
+28. add a Supplier entity to my Rails app
+29. review my resume
+30. write unit tests for this C# string helper
+31. why is my EF Core query slow?
+32. translate this paragraph into Turkish
+33. set up a GitHub Actions workflow for my Node project
+34. what's new in .NET 10?
+35. configure RabbitMQ on Kubernetes
+36. design a database schema for a library system
+37. review this SQL migration for my Laravel app
+38. how do I add JWT auth to an existing ASP.NET Core app?
+39. summarize the attached architecture document
+40. give me feedback on this pull request in our Python monorepo
+
+Write a JSON object mapping each number to the skill name or "none" to the file OUTFILE, with no other text in the file. Then reply "done".

@@ -1,0 +1,402 @@
+[
+ {
+  "id": 1,
+  "expected": "architect",
+  "prompt": "[empty folder] I want to start a new order management backend in C#, help me decide the architecture"
+ },
+ {
+  "id": 2,
+  "expected": "architect",
+  "prompt": "[empty folder] we're building a multi-tenant SaaS API, should tenants share one database or each get their own?"
+ },
+ {
+  "id": 3,
+  "expected": "architect",
+  "prompt": "[empty folder] which outbox approach should I use, background polling or publishing right after the command?"
+ },
+ {
+  "id": 4,
+  "expected": "architect",
+  "prompt": "[empty folder] planning a new microservice for invoices; it needs to publish events to other services. what should I choose for the broker?"
+ },
+ {
+  "id": 5,
+  "expected": "architect",
+  "prompt": "[empty folder] give me a lean project setup for a small internal tool backend"
+ },
+ {
+  "id": 6,
+  "expected": "architect",
+  "prompt": "[empty folder] I need an advanced-level backend: tenancy, RabbitMQ, read models. let's decide the options first"
+ },
+ {
+  "id": 7,
+  "expected": "architect",
+  "prompt": "[the current folder has a MORTIS.md] where should the code that checks stock before confirming an order go - the handler or the aggregate?"
+ },
+ {
+  "id": 8,
+  "expected": "architect",
+  "prompt": "[empty folder] bootstrap decisions for a new .NET service, I don't want to over-engineer it"
+ },
+ {
+  "id": 9,
+  "expected": "architect",
+  "prompt": "[empty folder] should my new API return error codes or just messages? and do I need translated error messages?"
+ },
+ {
+  "id": 10,
+  "expected": "architect",
+  "prompt": "[empty folder] I'm starting a Go backend for a booking system, help me plan it before we write code"
+ },
+ {
+  "id": 11,
+  "expected": "architect",
+  "prompt": "[empty folder] what's the difference between the lean, standard and advanced presets?"
+ },
+ {
+  "id": 12,
+  "expected": "architect",
+  "prompt": "[the current folder has a MORTIS.md] is it ok to call a repository from an event handler or should it send a command?"
+ },
+ {
+  "id": 13,
+  "expected": "architect",
+  "prompt": "[empty folder] help me architect a backend API for a logistics company, events between bounded parts matter"
+ },
+ {
+  "id": 14,
+  "expected": "architect",
+  "prompt": "[empty folder] new project: product catalog service with soft delete and caching. what decisions do we need?"
+ },
+ {
+  "id": 15,
+  "expected": "architect",
+  "prompt": "[empty folder] do I need integration tests with a real database for a new service or are unit tests enough? we're just starting"
+ },
+ {
+  "id": 16,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] MORTIS.md looks good, generate the project"
+ },
+ {
+  "id": 17,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] build it"
+ },
+ {
+  "id": 18,
+  "expected": "scaffold",
+  "prompt": "[empty folder] create a .NET 10 backend boilerplate with clean DDD structure, PostgreSQL and EF Core"
+ },
+ {
+  "id": 19,
+  "expected": "scaffold",
+  "prompt": "[empty folder] scaffold a C# API project with aggregates, commands and an outbox"
+ },
+ {
+  "id": 20,
+  "expected": "scaffold",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] I want this existing solution to adopt the Mortis building blocks (command dispatcher, unit of work, aggregates)"
+ },
+ {
+  "id": 21,
+  "expected": "scaffold",
+  "prompt": "[empty folder] give me a starter project for a Go REST service with pgx and PostgreSQL, lean setup"
+ },
+ {
+  "id": 22,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] generate the solution from the decisions file and run the checks"
+ },
+ {
+  "id": 23,
+  "expected": "scaffold",
+  "prompt": "[empty folder] spin up a DDD starter for .NET with an example domain so I can see how it fits together"
+ },
+ {
+  "id": 24,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] the decisions are done, now write all the files"
+ },
+ {
+  "id": 25,
+  "expected": "scaffold",
+  "prompt": "[empty folder] I need a backend skeleton in C#: layers, a console host, an API host, tests"
+ },
+ {
+  "id": 26,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] regenerate the project with the standard preset I just picked"
+ },
+ {
+  "id": 27,
+  "expected": "scaffold",
+  "prompt": "[empty folder] create a new ASP.NET Core service with the domain-driven folder layout and a verify script"
+ },
+ {
+  "id": 28,
+  "expected": "scaffold",
+  "prompt": "[the current folder has a MORTIS.md] go ahead and scaffold"
+ },
+ {
+  "id": 29,
+  "expected": "scaffold",
+  "prompt": "[empty folder] bootstrap a backend service from scratch, decisions already written in MORTIS.md which I'll paste: ..."
+ },
+ {
+  "id": 30,
+  "expected": "scaffold",
+  "prompt": "[empty folder] make me a .NET boilerplate with multi-tenancy and RabbitMQ"
+ },
+ {
+  "id": 31,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add a Supplier aggregate with contacts"
+ },
+ {
+  "id": 32,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] I need a command to cancel an order line"
+ },
+ {
+  "id": 33,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add a query that lists products by category, paged"
+ },
+ {
+  "id": 34,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] when an order is completed, the customer's completed-order count should go up - add that"
+ },
+ {
+  "id": 35,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add a Money value object for the invoice total"
+ },
+ {
+  "id": 36,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] turn on the outbox, we need reliable events now"
+ },
+ {
+  "id": 37,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] make the Product aggregate tenant-owned"
+ },
+ {
+  "id": 38,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] we want the product name translated in Turkish and English, add that field"
+ },
+ {
+  "id": 39,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add an event consumer that sends a welcome email when a customer is created"
+ },
+ {
+  "id": 40,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] change the Category key from int to Guid"
+ },
+ {
+  "id": 41,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] if I rename the OrderLine quantity field, where else must this change?"
+ },
+ {
+  "id": 42,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] implement a read model of order summaries for the dashboard"
+ },
+ {
+  "id": 43,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add an endpoint to block a customer"
+ },
+ {
+  "id": 44,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] we need soft delete on products now, the project didn't have it"
+ },
+ {
+  "id": 45,
+  "expected": "develop",
+  "prompt": "[the current folder has a MORTIS.md] add a child entity Address to Customer"
+ },
+ {
+  "id": 46,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] review my changes"
+ },
+ {
+  "id": 47,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] can you look over this diff before I open the PR?"
+ },
+ {
+  "id": 48,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] audit the whole project against its rules"
+ },
+ {
+  "id": 49,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] does this handler follow the project's conventions?"
+ },
+ {
+  "id": 50,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] check the branch feature/suppliers for problems"
+ },
+ {
+  "id": 51,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] review the pull request I just pushed"
+ },
+ {
+  "id": 52,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] is it fine that my test class has a private helper method?"
+ },
+ {
+  "id": 53,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] run the reviewer on the last commit"
+ },
+ {
+  "id": 54,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] I added a unique index on sku, check if it's right for a tenant-owned table"
+ },
+ {
+  "id": 55,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] look over the Orders folder and tell me what breaks the house rules"
+ },
+ {
+  "id": 56,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] code review please"
+ },
+ {
+  "id": 57,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] did I register the new consumer everywhere it needs to be?"
+ },
+ {
+  "id": 58,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] check my work on the supplier feature"
+ },
+ {
+  "id": 59,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] is anything wrong with putting this validation in the command handler instead of the aggregate? here's the code"
+ },
+ {
+  "id": 60,
+  "expected": "review",
+  "prompt": "[the current folder has a MORTIS.md] review src/App.Domain/Aggregates/Invoices for issues"
+ },
+ {
+  "id": 61,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] add a Supplier class with contacts to this Express.js app"
+ },
+ {
+  "id": 62,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] review this React component for accessibility"
+ },
+ {
+  "id": 63,
+  "expected": "none",
+  "prompt": "[empty folder] write a Python script that renames photos by date"
+ },
+ {
+  "id": 64,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] fix the failing unit test in my Spring Boot project"
+ },
+ {
+  "id": 65,
+  "expected": "none",
+  "prompt": "[empty folder] explain what domain-driven design is"
+ },
+ {
+  "id": 66,
+  "expected": "none",
+  "prompt": "[empty folder] what's the difference between an aggregate and an entity in DDD?"
+ },
+ {
+  "id": 67,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] set up EF Core migrations in my existing app"
+ },
+ {
+  "id": 68,
+  "expected": "none",
+  "prompt": "[empty folder] write a blog post about event sourcing"
+ },
+ {
+  "id": 69,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] code review my Django models"
+ },
+ {
+  "id": 70,
+  "expected": "none",
+  "prompt": "[empty folder] compare RabbitMQ and Kafka for me"
+ },
+ {
+  "id": 71,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] add pagination to this .NET controller"
+ },
+ {
+  "id": 72,
+  "expected": "none",
+  "prompt": "[empty folder] create a landing page for my startup"
+ },
+ {
+  "id": 73,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] our Go service leaks goroutines, help debug"
+ },
+ {
+  "id": 74,
+  "expected": "none",
+  "prompt": "[empty folder] how do I install the .NET 10 SDK on macOS?"
+ },
+ {
+  "id": 75,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] refactor this C# class to use records"
+ },
+ {
+  "id": 76,
+  "expected": "none",
+  "prompt": "[empty folder] make a spreadsheet of our Q3 budget"
+ },
+ {
+  "id": 77,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] review the Terraform for our staging cluster"
+ },
+ {
+  "id": 78,
+  "expected": "none",
+  "prompt": "[empty folder] what is the outbox pattern? just explain it"
+ },
+ {
+  "id": 79,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] add a GraphQL endpoint to this Node API"
+ },
+ {
+  "id": 80,
+  "expected": "none",
+  "prompt": "[the current folder is an existing project without a MORTIS.md] upgrade this project from .NET 8 to .NET 10"
+ }
+]
