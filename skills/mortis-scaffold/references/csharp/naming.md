@@ -13,7 +13,7 @@ These are the language's rules, not choices.
 | Private fields | `_camelCase` | `_domainEvents` |
 | Interfaces | `I` + `PascalCase` | `IOrderRepository` |
 | Generic parameters | `T` + `PascalCase` | `TCommand`, `TContent`, `TKey` |
-| Files | one public type per file, named after it; a command, its validator and its handler share the command's file | `CreateOrderCommand.cs` |
+| Files | one idea per file, named after its main type; the small types that exist for that idea (its enum, its codes, the records it takes or returns) share its file. A type with a role of its own in the table below (aggregate, status, constants, event, repository interface, domain service, port, DTO) keeps its own file; a command, its validator and its handler share the command's file | `CreateOrderCommand.cs`, `PageReading.cs` with `RoundDecision` and `ReadingOutcome` |
 | Namespaces | follow the folder path from the project root, file-scoped | `{Name}.Domain.Aggregates.Orders` |
 | Async methods | end in `Async`, except the overridden `Handle`, `OnHandle`, `Send`, `Publish`, `Invoke` | `FindByIdTrackingAsync` |
 | Test methods | `Method_Condition_Should_Result`, or `Method_Should_Result` | `Complete_WhenNotOpen_Should_ThrowNotOpen` |

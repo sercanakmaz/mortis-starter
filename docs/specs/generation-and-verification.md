@@ -87,7 +87,7 @@ Naming is decided in three levels, and nothing is named by taste at generation t
 
 | Level | Decided by | Examples |
 |---|---|---|
-| **Language rules** | the language; not a choice | C#: `PascalCase` types and members, `camelCase` parameters, `_camelCase` private fields, `I` prefix on interfaces, one type per file named after it. Go: exported `MixedCaps`, unexported `mixedCaps`, no `I` prefix, small interfaces named for what they do, lower-case single-word package names, `snake_case.go` file names, initialisms kept upper-case (`ID`, `HTTP`), errors named `Err…`, tests `Test…` in `_test.go` |
+| **Language rules** | the language; not a choice | C#: `PascalCase` types and members, `camelCase` parameters, `_camelCase` private fields, `I` prefix on interfaces, one idea per file, named after its main type (small types that serve it share the file). Go: exported `MixedCaps`, unexported `mixedCaps`, no `I` prefix, small interfaces named for what they do, lower-case single-word package names, `snake_case.go` file names, initialisms kept upper-case (`ID`, `HTTP`), errors named `Err…`, tests `Test…` in `_test.go` |
 | **Role names** | the language's naming table | the role "handler of the command *complete order*" is `CompleteOrderCommandHandler` in `Orders/CompleteOrderCommand.cs` in C#, and `CompleteOrderHandler` in `internal/application/order/complete_order.go` in Go |
 | **Project choices** | the interview, stored in `MORTIS.md` under `naming` | database names (`snake_case` or as written in code), JSON property casing (`camelCase` or `snake_case`), route style (`kebab-case` or lower-case), event names (bare `Completed` in a per-aggregate namespace, or prefixed `OrderCompleted`), test method style |
 

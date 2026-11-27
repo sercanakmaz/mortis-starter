@@ -5,6 +5,11 @@ All notable changes to the skills and the template. Newest first.
 ## Unreleased
 
 ### Changed
+- The manifest allows subfolders (`**/*.cs`) in an aggregate's folder and in `Domain/Services`, `Domain/Ports` and `Infrastructure/Integrations` (decision 62).
+- A C# file holds one idea: small types that serve the file's main type share its file; role types keep their own (decision 63).
+- `Api/Authentication`, `Api/Contract`, `Infrastructure/Processing`, `Infrastructure/Storage` and their test folders are always allowed (decision 64).
+- Tests directly in `Tests/Api/` and helpers in `TestSupport/Api/` are always allowed (decision 65).
+- Files directly in `Api/Authentication`, `Api/Contract`, `Infrastructure/Processing` and `Infrastructure/Storage` are always allowed, not only in their subfolders (decision 66).
 - Installed as skills only (`scripts/install.sh`); the plugin manifest and marketplace are removed (decision 60).
 - `_temp/` is renamed `reference/`, with a README that says what it is; `csharp-example.txt` moves to `reference/tools/`.
 - `plans/` moves to `docs/plans/` (decision 61).

@@ -4766,6 +4766,7 @@
   "folders": {
    "src/{Name}.Domain/Aggregates/{Plural}": [
     "*.cs",
+    "**/*.cs",
     "Events/*.cs",
     "I{Aggregate}Reader.cs",
     "*View.cs"
@@ -4822,8 +4823,24 @@
   "description": "Paths a project may add at any time. A file outside the manifest, the aggregate folders and these patterns is an extra file and fails verify.sh.",
   "patterns": [
    "src/{Name}.Domain/Services/*.cs",
+   "src/{Name}.Domain/Services/**/*.cs",
    "src/{Name}.Domain/Ports/*.cs",
+   "src/{Name}.Domain/Ports/**/*.cs",
    "src/{Name}.Infrastructure/Integrations/*.cs",
+   "src/{Name}.Infrastructure/Integrations/**/*.cs",
+   "src/{Name}.Api/Authentication/*.cs",
+   "src/{Name}.Api/Authentication/**/*.cs",
+   "src/{Name}.Api/Contract/*.cs",
+   "src/{Name}.Api/Contract/**/*.cs",
+   "src/{Name}.Infrastructure/Processing/*.cs",
+   "src/{Name}.Infrastructure/Processing/**/*.cs",
+   "src/{Name}.Infrastructure/Storage/*.cs",
+   "src/{Name}.Infrastructure/Storage/**/*.cs",
+   "test/{Name}.Tests/Api/*Tests.cs",
+   "test/{Name}.Tests/Api/**/*Tests.cs",
+   "test/{Name}.Tests/TestSupport/Api/*.cs",
+   "test/{Name}.Tests/Infrastructure/Processing/**/*Tests.cs",
+   "test/{Name}.Tests/Infrastructure/Storage/**/*Tests.cs",
    "test/{Name}.Tests/Domain/Services/*Tests.cs",
    "test/{Name}.Tests/Infrastructure/Integrations/*Tests.cs",
    "src/{Name}.Infrastructure/Persistence/Migrations/*.cs",
